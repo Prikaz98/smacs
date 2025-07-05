@@ -1,2 +1,11 @@
+PKGS=sdl2
+PKG_FLAGS:=$(shell pkg-config --cflags $(PKGS))
+PKG_LIBS:=$(shell pkg-config --libs $(PKGS))
+SDL2_LIBS:=-lSDL2_ttf
+CFLAGS:=-Wall -Wextra -std=c11 -pedantic -ggdb
+
 build:
-	cc -I/usr/include/SDL2 -D_REENTRANT -o main main.c -lSDL2 -lSDL2_ttf
+	$(CC) $(CFLAGS) $(PKG_FLAGS) -o smacs ./src/editor.c ./src/render.c ./src/main.c $(PKG_LIBS) $(SDL2_LIBS)
+
+run_test:
+	$(CC) $(CFLAGS) ./src/editor.c ./test/test.c && ./a.out || rm a.out
