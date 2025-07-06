@@ -379,7 +379,7 @@ void editor_beginning_of_buffer(Editor *editor)
 
 void editor_end_of_buffer(Editor *editor)
 {
-    editor->position = editor->buffer.content.len;
+    editor->position = editor->buffer.content.len - 1;
     editor_recognize_arena(editor);
 }
 
