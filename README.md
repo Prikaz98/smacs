@@ -13,37 +13,25 @@ I like [Emacs](https://emacsdocs.org/) and I want to learn how this kind of app 
 In the following keybinding description I use standard Emacs key definition:
 
 C - Ctrl
-
 M - Alt (Meta)
 
 General:
 
 C-f - forward char
-
 C-b - backward char
-
 C-n - next line
-
 C-p - previous line
-
 C-a - move cursor to the beginning of the line
-
 C-e - move cursor to the end of the line
-
 C-v - scroll up
-
 M-v - scroll down
-
 M-< - beginning of the buffer
-
 M-> - end of the buffer
-
 F2 - save file
 
 Deleting:
 
 C-k - delete from cursor position to the end of the line
-
 C-d - delete forward char
 
 BACKSPACE - delete backward char
@@ -51,9 +39,7 @@ BACKSPACE - delete backward char
 Selection:
 
 C-SPC - set mark
-
 M-w - copy to clipboard
-
 C-y - paste from clipboard
 
 View manipulation:
