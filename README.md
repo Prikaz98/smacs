@@ -2,7 +2,7 @@
 
 Custom implementation of Emacs-like text editor.
 
-!(smacs.png)[./smacs.png]
+![smacs.png](./smacs.png)
 
 ## Motivation
 
