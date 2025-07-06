@@ -487,11 +487,12 @@ void editor_duplicate_line(Editor *editor)
 
     line_num = editor_get_current_line_number(editor);
     line = &editor->buffer.lines[line_num];
-    line_len = (line->end - line->start) + 1;
+    line_len = line->end - line->start;
     copy = calloc(line_len, sizeof(char));
     memcpy(copy, &editor->buffer.content.data[line->start], line_len);
     editor_move_begginning_of_line(editor);
     editor_insert(editor, copy);
+    editor_insert(editor, "\n");
 
     free(copy);
 }
