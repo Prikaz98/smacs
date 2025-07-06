@@ -14,7 +14,6 @@
 #define FONT_SIZE       17
 //#define TTF_PATH        "fonts/AcPlus_IBM_VGA_8x16.ttf"
 #define TTF_PATH        "fonts/iosevka-regular.ttf"
-#define FPS             60
 #define MESSAGE_TIMEOUT 100
 #define TAB_SIZE        4
 #define NEWLINE         "\n"
@@ -38,7 +37,6 @@ int main(int argc, char *argv[])
     char *file_path;
     size_t i;
     int win_h, message_timeout, font_y;
-    Uint32 duration, delta_time_ms, start;
 
     if (argc != 2) {
         fprintf(stderr, "Usage %s <file_path>\n", argv[0]);
@@ -90,155 +88,147 @@ int main(int argc, char *argv[])
     SDL_Event event = {0};
 
     while (!quit) {
-      start = SDL_GetTicks();
+        SDL_WaitEvent(&event);
 
-      while (SDL_PollEvent(&event)) {
-          switch (event.type) {
-          case SDL_QUIT: {
-              quit = true;
-              break;
-          }
-          case SDL_TEXTINPUT: {
-              if (!(event.key.keysym.mod & KMOD_CTRL) && !(event.key.keysym.mod & KMOD_ALT)) {
-                  editor_insert(&smacs.editor, event.text.text);
-              }
-              break;
-          }
-          case SDL_MOUSEWHEEL: {
-              editor_mwheel_scroll(&smacs.editor, event.wheel.y);
-              break;
-          }
-          case SDL_KEYDOWN: {
-              //main mapping
-              if (event.key.keysym.mod & KMOD_CTRL) {
-                  switch (event.key.keysym.sym) {
-                  case SDLK_b: {
-                      editor_char_backward(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_f: {
-                      editor_char_forward(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_p: {
-                      editor_previous_line(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_n: {
-                      editor_next_line(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_a: {
-                      editor_move_begginning_of_line(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_e: {
-                      editor_move_end_of_line(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_k: {
-                      editor_kill_line(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_d: {
-                      editor_delete_forward(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_l: {
-                      editor_recenter(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_v: {
-                      editor_scroll_up(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_SPACE: {
-                      editor_set_mark(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_g: {
-                      smacs.editor.selection = false;
-                      break;
-                  }
-                  case SDLK_y: {
-                      editor_paste(&smacs.editor);
-                      break;
-                  }
-                  }
-              }
+        switch (event.type) {
+        case SDL_QUIT: {
+            quit = true;
+            break;
+        }
+        case SDL_TEXTINPUT: {
+            if (!(event.key.keysym.mod & KMOD_CTRL) && !(event.key.keysym.mod & KMOD_ALT)) {
+                editor_insert(&smacs.editor, event.text.text);
+            }
+            break;
+        }
+        case SDL_MOUSEWHEEL: {
+            editor_mwheel_scroll(&smacs.editor, event.wheel.y);
+            break;
+        }
+        case SDL_KEYDOWN: {
+            //main mapping
+            if (event.key.keysym.mod & KMOD_CTRL) {
+                switch (event.key.keysym.sym) {
+                case SDLK_b: {
+                    editor_char_backward(&smacs.editor);
+                    break;
+                }
+                case SDLK_f: {
+                    editor_char_forward(&smacs.editor);
+                    break;
+                }
+                case SDLK_p: {
+                    editor_previous_line(&smacs.editor);
+                    break;
+                }
+                case SDLK_n: {
+                    editor_next_line(&smacs.editor);
+                    break;
+                }
+                case SDLK_a: {
+                    editor_move_begginning_of_line(&smacs.editor);
+                    break;
+                }
+                case SDLK_e: {
+                    editor_move_end_of_line(&smacs.editor);
+                    break;
+                }
+                case SDLK_k: {
+                    editor_kill_line(&smacs.editor);
+                    break;
+                }
+                case SDLK_d: {
+                    editor_delete_forward(&smacs.editor);
+                    break;
+                }
+                case SDLK_l: {
+                    editor_recenter(&smacs.editor);
+                    break;
+                }
+                case SDLK_v: {
+                    editor_scroll_up(&smacs.editor);
+                    break;
+                }
+                case SDLK_SPACE: {
+                    editor_set_mark(&smacs.editor);
+                    break;
+                }
+                case SDLK_g: {
+                    smacs.editor.selection = false;
+                    break;
+                }
+                case SDLK_y: {
+                    editor_paste(&smacs.editor);
+                    break;
+                }
+                }
+            }
 
-              if (event.key.keysym.mod & KMOD_ALT) {
-                  switch (event.key.keysym.sym) {
-                  case SDLK_v: {
-                      editor_scroll_down(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_PERIOD: {
-                      editor_end_of_buffer(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_COMMA: {
-                      editor_beginning_of_buffer(&smacs.editor);
-                      break;
-                  }
-                  case SDLK_w: {
-                      editor_copy_to_clipboard(&smacs.editor);
-                      smacs.editor.selection = false;
-                      break;
-                  }
-                  }
-              }
+            if (event.key.keysym.mod & KMOD_ALT) {
+                switch (event.key.keysym.sym) {
+                case SDLK_v: {
+                    editor_scroll_down(&smacs.editor);
+                    break;
+                }
+                case SDLK_PERIOD: {
+                    editor_end_of_buffer(&smacs.editor);
+                    break;
+                }
+                case SDLK_COMMA: {
+                    editor_beginning_of_buffer(&smacs.editor);
+                    break;
+                }
+                case SDLK_w: {
+                    editor_copy_to_clipboard(&smacs.editor);
+                    smacs.editor.selection = false;
+                    break;
+                }
+                }
+            }
 
-              switch (event.key.keysym.sym) {
-              case SDLK_BACKSPACE: {
-                  editor_delete_backward(&smacs.editor);
-                  break;
-              }
-              case SDLK_RETURN: {
-                  editor_insert(&smacs.editor, NEWLINE);
-                  break;
-              }
-              case SDLK_TAB: {
-                  for (i = 0; i < TAB_SIZE; i++) editor_insert(&smacs.editor, SPACE);
-                  break;
-              }
-              case SDLK_F2: {
-                  if (editor_save(&smacs.editor.buffer) == 0) {
-                      sprintf(&smacs.notification[0], "Saved");
-                      message_timeout = MESSAGE_TIMEOUT;
-                  }
-                  break;
-              }
-              }
-              break;
-          }
-          }
-      }
+            switch (event.key.keysym.sym) {
+            case SDLK_BACKSPACE: {
+                editor_delete_backward(&smacs.editor);
+                break;
+            }
+            case SDLK_RETURN: {
+                editor_insert(&smacs.editor, NEWLINE);
+                break;
+            }
+            case SDLK_TAB: {
+                for (i = 0; i < TAB_SIZE; i++) editor_insert(&smacs.editor, SPACE);
+                break;
+            }
+            case SDLK_F2: {
+                if (editor_save(&smacs.editor.buffer) == 0) {
+                    sprintf(&smacs.notification[0], "Saved");
+                    message_timeout = MESSAGE_TIMEOUT;
+                }
+                break;
+            }
+            }
+            break;
+        }
+        }
 
-      SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
-      SDL_RenderClear(smacs.renderer);
+        SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
+        SDL_RenderClear(smacs.renderer);
 
-      SDL_GetWindowSize(smacs.window, NULL, &win_h);
-      TTF_SizeText(smacs.font, "h", NULL, &font_y);
+        SDL_GetWindowSize(smacs.window, NULL, &win_h);
+        TTF_SizeText(smacs.font, "h", NULL, &font_y);
 
-      smacs.editor.buffer.arena.show_lines = (win_h / font_y) + 1;
-      //TODO: Draw mode line
+        smacs.editor.buffer.arena.show_lines = (win_h / font_y) + 1;
+        //TODO: Draw mode line
 
-      render_draw_smacs(&smacs);
+        render_draw_smacs(&smacs);
 
-      if (message_timeout > 0) {
-          message_timeout--;
-      } else {
-          memset(&smacs.notification[0], 0, RENDER_NOTIFICATION_LEN);
-      }
+        if (message_timeout > 0) {
+            message_timeout--;
+        } else {
+            memset(&smacs.notification[0], 0, RENDER_NOTIFICATION_LEN);
+        }
 
-      SDL_RenderPresent(smacs.renderer);
-
-      duration = SDL_GetTicks() - start;
-      delta_time_ms = 1000 / FPS;
-      if (duration < delta_time_ms) {
-          SDL_Delay(delta_time_ms - duration);
-      }
+        SDL_RenderPresent(smacs.renderer);
     }
 
     render_destroy_smacs(&smacs);
