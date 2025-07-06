@@ -14,7 +14,7 @@ void append_char(Content *content, char ch, size_t pos)
     }
 
     if (content->len >= content->capacity) {
-        content->capacity = content->capacity == 0 ? CONTENT_CAP : content->capacity * 2;
+        content->capacity = content->capacity == 0 ? EDITOR_CONTENT_CAP : content->capacity * 2;
         content->data = realloc(content->data, content->capacity * sizeof(*content->data));
         memset(&content->data[content->len], 0, content->capacity - content->len);
     }
@@ -247,14 +247,24 @@ void editor_determine_lines(Editor *editor)
     buffer->lines[buffer->lines_count++] = (Line) {beg, i};
 }
 
-int editor_save(Buffer *buf, char *file_path)
+int editor_save(Buffer *buf)
 {
     FILE *out;
     Content content;
 
-    out = fopen(file_path, "w");
+    if (buf->file_path == NULL) {
+        fprintf(stderr, "No file_path\n");
+        return 1;
+    }
+
+    if (strlen(buf->file_path) <= 0) {
+        fprintf(stderr, "file_path is invalid\n");
+        return 1;
+    }
+
+    out = fopen(buf->file_path, "w");
     if (out == NULL) {
-        fprintf(stderr, "Could not save file %s\n", file_path);
+        fprintf(stderr, "Could not save file %s\n", buf->file_path);
         return 1;
     }
 
@@ -264,7 +274,7 @@ int editor_save(Buffer *buf, char *file_path)
     }
 
     fclose(out);
-    fprintf(stderr, "Wrote file %s\n", file_path);
+    fprintf(stderr, "Wrote file %s\n", buf->file_path);
     return 0;
 }
 
@@ -289,7 +299,8 @@ int editor_read_file(Editor *editor, char *file_path)
 
     fclose(in);
 
-    editor->buffer = (Buffer) {content, NULL, 0, {0, 0}};
+    editor->buffer = (Buffer) {content, NULL, 0, {0, 0}, 0};
+    editor->buffer.file_path = file_path;
     editor->position = 0;
 
     editor_determine_lines(editor);

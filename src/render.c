@@ -57,6 +57,35 @@ void render_draw_cursor(Smacs *smacs, SDL_Rect cursor_rect, StringBuilder *sb)
     smacs->fg = tmp;
 }
 
+void render_draw_modeline(Smacs *smacs)
+{
+    SDL_Rect mode_line;
+    int win_w, win_h, char_w, char_h, padding_left;
+    size_t current_line;
+    char mode_line_info[1000] = {0};
+
+    TTF_SizeText(smacs->font, "|", &char_w, &char_h);
+    SDL_GetWindowSize(smacs->window, &win_w, &win_h);
+
+    mode_line = (SDL_Rect) {0, win_h - (char_h * 2), win_w, win_h};
+    padding_left = char_w;
+    current_line = editor_get_current_line_number(&smacs->editor);
+
+    SDL_SetRenderDrawColor(smacs->renderer, smacs->bg.r, smacs->bg.g, smacs->bg.b, smacs->bg.a);
+    SDL_RenderFillRect(smacs->renderer, &mode_line);
+
+    SDL_SetRenderDrawColor(smacs->renderer, smacs->rg.r, smacs->rg.g, smacs->rg.b, smacs->rg.a);
+    SDL_RenderDrawLine(smacs->renderer, 0, mode_line.y, mode_line.w, mode_line.y);
+
+    SDL_SetRenderDrawColor(smacs->renderer, smacs->rg.r, smacs->rg.g, smacs->rg.b, smacs->rg.a);
+    SDL_RenderDrawLine(smacs->renderer, 0, win_h - char_h, mode_line.w, win_h - char_h);
+
+    //TODO: Move it in minibuffer rendering
+    render_draw_text(smacs, padding_left, win_h - char_h, smacs->notification);
+    sprintf(mode_line_info, "%s  (%ld)", smacs->editor.buffer.file_path, current_line + 1);
+    render_draw_text(smacs, padding_left, win_h - (char_h * 2), mode_line_info);
+}
+
 void render_draw_smacs(Smacs *smacs)
 {
     Arena arena;
@@ -177,4 +206,15 @@ void render_draw_smacs(Smacs *smacs)
         SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
         SDL_RenderFillRect(smacs->renderer, &cursor_rect);
     }
+
+    render_draw_modeline(smacs);
+}
+
+void render_destroy_smacs(Smacs *smacs)
+{
+    editor_destroy(&smacs->editor);
+    SDL_DestroyRenderer(smacs->renderer);
+    SDL_DestroyWindow(smacs->window);
+    free(smacs->notification);
+    TTF_CloseFont(smacs->font);
 }

@@ -26,6 +26,7 @@ typedef struct {
     Line *lines;
     size_t lines_count;
     Arena arena;
+    char *file_path;
 } Buffer;
 
 typedef struct {
@@ -35,12 +36,12 @@ typedef struct {
     bool selection;
 } Editor;
 
-#define CONTENT_CAP 256
+#define EDITOR_CONTENT_CAP 256
 
 void editor_insert(Editor *editor, char *str);
 void editor_delete_backward(Editor *editor);
 void editor_delete_forward(Editor *editor);
-int  editor_save(Buffer *buf, char *file_path);
+int  editor_save(Buffer *buf);
 int  editor_read_file(Editor *editor, char *file_path);
 void editor_determine_lines(Editor *editor);
 size_t editor_get_current_line_number(Editor *editor);

@@ -26,17 +26,17 @@ const unsigned int RG_COLOR = 0xCFD8DC;
 
 static Smacs smacs = {0};
 
-//TODO: write function copy/paste/cut
+//TODO: write function cut
 //TODO: forward-word/backward-word
 //TODO: search
 //TODO: show line numbers
 //TODO: undo/redo
+//TODO: UTF-8
 
 int main(int argc, char *argv[])
 {
     char *file_path;
     size_t i;
-    char message[256] = {0};
     int win_h, message_timeout, font_y;
     Uint32 duration, delta_time_ms, start;
 
@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
     smacs.editor = (Editor) {0};
     editor_read_file(&smacs.editor, file_path);
     smacs.editor.buffer.arena = (Arena) {0, SCREEN_HEIGHT / FONT_SIZE};
+    smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
 
     SDL_Event event = {0};
 
@@ -202,8 +203,8 @@ int main(int argc, char *argv[])
                   break;
               }
               case SDLK_F2: {
-                  if (editor_save(&smacs.editor.buffer, file_path) == 0) {
-                      sprintf(message, "Wrote %s", file_path);
+                  if (editor_save(&smacs.editor.buffer) == 0) {
+                      sprintf(&smacs.notification[0], "Saved");
                       message_timeout = MESSAGE_TIMEOUT;
                   }
                   break;
@@ -223,13 +224,13 @@ int main(int argc, char *argv[])
       smacs.editor.buffer.arena.show_lines = (win_h / font_y) + 1;
       //TODO: Draw mode line
 
-      if (message_timeout > 0) {
-          //TODO: Find more better place to draw message
-          render_draw_text(&smacs, 0, win_h - font_y, &message[0]);
-          message_timeout--;
-      }
-
       render_draw_smacs(&smacs);
+
+      if (message_timeout > 0) {
+          message_timeout--;
+      } else {
+          memset(&smacs.notification[0], 0, RENDER_NOTIFICATION_LEN);
+      }
 
       SDL_RenderPresent(smacs.renderer);
 
@@ -240,14 +241,9 @@ int main(int argc, char *argv[])
       }
     }
 
-    editor_destroy(&smacs.editor);
+    render_destroy_smacs(&smacs);
 
-    SDL_DestroyRenderer(smacs.renderer);
-    SDL_DestroyWindow(smacs.window);
-
-    TTF_CloseFont(smacs.font);
     TTF_Quit();
-
     SDL_Quit();
 
     return 0;
