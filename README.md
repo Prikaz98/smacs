@@ -33,8 +33,7 @@ Deleting:
 
 - C-k - delete from cursor position to the end of the line
 - C-d - delete forward char
-
-BACKSPACE - delete backward char
+- BACKSPACE - delete backward char
 
 Selection:
 
@@ -53,3 +52,5 @@ View manipulation:
 Everything works using [SDL](https://www.libsdl.org/).
 
 Color theme inspired by [mindre-theme](https://github.com/erikbackman/mindre-theme).
+
+Font [Iosevka](https://typeof.net/Iosevka/)
