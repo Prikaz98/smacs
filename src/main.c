@@ -12,7 +12,6 @@
 #define SCREEN_WIDTH    600
 #define SCREEN_HEIGHT   600
 #define FONT_SIZE       17
-//#define TTF_PATH        "fonts/AcPlus_IBM_VGA_8x16.ttf"
 #define TTF_PATH        "fonts/iosevka-regular.ttf"
 #define MESSAGE_TIMEOUT 100
 #define TAB_SIZE        4
@@ -159,6 +158,10 @@ int main(int argc, char *argv[])
                 }
                 case SDLK_y: {
                     editor_paste(&smacs.editor);
+                    break;
+                }
+                case SDLK_COMMA: {
+                    editor_duplicate_line(&smacs.editor);
                     break;
                 }
                 }

@@ -28,6 +28,7 @@ General:
 - M-< - beginning of the buffer
 - M-> - end of the buffer
 - F2 - save file
+- C-, - duplicate line
 
 Deleting:
 

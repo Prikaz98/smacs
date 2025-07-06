@@ -64,6 +64,6 @@ void editor_mwheel_scroll(Editor *editor, Sint32 y);
 void editor_set_mark(Editor *editor);
 void editor_copy_to_clipboard(Editor *editor);
 void editor_paste(Editor *editor);
-
+void editor_duplicate_line(Editor *editor);
 
 #endif

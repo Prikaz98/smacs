@@ -478,3 +478,20 @@ void editor_paste(Editor *editor)
 
     free(clipboard);
 }
+
+void editor_duplicate_line(Editor *editor)
+{
+    size_t line_num, line_len;
+    Line *line;
+    char *copy;
+
+    line_num = editor_get_current_line_number(editor);
+    line = &editor->buffer.lines[line_num];
+    line_len = (line->end - line->start) + 1;
+    copy = calloc(line_len, sizeof(char));
+    memcpy(copy, &editor->buffer.content.data[line->start], line_len);
+    editor_move_begginning_of_line(editor);
+    editor_insert(editor, copy);
+
+    free(copy);
+}
