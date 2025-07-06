@@ -6,6 +6,3 @@ CFLAGS:=-Wall -Wextra -std=c11 -pedantic -ggdb
 
 build:
 	$(CC) $(CFLAGS) $(PKG_FLAGS) -o smacs ./src/editor.c ./src/render.c ./src/main.c $(PKG_LIBS) $(SDL2_LIBS)
-
-run_test:
-	$(CC) $(CFLAGS) ./src/editor.c ./test/test.c && ./a.out || rm a.out
