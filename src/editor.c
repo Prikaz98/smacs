@@ -124,7 +124,7 @@ void editor_recognize_arena(Editor *editor)
     line_num = editor_get_current_line_number(editor);
     arena = &editor->buffer.arena;
 
-    if (line_num >= (arena->start + arena->show_lines)) {
+    if (line_num >= ((arena->start + arena->show_lines) - 5)) {
         arena->start = line_num - (arena->show_lines / 2);
     } else if (line_num < arena->start) {
         arena->start = line_num;
@@ -284,6 +284,8 @@ int editor_read_file(Editor *editor, char *file_path)
     Content content;
     char next;
     size_t len;
+
+    editor->buffer.file_path = file_path;
 
     in = fopen(file_path, "r");
     if (in == NULL) {
@@ -495,4 +497,64 @@ void editor_duplicate_line(Editor *editor)
     editor_insert(editor, "\n");
 
     free(copy);
+}
+
+void editor_search_forward(Editor *editor)
+{
+    StringBuilder *sb;
+
+    sb = &editor->search_target;
+
+    editor->search = true;
+    sb_clean(sb);
+}
+
+void editor_search_insert(Editor *editor, char *text)
+{
+    size_t i;
+    StringBuilder *sb;
+
+    sb = &editor->search_target;
+
+    for (i = 0; i < strlen(text); i++) {
+        sb_append(sb, text[i]);
+    }
+}
+
+void editor_search_delete_backward(Editor *editor)
+{
+    StringBuilder *sb;
+
+    sb = &editor->search_target;
+    memset(&sb->data[--sb->len], 0, 1);
+}
+
+bool editor_search_next(Editor *editor, char *notification)
+{
+    size_t i, to_find_len;
+    char *to_find;
+    char *tmp;
+
+    to_find = editor->search_target.data;
+
+    if (to_find == NULL) return false;
+    if (strlen(to_find) == 0) return false;
+
+    to_find_len = strlen(to_find);
+    tmp = calloc(to_find_len, sizeof(char));
+
+    for (i = (editor->position + 1); i < editor->buffer.content.len; i++) {
+        memcpy(tmp, &editor->buffer.content.data[i], to_find_len);
+        if (strcmp(tmp, to_find) == 0) {
+            editor->position = i;
+            editor_recognize_arena(editor);
+            return true;
+        }
+    }
+
+    editor->search = false;
+    sprintf(notification, "Failing to find symbols: %s", to_find);
+
+    free(tmp);
+    return false;
 }

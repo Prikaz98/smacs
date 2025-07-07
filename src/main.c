@@ -31,6 +31,9 @@ static Smacs smacs = {0};
 //TODO: undo/redo
 //TODO: UTF-8
 
+void ctrl_leader_mapping(SDL_Event event);
+void alt_leader_mapping(SDL_Event event);
+
 int main(int argc, char *argv[])
 {
     char *file_path;
@@ -96,7 +99,11 @@ int main(int argc, char *argv[])
         }
         case SDL_TEXTINPUT: {
             if (!(event.key.keysym.mod & KMOD_CTRL) && !(event.key.keysym.mod & KMOD_ALT)) {
-                editor_insert(&smacs.editor, event.text.text);
+                if (smacs.editor.search) {
+                    editor_search_insert(&smacs.editor, event.text.text);
+                } else {
+                    editor_insert(&smacs.editor, event.text.text);
+                }
             }
             break;
         }
@@ -105,92 +112,41 @@ int main(int argc, char *argv[])
             break;
         }
         case SDL_KEYDOWN: {
-            //main mapping
-            if (event.key.keysym.mod & KMOD_CTRL) {
+            if (smacs.editor.search) {
+                if (event.key.keysym.mod & KMOD_CTRL) {
+                    switch (event.key.keysym.sym) {
+                    case SDLK_g: {
+                        smacs.editor.selection = false;
+                        smacs.editor.search = false;
+                        break;
+                    }
+                    }
+                }
                 switch (event.key.keysym.sym) {
-                case SDLK_b: {
-                    editor_char_backward(&smacs.editor);
+                case SDLK_BACKSPACE: {
+                    editor_search_delete_backward(&smacs.editor);
                     break;
-                }
-                case SDLK_f: {
-                    editor_char_forward(&smacs.editor);
-                    break;
-                }
-                case SDLK_p: {
-                    editor_previous_line(&smacs.editor);
-                    break;
-                }
-                case SDLK_n: {
-                    editor_next_line(&smacs.editor);
-                    break;
-                }
-                case SDLK_a: {
-                    editor_move_begginning_of_line(&smacs.editor);
-                    break;
-                }
-                case SDLK_e: {
-                    editor_move_end_of_line(&smacs.editor);
-                    break;
-                }
-                case SDLK_k: {
-                    editor_kill_line(&smacs.editor);
-                    break;
-                }
-                case SDLK_d: {
-                    editor_delete_forward(&smacs.editor);
-                    break;
-                }
-                case SDLK_l: {
-                    editor_recenter(&smacs.editor);
-                    break;
-                }
-                case SDLK_v: {
-                    editor_scroll_up(&smacs.editor);
-                    break;
-                }
-                case SDLK_SPACE: {
-                    editor_set_mark(&smacs.editor);
-                    break;
-                }
-                case SDLK_g: {
-                    smacs.editor.selection = false;
-                    break;
-                }
-                case SDLK_y: {
-                    editor_paste(&smacs.editor);
-                    break;
-                }
-                case SDLK_COMMA: {
-                    editor_duplicate_line(&smacs.editor);
-                    break;
+                    case SDLK_RETURN: {
+                        if (!editor_search_next(&smacs.editor, smacs.notification)) {
+                            message_timeout = MESSAGE_TIMEOUT;
+                        }
+                        break;
+                    }
                 }
                 }
+                break;
             }
 
-            if (event.key.keysym.mod & KMOD_ALT) {
-                switch (event.key.keysym.sym) {
-                case SDLK_v: {
-                    editor_scroll_down(&smacs.editor);
-                    break;
-                }
-                case SDLK_PERIOD: {
-                    editor_end_of_buffer(&smacs.editor);
-                    break;
-                }
-                case SDLK_COMMA: {
-                    editor_beginning_of_buffer(&smacs.editor);
-                    break;
-                }
-                case SDLK_w: {
-                    editor_copy_to_clipboard(&smacs.editor);
-                    smacs.editor.selection = false;
-                    break;
-                }
-                }
-            }
+            ctrl_leader_mapping(event);
+            alt_leader_mapping(event);
 
             switch (event.key.keysym.sym) {
             case SDLK_BACKSPACE: {
+                if (smacs.editor.search) {
+                    editor_search_delete_backward(&smacs.editor);
+                    break;
+                }
+
                 editor_delete_backward(&smacs.editor);
                 break;
             }
@@ -204,7 +160,7 @@ int main(int argc, char *argv[])
             }
             case SDLK_F2: {
                 if (editor_save(&smacs.editor.buffer) == 0) {
-                    sprintf(&smacs.notification[0], "Saved");
+                    sprintf(smacs.notification, "Saved");
                     message_timeout = MESSAGE_TIMEOUT;
                 }
                 break;
@@ -240,4 +196,98 @@ int main(int argc, char *argv[])
     SDL_Quit();
 
     return 0;
+}
+
+void ctrl_leader_mapping(SDL_Event event)
+{
+    if (event.key.keysym.mod & KMOD_CTRL) {
+        switch (event.key.keysym.sym) {
+        case SDLK_b: {
+            editor_char_backward(&smacs.editor);
+            break;
+        }
+        case SDLK_f: {
+            editor_char_forward(&smacs.editor);
+            break;
+        }
+        case SDLK_p: {
+            editor_previous_line(&smacs.editor);
+            break;
+        }
+        case SDLK_n: {
+            editor_next_line(&smacs.editor);
+            break;
+        }
+        case SDLK_a: {
+            editor_move_begginning_of_line(&smacs.editor);
+            break;
+        }
+        case SDLK_e: {
+            editor_move_end_of_line(&smacs.editor);
+            break;
+        }
+        case SDLK_k: {
+            editor_kill_line(&smacs.editor);
+            break;
+        }
+        case SDLK_d: {
+            editor_delete_forward(&smacs.editor);
+            break;
+        }
+        case SDLK_l: {
+            editor_recenter(&smacs.editor);
+            break;
+        }
+        case SDLK_v: {
+            editor_scroll_up(&smacs.editor);
+            break;
+        }
+        case SDLK_SPACE: {
+            editor_set_mark(&smacs.editor);
+            break;
+        }
+        case SDLK_g: {
+            smacs.editor.selection = false;
+            smacs.editor.search = false;
+            break;
+        }
+        case SDLK_y: {
+            editor_paste(&smacs.editor);
+            break;
+        }
+        case SDLK_COMMA: {
+            editor_duplicate_line(&smacs.editor);
+            break;
+        }
+        case SDLK_s: {
+            editor_search_forward(&smacs.editor);
+            break;
+        }
+        }
+    }
+}
+
+void alt_leader_mapping(SDL_Event event)
+{
+    if (event.key.keysym.mod & KMOD_ALT) {
+        switch (event.key.keysym.sym) {
+        case SDLK_v: {
+            editor_scroll_down(&smacs.editor);
+            break;
+        }
+        case SDLK_PERIOD: {
+            editor_end_of_buffer(&smacs.editor);
+            break;
+        }
+        case SDLK_COMMA: {
+            editor_beginning_of_buffer(&smacs.editor);
+            break;
+        }
+        case SDLK_w: {
+            editor_copy_to_clipboard(&smacs.editor);
+            smacs.editor.selection = false;
+            break;
+        }
+        }
+    }
 }

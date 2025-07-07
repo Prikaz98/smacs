@@ -29,6 +29,7 @@ General:
 - M-> - end of the buffer
 - F2 - save file
 - C-, - duplicate line
+- C-s - search
 
 Deleting:
 

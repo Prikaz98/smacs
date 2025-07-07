@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include "common.h"
 
 typedef struct {
     size_t start;
@@ -34,6 +35,8 @@ typedef struct {
     Buffer buffer;
     size_t mark;
     bool selection;
+    bool search;
+    StringBuilder search_target;
 } Editor;
 
 #define EDITOR_CONTENT_CAP 256
@@ -65,5 +68,10 @@ void editor_set_mark(Editor *editor);
 void editor_copy_to_clipboard(Editor *editor);
 void editor_paste(Editor *editor);
 void editor_duplicate_line(Editor *editor);
+
+void editor_search_forward(Editor *editor);
+void editor_search_insert(Editor *editor, char *text);
+void editor_search_delete_backward(Editor *editor);
+bool editor_search_next(Editor *editor, char *notification);
 
 #endif
