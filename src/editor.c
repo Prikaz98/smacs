@@ -499,13 +499,35 @@ void editor_duplicate_line(Editor *editor)
     free(copy);
 }
 
+void editor_search_clear(Editor *editor)
+{
+    StringBuilder *sb;
+
+    sb = &editor->search.target;
+
+    sb_clean(sb);
+    editor->search.searching = false;
+    editor->search.reverse = false;
+}
+
 void editor_search_forward(Editor *editor)
 {
     StringBuilder *sb;
 
-    sb = &editor->search_target;
+    sb = &editor->search.target;
 
-    editor->search = true;
+    editor->search.searching = true;
+    sb_clean(sb);
+}
+
+void editor_search_backward(Editor *editor)
+{
+    StringBuilder *sb;
+
+    sb = &editor->search.target;
+    editor->search.searching = true;
+    editor->search.reverse = true;
+
     sb_clean(sb);
 }
 
@@ -514,7 +536,7 @@ void editor_search_insert(Editor *editor, char *text)
     size_t i;
     StringBuilder *sb;
 
-    sb = &editor->search_target;
+    sb = &editor->search.target;
 
     for (i = 0; i < strlen(text); i++) {
         sb_append(sb, text[i]);
@@ -525,7 +547,7 @@ void editor_search_delete_backward(Editor *editor)
 {
     StringBuilder *sb;
 
-    sb = &editor->search_target;
+    sb = &editor->search.target;
     memset(&sb->data[--sb->len], 0, 1);
 }
 
@@ -535,25 +557,36 @@ bool editor_search_next(Editor *editor, char *notification)
     char *to_find;
     char *tmp;
 
-    to_find = editor->search_target.data;
+    to_find = editor->search.target.data;
 
     if (to_find == NULL) return false;
     if (strlen(to_find) == 0) return false;
 
     to_find_len = strlen(to_find);
     tmp = calloc(to_find_len, sizeof(char));
-
-    for (i = (editor->position + 1); i < editor->buffer.content.len; i++) {
-        memcpy(tmp, &editor->buffer.content.data[i], to_find_len);
-        if (strcmp(tmp, to_find) == 0) {
-            editor->position = i;
-            editor_recognize_arena(editor);
-            return true;
+    
+    if (editor->search.reverse) {
+        for (i = editor->position - 1; i > 0; i--) {
+            memcpy(tmp, &editor->buffer.content.data[i], to_find_len);
+            if (strcmp(tmp, to_find) == 0) {
+                editor->position = i;
+                editor_recognize_arena(editor);
+                return true;
+            }
+        }
+    } else {
+        for (i = editor->position + 1; i < editor->buffer.content.len; i++) {
+            memcpy(tmp, &editor->buffer.content.data[i], to_find_len);
+            if (strcmp(tmp, to_find) == 0) {
+                editor->position = i;
+                editor_recognize_arena(editor);
+                return true;
+            }
         }
     }
 
-    editor->search = false;
-    sprintf(notification, "Failing to find symbols: %s", to_find);
+    editor->search.searching = false;
+    sprintf(notification, "Not found: %s", to_find);
 
     free(tmp);
     return false;

@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
     editor_read_file(&smacs.editor, file_path);
     smacs.editor.buffer.arena = (Arena) {0, SCREEN_HEIGHT / FONT_SIZE};
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
+    smacs.editor.search = (Search) {0};
 
     SDL_Event event = {0};
 
@@ -99,7 +100,7 @@ int main(int argc, char *argv[])
         }
         case SDL_TEXTINPUT: {
             if (!(event.key.keysym.mod & KMOD_CTRL) && !(event.key.keysym.mod & KMOD_ALT)) {
-                if (smacs.editor.search) {
+                if (smacs.editor.search.searching) {
                     editor_search_insert(&smacs.editor, event.text.text);
                 } else {
                     editor_insert(&smacs.editor, event.text.text);
@@ -112,12 +113,11 @@ int main(int argc, char *argv[])
             break;
         }
         case SDL_KEYDOWN: {
-            if (smacs.editor.search) {
+            if (smacs.editor.search.searching) {
                 if (event.key.keysym.mod & KMOD_CTRL) {
                     switch (event.key.keysym.sym) {
                     case SDLK_g: {
-                        smacs.editor.selection = false;
-                        smacs.editor.search = false;
+                        editor_search_clear(&smacs.editor);
                         break;
                     }
                     }
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 
             switch (event.key.keysym.sym) {
             case SDLK_BACKSPACE: {
-                if (smacs.editor.search) {
+                if (smacs.editor.search.searching) {
                     editor_search_delete_backward(&smacs.editor);
                     break;
                 }
@@ -248,7 +248,7 @@ void ctrl_leader_mapping(SDL_Event event)
         }
         case SDLK_g: {
             smacs.editor.selection = false;
-            smacs.editor.search = false;
+            smacs.editor.search.searching = false;
             break;
         }
         case SDLK_y: {
@@ -261,6 +261,10 @@ void ctrl_leader_mapping(SDL_Event event)
         }
         case SDLK_s: {
             editor_search_forward(&smacs.editor);
+            break;
+        }
+        case SDLK_r: {
+            editor_search_backward(&smacs.editor);
             break;
         }
         }

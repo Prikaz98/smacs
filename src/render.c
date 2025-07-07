@@ -81,13 +81,13 @@ void render_draw_modeline(Smacs *smacs)
     SDL_RenderDrawLine(smacs->renderer, 0, win_h - char_h, mode_line.w, win_h - char_h);
 
     //TODO: Move it in minibuffer rendering
-    if (smacs->editor.search) {
-        render_draw_text(smacs, padding_left, win_h - char_h, smacs->editor.search_target.data);
+    if (smacs->editor.search.searching) {
+        render_draw_text(smacs, padding_left, win_h - char_h, smacs->editor.search.target.data);
     } else {
         render_draw_text(smacs, padding_left, win_h - char_h, smacs->notification);
     }
 
-    sprintf(mode_line_info, "%s  (%ld)  %s", smacs->editor.buffer.file_path, current_line + 1, smacs->editor.search ? "Search[:enter next :C-g stop]" : "");
+    sprintf(mode_line_info, "%s  (%ld)  %s%s", smacs->editor.buffer.file_path, current_line + 1, smacs->editor.search.reverse ? "Re-" : "", smacs->editor.search.searching ? "Search[:enter next :C-g stop]" : "");
     render_draw_text(smacs, padding_left, win_h - (char_h * 2), mode_line_info);
 }
 
