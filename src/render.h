@@ -7,6 +7,11 @@
 
 #define RENDER_NOTIFICATION_LEN 256
 
+enum LineNumberFormat {
+    ABSOLUTE,
+    RELATIVE,
+};
+
 typedef struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
@@ -18,6 +23,7 @@ typedef struct {
     SDL_Color fg;
     SDL_Color rg;
 
+    enum LineNumberFormat line_number_format;
     char *notification;
 } Smacs;
 

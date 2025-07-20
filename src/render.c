@@ -2,9 +2,7 @@
 #include <sys/param.h>
 #include "render.h"
 #include "common.h"
-
-// TODO: Render only visible part of the file
-// TODO: Add scroll option
+#include "utf8.h"
 
 void render_draw_text(Smacs *smacs, int x, int y, char *text)
 {
@@ -16,7 +14,7 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text)
     if (strlen(text) > 0) {
         int text_width, text_height;
 
-        SDL_Surface *surface = TTF_RenderText_Blended(smacs->font, text, smacs->fg);
+        SDL_Surface *surface = TTF_RenderUTF8_Blended(smacs->font, text, smacs->fg);
         texture = SDL_CreateTextureFromSurface(smacs->renderer, surface);
 
         text_width = surface->w;
@@ -41,7 +39,7 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text)
 void render_draw_cursor(Smacs *smacs, SDL_Rect cursor_rect, StringBuilder *sb)
 {
     char *data;
-    size_t cursor;
+    size_t cursor, char_len, i;
 
     data = smacs->editor.buffer.content.data;
     cursor = smacs->editor.position;
@@ -52,7 +50,10 @@ void render_draw_cursor(Smacs *smacs, SDL_Rect cursor_rect, StringBuilder *sb)
     SDL_Color tmp;
     tmp = smacs->fg;
     smacs->fg = smacs->bg;
-    sb_append(sb, data[cursor] == '\n' ? ' ' : data[cursor]);
+    char_len = utf8_size_char(data[cursor]);
+    for (i = 0; i < char_len; i++) {
+        sb_append(sb, data[cursor + i] == '\n' ? ' ' : data[cursor + i]);
+    }
     render_draw_text(smacs, cursor_rect.x, cursor_rect.y, sb->data);
     smacs->fg = tmp;
 }
@@ -61,15 +62,13 @@ void render_draw_modeline(Smacs *smacs)
 {
     SDL_Rect mode_line;
     int win_w, win_h, char_w, char_h, padding_left;
-    size_t current_line;
     char mode_line_info[1000] = {0};
 
-    TTF_SizeText(smacs->font, "|", &char_w, &char_h);
+    TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
     SDL_GetWindowSize(smacs->window, &win_w, &win_h);
 
     mode_line = (SDL_Rect) {0, win_h - (char_h * 2), win_w, win_h};
     padding_left = char_w;
-    current_line = editor_get_current_line_number(&smacs->editor);
 
     SDL_SetRenderDrawColor(smacs->renderer, smacs->bg.r, smacs->bg.g, smacs->bg.b, smacs->bg.a);
     SDL_RenderFillRect(smacs->renderer, &mode_line);
@@ -81,14 +80,72 @@ void render_draw_modeline(Smacs *smacs)
     SDL_RenderDrawLine(smacs->renderer, 0, win_h - char_h, mode_line.w, win_h - char_h);
 
     //TODO: Move it in minibuffer rendering
-    if (smacs->editor.search.searching) {
-        render_draw_text(smacs, padding_left, win_h - char_h, smacs->editor.search.target.data);
+    if (smacs->editor.searching || smacs->editor.extend_command) {
+        render_draw_text(smacs, padding_left, win_h - char_h, smacs->editor.user_input.data);
     } else {
         render_draw_text(smacs, padding_left, win_h - char_h, smacs->notification);
     }
 
-    sprintf(mode_line_info, "%s  (%ld)  %s%s", smacs->editor.buffer.file_path, current_line + 1, smacs->editor.search.reverse ? "Re-" : "", smacs->editor.search.searching ? "Search[:enter next :C-g stop]" : "");
+    sprintf(mode_line_info,
+            "%s %s%s",
+            smacs->editor.buffer.file_path,
+            smacs->editor.reverse_searching ? "Re-" : "",
+            smacs->editor.searching ? "Search[:enter next :C-g stop]" : smacs->editor.extend_command ? "M-x" : "");
+
     render_draw_text(smacs, padding_left, win_h - (char_h * 2), mode_line_info);
+}
+
+int count_digits(size_t num)
+{
+    long tmp;
+    int count;
+
+    if (num == 0) {
+        return 1;
+    }
+
+    count = 0;
+    tmp = (long) num;
+
+    while (tmp > 0) {
+        tmp = tmp / 10;
+        count++;
+    }
+
+    return count;
+}
+
+void render_format_line_number_padding(char **buffer, size_t buffer_len, size_t num)
+{
+    char *padding;
+    int to_fill;
+
+    to_fill = ((int) buffer_len) - count_digits(num);
+    padding = (char*) calloc(to_fill + 1, sizeof(char));
+    memset(padding, ' ', to_fill);
+    sprintf(*buffer, "%s%ld", padding, num);
+
+    free(padding);
+}
+
+void render_format_display_line_number(Smacs *smacs, char **buffer, size_t buffer_len, size_t num, size_t cursor_line_num)
+{
+    switch (smacs->line_number_format) {
+    case ABSOLUTE: {
+        render_format_line_number_padding(buffer, buffer_len, num);
+        break;
+    }
+    case RELATIVE: {
+        if (cursor_line_num < num) {
+            render_format_line_number_padding(buffer, buffer_len, num - cursor_line_num);
+        } else if (cursor_line_num > num) {
+            render_format_line_number_padding(buffer, buffer_len, cursor_line_num - num);
+        } else {
+            render_format_line_number_padding(buffer, buffer_len, cursor_line_num);
+        }
+        break;
+    }
+    }
 }
 
 void render_draw_smacs(Smacs *smacs)
@@ -96,10 +153,10 @@ void render_draw_smacs(Smacs *smacs)
     Arena arena;
     Line *lines;
     Line line;
-    size_t arena_end, li, ci, cursor, content_line_index, region_beg, region_end;
-    int win_w, win_h, x, y, char_w, char_h;
+    size_t arena_end, li, ci, cursor, content_line_index, region_beg, region_end, max_line_num, current_line, line_number_len;
+    int win_w, win_h, x, y, char_w, char_h, content_hight, char_len, common_indention, text_indention;
     StringBuilder *sb;
-    char *data;
+    char *data, *line_number;
     SDL_Rect cursor_rect, region_rect;
     bool is_line_region;
 
@@ -111,69 +168,87 @@ void render_draw_smacs(Smacs *smacs)
     region_end = smacs->editor.mark > cursor ? smacs->editor.mark : cursor;
     assert(region_beg <= region_end);
 
-    TTF_SizeText(smacs->font, "|", &char_w, &char_h);
-    cursor_rect = (SDL_Rect) {0, 0, char_w, char_h};
-    region_rect = (SDL_Rect) {0, 0, char_w, char_h};
+    current_line = editor_get_current_line_number(&smacs->editor) + 1;
+    max_line_num = arena.start + arena.show_lines;
+    line_number_len = count_digits(max_line_num);
+    line_number = (char*) calloc(line_number_len, sizeof(char));
+    render_format_line_number_padding(&line_number, line_number_len, max_line_num);
+
+    TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
+    common_indention = char_w * 2;
+    text_indention = common_indention + char_w * strlen(line_number) + (char_w * 1);
+    cursor_rect = (SDL_Rect) {text_indention, 0, char_w, char_h};
+    region_rect = (SDL_Rect) {text_indention, 0, char_w, char_h};
 
     x = 0;
-    y = 0;
+    y = char_h;
+
     arena_end = MIN(arena.start + arena.show_lines, smacs->editor.buffer.lines_count);
+
     if(smacs->editor.buffer.content.len > 0) {
         assert(arena.start < arena_end);
 
-        li = 0;
         sb = &(StringBuilder) {0};
 
         SDL_GetWindowSize(smacs->window, &win_w, &win_h);
-        win_w -= y; //PADDING
+        win_w -= char_w; //PADDING
 
         content_line_index = arena.start;
-        while ((li + arena.start) < arena_end) {
+        content_hight = 0;
+
+        for (li = 0; (li + arena.start) < arena_end; li++) {
             line = lines[content_line_index++];
 
+            render_format_display_line_number(smacs, &line_number, line_number_len, content_line_index, current_line);
+            render_draw_text(smacs, common_indention, content_hight, line_number);
+
             is_line_region = smacs->editor.selection &&
-                ((line.start <= region_beg && region_beg < line.end) ||
+                ((line.start <= region_beg && region_beg <= line.end) ||
                  (line.start < region_end && region_end <= line.end) ||
                  (region_beg < line.start && region_end > line.end));
 
             if (is_line_region) {
                 if (region_beg < line.start) {
-                    region_rect.x = 0;
+                    region_rect.x = text_indention;
                 }
             }
 
             for (ci = line.start; ci <= line.end; ci++) {
                 if (is_line_region) {
                     if (region_beg == ci) {
-                        TTF_SizeText(smacs->font, sb->data, &x, NULL);
-                        region_rect.x = x;
+                        TTF_SizeUTF8(smacs->font, sb->data, &x, NULL);
+                        region_rect.x = text_indention + x;
                     }
 
                     if (region_end == ci) {
-                        TTF_SizeText(smacs->font, sb->data, &x, NULL);
-                        region_rect.w = x - region_rect.x;
+                        TTF_SizeUTF8(smacs->font, sb->data, &x, NULL);
+                        region_rect.w = text_indention + x - region_rect.x;
                     }
                 }
 
                 if (cursor == ci) {
-                    TTF_SizeText(smacs->font, sb->data, &x, &y);
+                    TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
                     if (y > 0) {
-                        cursor_rect.x = x;
-                        cursor_rect.y = li * y;
+                        cursor_rect.x = text_indention + x;
+                        cursor_rect.y = content_hight;
                     }
                 }
 
                 if (ci < line.end) {
                     sb_append(sb, data[ci]);
-                    TTF_SizeText(smacs->font, sb->data, &x, &y);
 
-                    if (win_w < x) {
+                    for (char_len = utf8_size_char(data[ci]); char_len > 1; char_len--) {
+                        sb_append(sb, data[++ci]);
+                    }
+
+                    TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
+                    if (win_w < (text_indention + x)) {
                         if (is_line_region) {
-                            region_rect.y = li * y;
+                            region_rect.y = content_hight;
 
-                            if (region_end >= ci) {
-                                TTF_SizeText(smacs->font, sb->data, &x, NULL);
-                                region_rect.w = x - region_rect.x;
+                            if (region_end == line.end || region_end > ci) {
+                                TTF_SizeUTF8(smacs->font, sb->data, &x, NULL);
+                                region_rect.w = text_indention + x - region_rect.x;
                             }
 
                             SDL_SetRenderDrawColor(smacs->renderer, smacs->rg.r, smacs->rg.g, smacs->rg.b, smacs->rg.a);
@@ -181,28 +256,33 @@ void render_draw_smacs(Smacs *smacs)
                             region_rect.w = 0;
                         }
 
-                        render_draw_text(smacs, 0, li * y, sb->data);
+                        render_draw_text(smacs, text_indention, content_hight, sb->data);
+
                         sb_clean(sb);
-                        li++;
+                        content_hight += y;
                     }
                 }
             }
 
             if (is_line_region) {
-                region_rect.y = li * y;
+                region_rect.y = content_hight;
 
-                if (region_end >= line.end) {
-                    TTF_SizeText(smacs->font, sb->data, &x, NULL);
-                    region_rect.w = x - region_rect.x;
+                if (region_end > line.end) {
+                    region_rect.w = win_w;
+                }
+
+                if (region_end == line.end) {
+                    TTF_SizeUTF8(smacs->font, sb->data, &x, NULL);
+                    region_rect.w = text_indention + x - region_rect.x;
                 }
 
                 SDL_SetRenderDrawColor(smacs->renderer, smacs->rg.r, smacs->rg.g, smacs->rg.b, smacs->rg.a);
                 SDL_RenderFillRect(smacs->renderer, &region_rect);
             }
 
-            render_draw_text(smacs, 0, li * y, sb->data);
+            render_draw_text(smacs, text_indention, content_hight, sb->data);
             sb_clean(sb);
-            li++;
+            content_hight += y;
         }
 
         render_draw_cursor(smacs, cursor_rect, sb);
@@ -212,6 +292,7 @@ void render_draw_smacs(Smacs *smacs)
         SDL_RenderFillRect(smacs->renderer, &cursor_rect);
     }
 
+    free(line_number);
     render_draw_modeline(smacs);
 }
 

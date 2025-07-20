@@ -9,43 +9,43 @@
 #include "editor.h"
 #include "render.h"
 
-#define SCREEN_WIDTH    600
-#define SCREEN_HEIGHT   600
+#define SCREEN_WIDTH    1000
+#define SCREEN_HEIGHT   1000
 #define FONT_SIZE       17
-#define TTF_PATH        "fonts/iosevka-regular.ttf"
 #define MESSAGE_TIMEOUT 100
 #define TAB_SIZE        4
 #define NEWLINE         "\n"
 #define SPACE           " "
 
-const unsigned int BG_COLOR = 0xF5F5F5;
-const unsigned int FG_COLOR = 0x2E3331;
-const unsigned int RG_COLOR = 0xCFD8DC;
+/* mindre-theme */
+//const unsigned int BG_COLOR    = 0xF5F5F5;
+//const unsigned int FG_COLOR    = 0x2E3331;
+//const unsigned int RG_COLOR    = 0xCFD8DC;
+
+/* naysayer-theme */
+const unsigned int BG_COLOR    = 0x062329;
+const unsigned int FG_COLOR    = 0xD1B897;
+const unsigned int RG_COLOR    = 0x0000FF;
+
+const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE;
+//const enum LineNumberFormat DISPLAY_LINE_FROMAT = ABSOLUTE;
 
 static Smacs smacs = {0};
 
 //TODO: write function cut
 //TODO: forward-word/backward-word
-//TODO: search
 //TODO: show line numbers
 //TODO: undo/redo
-//TODO: UTF-8
 
 void ctrl_leader_mapping(SDL_Event event);
 void alt_leader_mapping(SDL_Event event);
+bool search_mapping(SDL_Event event, int *message_timeout);
+bool extend_command_mapping(SDL_Event event);
 
-int main(int argc, char *argv[])
+int smacs_launch(char *ttf_path, char *file_path)
 {
-    char *file_path;
     size_t i;
     int win_h, message_timeout, font_y;
-
-    if (argc != 2) {
-        fprintf(stderr, "Usage %s <file_path>\n", argv[0]);
-        return 1;
-    }
-
-    file_path = argv[1];
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "Could not initialize SDL: %s\n", SDL_GetError());
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    smacs.font = TTF_OpenFont(TTF_PATH, FONT_SIZE);
+    smacs.font = TTF_OpenFont(ttf_path, FONT_SIZE);
     if (smacs.font == NULL) {
         fprintf(stderr, "Could not open ttf: %s\n", SDL_GetError());
         return 1;
@@ -78,20 +78,24 @@ int main(int argc, char *argv[])
     bool quit = false;
     message_timeout = 0;
 
-    smacs.bg = (SDL_Color) {BG_COLOR >> 16, BG_COLOR >> 8 & 0xFF, BG_COLOR & 0xFFFF, 0};
-    smacs.fg = (SDL_Color) {FG_COLOR >> 16, FG_COLOR >> 8 & 0xFF, FG_COLOR & 0xFFFF, 0};
-    smacs.rg = (SDL_Color) {RG_COLOR >> 16, RG_COLOR >> 8 & 0xFF, RG_COLOR & 0xFFFF, 0};
-
+    smacs.bg = (SDL_Color) {BG_COLOR >> 16, BG_COLOR >> 8 & 0xFF, (Uint8) BG_COLOR & 0xFFFF, 0};
+    smacs.fg = (SDL_Color) {FG_COLOR >> 16, FG_COLOR >> 8 & 0xFF, (Uint8) FG_COLOR & 0xFFFF, 0};
+    smacs.rg = (SDL_Color) {RG_COLOR >> 16, RG_COLOR >> 8 & 0xFF, (Uint8) RG_COLOR & 0xFFFF, 0};
+    smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.editor = (Editor) {0};
+
     editor_read_file(&smacs.editor, file_path);
     smacs.editor.buffer.arena = (Arena) {0, SCREEN_HEIGHT / FONT_SIZE};
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
-    smacs.editor.search = (Search) {0};
 
     SDL_Event event = {0};
 
     while (!quit) {
         SDL_WaitEvent(&event);
+
+        if (event.type == SDL_MOUSEMOTION) {
+            continue;
+        }
 
         switch (event.type) {
         case SDL_QUIT: {
@@ -99,9 +103,9 @@ int main(int argc, char *argv[])
             break;
         }
         case SDL_TEXTINPUT: {
-            if (!(event.key.keysym.mod & KMOD_CTRL) && !(event.key.keysym.mod & KMOD_ALT)) {
-                if (smacs.editor.search.searching) {
-                    editor_search_insert(&smacs.editor, event.text.text);
+            if (!(event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT))) {
+                if (smacs.editor.searching || smacs.editor.extend_command) {
+                    editor_user_input_insert(&smacs.editor, event.text.text);
                 } else {
                     editor_insert(&smacs.editor, event.text.text);
                 }
@@ -113,41 +117,19 @@ int main(int argc, char *argv[])
             break;
         }
         case SDL_KEYDOWN: {
-            if (smacs.editor.search.searching) {
-                if (event.key.keysym.mod & KMOD_CTRL) {
-                    switch (event.key.keysym.sym) {
-                    case SDLK_g: {
-                        editor_search_clear(&smacs.editor);
-                        break;
-                    }
-                    }
-                }
-                switch (event.key.keysym.sym) {
-                case SDLK_BACKSPACE: {
-                    editor_search_delete_backward(&smacs.editor);
-                    break;
-                    case SDLK_RETURN: {
-                        if (!editor_search_next(&smacs.editor, smacs.notification)) {
-                            message_timeout = MESSAGE_TIMEOUT;
-                        }
-                        break;
-                    }
-                }
-                }
-                break;
-            }
+            if (search_mapping(event, &message_timeout)) break;
+            if (extend_command_mapping(event)) break;
 
             ctrl_leader_mapping(event);
             alt_leader_mapping(event);
 
             switch (event.key.keysym.sym) {
             case SDLK_BACKSPACE: {
-                if (smacs.editor.search.searching) {
-                    editor_search_delete_backward(&smacs.editor);
-                    break;
+                if (smacs.editor.searching) {
+                    editor_user_input_delete_backward(&smacs.editor);
+                } else {
+                    editor_delete_backward(&smacs.editor);
                 }
-
-                editor_delete_backward(&smacs.editor);
                 break;
             }
             case SDLK_RETURN: {
@@ -174,12 +156,11 @@ int main(int argc, char *argv[])
         SDL_RenderClear(smacs.renderer);
 
         SDL_GetWindowSize(smacs.window, NULL, &win_h);
-        TTF_SizeText(smacs.font, "h", NULL, &font_y);
+        TTF_SizeUTF8(smacs.font, "|", NULL, &font_y);
 
         smacs.editor.buffer.arena.show_lines = (win_h / font_y) + 1;
-        //TODO: Draw mode line
-
         render_draw_smacs(&smacs);
+        SDL_RenderPresent(smacs.renderer);
 
         if (message_timeout > 0) {
             message_timeout--;
@@ -187,7 +168,6 @@ int main(int argc, char *argv[])
             memset(&smacs.notification[0], 0, RENDER_NOTIFICATION_LEN);
         }
 
-        SDL_RenderPresent(smacs.renderer);
     }
 
     render_destroy_smacs(&smacs);
@@ -235,7 +215,7 @@ void ctrl_leader_mapping(SDL_Event event)
             break;
         }
         case SDLK_l: {
-            editor_recenter(&smacs.editor);
+            editor_recenter_top_bottom(&smacs.editor);
             break;
         }
         case SDLK_v: {
@@ -248,7 +228,7 @@ void ctrl_leader_mapping(SDL_Event event)
         }
         case SDLK_g: {
             smacs.editor.selection = false;
-            smacs.editor.search.searching = false;
+            smacs.editor.searching = false;
             break;
         }
         case SDLK_y: {
@@ -260,11 +240,19 @@ void ctrl_leader_mapping(SDL_Event event)
             break;
         }
         case SDLK_s: {
-            editor_search_forward(&smacs.editor);
+            editor_user_search_forward(&smacs.editor);
             break;
         }
         case SDLK_r: {
-            editor_search_backward(&smacs.editor);
+            editor_user_search_backward(&smacs.editor);
+            break;
+        }
+        case SDLK_w: {
+            editor_cut(&smacs.editor);
+            break;
+        }
+        case SDLK_x: {
+            editor_user_extend_command(&smacs.editor);
             break;
         }
         }
@@ -294,4 +282,64 @@ void alt_leader_mapping(SDL_Event event)
         }
         }
     }
+}
+
+bool extend_command_mapping(SDL_Event event)
+{
+    if (!smacs.editor.extend_command) return false;
+
+    if (event.key.keysym.mod & KMOD_CTRL) {
+        switch (event.key.keysym.sym) {
+        case SDLK_g: {
+            editor_user_input_clear(&smacs.editor);
+            break;
+        }
+        }
+    }
+
+    switch (event.key.keysym.sym) {
+    case SDLK_BACKSPACE: {
+        editor_user_input_delete_backward(&smacs.editor);
+        break;
+    }
+    case SDLK_RETURN: {
+        //TODO: write start_with function
+        if (strncmp(smacs.editor.user_input.data, "gl", 2) == 0) {
+            editor_goto_line(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[2]));
+        }
+        editor_user_input_clear(&smacs.editor);
+        break;
+    }
+    }
+
+    return true;
+}
+
+bool search_mapping(SDL_Event event, int *message_timeout)
+{
+    if (!smacs.editor.searching) return false;
+
+    if (event.key.keysym.mod & KMOD_CTRL) {
+        switch (event.key.keysym.sym) {
+        case SDLK_g: {
+            editor_user_input_clear(&smacs.editor);
+            break;
+        }
+        }
+    }
+
+    switch (event.key.keysym.sym) {
+    case SDLK_BACKSPACE: {
+        editor_user_input_delete_backward(&smacs.editor);
+        break;
+    }
+    case SDLK_RETURN: {
+        if (!editor_user_search_next(&smacs.editor, smacs.notification)) {
+            *message_timeout = MESSAGE_TIMEOUT;
+        }
+        break;
+    }
+    }
+
+    return true;
 }

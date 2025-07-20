@@ -1,0 +1,14 @@
+#include <stdio.h>
+#include "../src/smacs.h"
+
+#define TTF_PATH ""
+
+int main(int argc, char **argv)
+{
+    if (argc != 2) {
+        fprintf(stderr, "Usage %s <file_path>\n", argv[0]);
+        return 1;
+    }
+
+    return smacs_launch(TTF_PATH, argv[1]);
+}

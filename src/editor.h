@@ -31,17 +31,15 @@ typedef struct {
 } Buffer;
 
 typedef struct {
-    bool searching;
-    bool reverse;
-    StringBuilder target;
-} Search;
-
-typedef struct {
     size_t position;
     Buffer buffer;
     size_t mark;
+
     bool selection;
-    Search search;
+    bool searching;
+    bool reverse_searching;
+    bool extend_command;
+    StringBuilder user_input;
 } Editor;
 
 #define EDITOR_CONTENT_CAP 256
@@ -63,7 +61,7 @@ void editor_move_begginning_of_line(Editor *editor);
 void editor_kill_line(Editor *editor);
 
 void editor_destroy(Editor *editor);
-void editor_recenter(Editor *editor);
+void editor_recenter_top_bottom(Editor *editor);
 void editor_scroll_up(Editor *editor);
 void editor_scroll_down(Editor *editor);
 void editor_beginning_of_buffer(Editor *editor);
@@ -72,13 +70,19 @@ void editor_mwheel_scroll(Editor *editor, Sint32 y);
 void editor_set_mark(Editor *editor);
 void editor_copy_to_clipboard(Editor *editor);
 void editor_paste(Editor *editor);
+void editor_cut(Editor *editor);
 void editor_duplicate_line(Editor *editor);
 
-void editor_search_clear(Editor *editor);
-void editor_search_forward(Editor *editor);
-void editor_search_backward(Editor *editor);
-void editor_search_insert(Editor *editor, char *text);
-void editor_search_delete_backward(Editor *editor);
-bool editor_search_next(Editor *editor, char *notification);
+void editor_user_search_forward(Editor *editor);
+void editor_user_search_backward(Editor *editor);
+
+void editor_user_extend_command(Editor *editor);
+
+void editor_user_input_clear(Editor *editor);
+void editor_user_input_insert(Editor *editor, char *text);
+void editor_user_input_delete_backward(Editor *editor);
+bool editor_user_search_next(Editor *editor, char *notification);
+
+void editor_goto_line(Editor *editor, size_t line);
 
 #endif
