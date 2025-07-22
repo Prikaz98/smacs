@@ -128,7 +128,7 @@ void editor_recognize_arena(Editor *editor)
     arena = &editor->buffer.arena;
 
     if (line_num >= ((arena->start + arena->show_lines) - 3)) {
-        arena->start = MIN(editor->buffer.lines_count - 1, arena->start + (arena->start + arena->show_lines - line_num));
+        arena->start = MIN(editor->buffer.lines_count - 1, line_num - arena->show_lines / 2);
     } else if (line_num < arena->start) {
         arena->start = line_num;
     }
@@ -613,6 +613,7 @@ bool editor_user_search_next(Editor *editor, char *notification)
             if (strcmp(tmp, to_find) == 0) {
                 editor->position = i;
                 editor_recognize_arena(editor);
+                free(tmp);
                 return true;
             }
         }
@@ -622,6 +623,7 @@ bool editor_user_search_next(Editor *editor, char *notification)
             if (strcmp(tmp, to_find) == 0) {
                 editor->position = i;
                 editor_recognize_arena(editor);
+                free(tmp);
                 return true;
             }
         }
