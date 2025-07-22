@@ -16,6 +16,7 @@
 #define TAB_SIZE        4
 #define NEWLINE         "\n"
 #define SPACE           " "
+#define TAB             "\t"
 
 /* mindre-theme */
 //const unsigned int BG_COLOR    = 0xF5F5F5;
@@ -40,11 +41,10 @@ static Smacs smacs = {0};
 void ctrl_leader_mapping(SDL_Event event);
 void alt_leader_mapping(SDL_Event event);
 bool search_mapping(SDL_Event event, int *message_timeout);
-bool extend_command_mapping(SDL_Event event);
+bool extend_command_mapping(SDL_Event event, int *message_timeout);
 
 int smacs_launch(char *ttf_path, char *file_path)
 {
-    size_t i;
     int win_h, message_timeout, font_y;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -118,35 +118,25 @@ int smacs_launch(char *ttf_path, char *file_path)
         }
         case SDL_KEYDOWN: {
             if (search_mapping(event, &message_timeout)) break;
-            if (extend_command_mapping(event)) break;
+            if (extend_command_mapping(event, &message_timeout)) break;
 
             ctrl_leader_mapping(event);
             alt_leader_mapping(event);
 
             switch (event.key.keysym.sym) {
-            case SDLK_BACKSPACE: {
+            case SDLK_BACKSPACE:
                 if (smacs.editor.searching) {
                     editor_user_input_delete_backward(&smacs.editor);
                 } else {
                     editor_delete_backward(&smacs.editor);
                 }
                 break;
-            }
-            case SDLK_RETURN: {
+            case SDLK_RETURN:
                 editor_insert(&smacs.editor, NEWLINE);
                 break;
-            }
-            case SDLK_TAB: {
-                for (i = 0; i < TAB_SIZE; i++) editor_insert(&smacs.editor, SPACE);
+            case SDLK_TAB:
+                editor_insert(&smacs.editor, TAB);
                 break;
-            }
-            case SDLK_F2: {
-                if (editor_save(&smacs.editor.buffer) == 0) {
-                    sprintf(smacs.notification, "Saved");
-                    message_timeout = MESSAGE_TIMEOUT;
-                }
-                break;
-            }
             }
             break;
         }
@@ -182,79 +172,61 @@ void ctrl_leader_mapping(SDL_Event event)
 {
     if (event.key.keysym.mod & KMOD_CTRL) {
         switch (event.key.keysym.sym) {
-        case SDLK_b: {
+        case SDLK_b:
             editor_char_backward(&smacs.editor);
             break;
-        }
-        case SDLK_f: {
+        case SDLK_f:
             editor_char_forward(&smacs.editor);
             break;
-        }
-        case SDLK_p: {
+        case SDLK_p:
             editor_previous_line(&smacs.editor);
             break;
-        }
-        case SDLK_n: {
+        case SDLK_n:
             editor_next_line(&smacs.editor);
             break;
-        }
-        case SDLK_a: {
+        case SDLK_a:
             editor_move_begginning_of_line(&smacs.editor);
             break;
-        }
-        case SDLK_e: {
+        case SDLK_e:
             editor_move_end_of_line(&smacs.editor);
             break;
-        }
-        case SDLK_k: {
+        case SDLK_k:
             editor_kill_line(&smacs.editor);
             break;
-        }
-        case SDLK_d: {
+        case SDLK_d:
             editor_delete_forward(&smacs.editor);
             break;
-        }
-        case SDLK_l: {
+        case SDLK_l:
             editor_recenter_top_bottom(&smacs.editor);
             break;
-        }
-        case SDLK_v: {
+        case SDLK_v:
             editor_scroll_up(&smacs.editor);
             break;
-        }
-        case SDLK_SPACE: {
+        case SDLK_SPACE:
             editor_set_mark(&smacs.editor);
             break;
-        }
-        case SDLK_g: {
+        case SDLK_g:
             smacs.editor.selection = false;
-            smacs.editor.searching = false;
+            editor_user_input_clear(&smacs.editor);
             break;
-        }
-        case SDLK_y: {
+        case SDLK_y:
             editor_paste(&smacs.editor);
             break;
-        }
-        case SDLK_COMMA: {
+        case SDLK_COMMA:
             editor_duplicate_line(&smacs.editor);
             break;
-        }
-        case SDLK_s: {
+        case SDLK_s:
             editor_user_search_forward(&smacs.editor);
             break;
-        }
-        case SDLK_r: {
+        case SDLK_r:
             editor_user_search_backward(&smacs.editor);
             break;
-        }
-        case SDLK_w: {
+        case SDLK_w:
             editor_cut(&smacs.editor);
             break;
-        }
-        case SDLK_x: {
+        case SDLK_x:
             editor_user_extend_command(&smacs.editor);
             break;
-        }
         }
     }
 }
@@ -263,53 +235,53 @@ void alt_leader_mapping(SDL_Event event)
 {
     if (event.key.keysym.mod & KMOD_ALT) {
         switch (event.key.keysym.sym) {
-        case SDLK_v: {
+        case SDLK_v:
             editor_scroll_down(&smacs.editor);
             break;
-        }
-        case SDLK_PERIOD: {
+        case SDLK_PERIOD:
             editor_end_of_buffer(&smacs.editor);
             break;
-        }
-        case SDLK_COMMA: {
+        case SDLK_COMMA:
             editor_beginning_of_buffer(&smacs.editor);
             break;
-        }
-        case SDLK_w: {
+        case SDLK_w:
             editor_copy_to_clipboard(&smacs.editor);
             smacs.editor.selection = false;
             break;
         }
-        }
     }
 }
 
-bool extend_command_mapping(SDL_Event event)
+bool extend_command_mapping(SDL_Event event, int *message_timeout)
 {
     if (!smacs.editor.extend_command) return false;
 
     if (event.key.keysym.mod & KMOD_CTRL) {
         switch (event.key.keysym.sym) {
-        case SDLK_g: {
+        case SDLK_g:
             editor_user_input_clear(&smacs.editor);
             break;
-        }
         }
     }
 
     switch (event.key.keysym.sym) {
-    case SDLK_BACKSPACE: {
+    case SDLK_BACKSPACE:
         editor_user_input_delete_backward(&smacs.editor);
         break;
-    }
-    case SDLK_RETURN: {
+    case SDLK_RETURN:
         //TODO: write start_with function
-        if (strncmp(smacs.editor.user_input.data, "gl", 2) == 0) {
-            editor_goto_line(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[2]));
+        if (strncmp(smacs.editor.user_input.data, ":", 1) == 0) {
+            editor_goto_line(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
+        } else if (strncmp(smacs.editor.user_input.data, "s", 1) == 0) {
+            if (editor_save(&smacs.editor) == 0) {
+                sprintf(smacs.notification, "Saved");
+                *message_timeout = MESSAGE_TIMEOUT;
+            }
+        } else {
+            fprintf(stderr, "Unknown cmd %s\n", smacs.editor.user_input.data);
         }
         editor_user_input_clear(&smacs.editor);
         break;
-    }
     }
 
     return true;
@@ -321,24 +293,21 @@ bool search_mapping(SDL_Event event, int *message_timeout)
 
     if (event.key.keysym.mod & KMOD_CTRL) {
         switch (event.key.keysym.sym) {
-        case SDLK_g: {
+        case SDLK_g:
             editor_user_input_clear(&smacs.editor);
             break;
-        }
         }
     }
 
     switch (event.key.keysym.sym) {
-    case SDLK_BACKSPACE: {
+    case SDLK_BACKSPACE:
         editor_user_input_delete_backward(&smacs.editor);
         break;
-    }
-    case SDLK_RETURN: {
+    case SDLK_RETURN:
         if (!editor_user_search_next(&smacs.editor, smacs.notification)) {
             *message_timeout = MESSAGE_TIMEOUT;
         }
         break;
-    }
     }
 
     return true;

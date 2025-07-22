@@ -47,7 +47,7 @@ typedef struct {
 void editor_insert(Editor *editor, char *str);
 void editor_delete_backward(Editor *editor);
 void editor_delete_forward(Editor *editor);
-int  editor_save(Buffer *buf);
+int  editor_save(Editor* editor);
 int  editor_read_file(Editor *editor, char *file_path);
 void editor_determine_lines(Editor *editor);
 size_t editor_get_current_line_number(Editor *editor);

@@ -256,10 +256,14 @@ void editor_determine_lines(Editor *editor)
     buffer->lines[buffer->lines_count++] = (Line) {beg, i};
 }
 
-int editor_save(Buffer *buf)
+int editor_save(Editor* editor)
 {
     FILE *out;
     Content content;
+    Buffer *buf;
+
+
+    buf = &editor->buffer;
 
     if (buf->file_path == NULL) {
         fprintf(stderr, "No file_path\n");
@@ -279,6 +283,10 @@ int editor_save(Buffer *buf)
 
     content = buf->content;
     if (content.len > 0) {
+        if (buf->content.data[buf->content.len - 1] != '\n') {
+            append_char(&buf->content, '\n', buf->content.len);
+            editor_determine_lines(editor);
+        }
         fwrite(content.data, sizeof(char), content.len, out);
     }
 
@@ -642,4 +650,5 @@ void editor_goto_line(Editor *editor, size_t line)
     goto_line = MIN(editor->buffer.lines_count - 1, line - 1);
 
     editor->position = editor->buffer.lines[goto_line].start;
+    editor_recognize_arena(editor);
 }

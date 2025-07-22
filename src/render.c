@@ -51,8 +51,17 @@ void render_draw_cursor(Smacs *smacs, SDL_Rect cursor_rect, StringBuilder *sb)
     tmp = smacs->fg;
     smacs->fg = smacs->bg;
     char_len = utf8_size_char(data[cursor]);
-    for (i = 0; i < char_len; i++) {
-        sb_append(sb, data[cursor + i] == '\n' ? ' ' : data[cursor + i]);
+    switch (data[cursor]) {
+    case '\t':
+        //"»"
+        sb_append(sb, (char)0xc2);
+        sb_append(sb, (char)0xbb);
+        break;
+    default:
+        for (i = 0; i < char_len; i++) {
+            sb_append(sb, data[cursor + i] == '\n' ? ' ' : data[cursor + i]);
+        }
+        break;
     }
     render_draw_text(smacs, cursor_rect.x, cursor_rect.y, sb->data);
     smacs->fg = tmp;
@@ -154,7 +163,7 @@ void render_draw_smacs(Smacs *smacs)
     Line *lines;
     Line line;
     size_t arena_end, li, ci, cursor, content_line_index, region_beg, region_end, max_line_num, current_line, line_number_len;
-    int win_w, win_h, x, y, char_w, char_h, content_hight, char_len, common_indention, text_indention;
+    int win_w, win_h, x, y, char_w, char_h, content_hight, char_len, common_indention, text_indention, i;
     StringBuilder *sb;
     char *data, *line_number;
     SDL_Rect cursor_rect, region_rect;
@@ -228,17 +237,28 @@ void render_draw_smacs(Smacs *smacs)
 
                 if (cursor == ci) {
                     TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
-                    if (y > 0) {
-                        cursor_rect.x = text_indention + x;
-                        cursor_rect.y = content_hight;
-                    }
+                    cursor_rect.x = text_indention + x;
+                    cursor_rect.y = content_hight;
                 }
 
                 if (ci < line.end) {
-                    sb_append(sb, data[ci]);
+                    switch (data[ci]) {
+                    case '\t': {
+                        //"»"
+                        sb_append(sb, (char)0xc2);
+                        sb_append(sb, (char)0xbb);
+                        for (i = 0; i < 3; i++) sb_append(sb, ' ');
 
-                    for (char_len = utf8_size_char(data[ci]); char_len > 1; char_len--) {
-                        sb_append(sb, data[++ci]);
+                        break;
+                    }
+                    default: {
+                        sb_append(sb, data[ci]);
+
+                        for (char_len = utf8_size_char(data[ci]); char_len > 1; char_len--) {
+                            sb_append(sb, data[++ci]);
+                        }
+                        break;
+                    }
                     }
 
                     TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
