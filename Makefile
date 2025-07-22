@@ -5,8 +5,7 @@ SDL2_LIBS:=-lSDL2_ttf
 CFLAGS:=-Wall -Wextra -std=c11 -pedantic -ggdb
 SOURCES:=./src/utf8.c ./src/editor.c ./src/render.c ./src/smacs.c
 EXEC:=smacs
-TTF_FILE:=fonts/iosevka-regular.ttf
-#TTF_FILE:=fonts/AcPlus_IBM_VGA_8x16.ttf
+TTF_FILE:=fonts/Consolas.ttf
 
 build:
 	PWD=$(shell pwd)
