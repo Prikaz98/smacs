@@ -8,34 +8,24 @@
 
 #include "editor.h"
 #include "render.h"
+#include "themes.h"
+#include "common.h"
 
 #define SCREEN_WIDTH    1000
-#define SCREEN_HEIGHT   1000
+#define SCREEN_HEIGHT   600
 #define FONT_SIZE       17
-#define MESSAGE_TIMEOUT 100
+#define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define NEWLINE         "\n"
 #define SPACE           " "
 #define TAB             "\t"
-
-/* mindre-theme */
-//const unsigned int BG_COLOR    = 0xF5F5F5;
-//const unsigned int FG_COLOR    = 0x2E3331;
-//const unsigned int RG_COLOR    = 0xCFD8DC;
-
-/* naysayer-theme */
-const unsigned int BG_COLOR    = 0x062329;
-const unsigned int FG_COLOR    = 0xD1B897;
-const unsigned int RG_COLOR    = 0x0000FF;
 
 const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE;
 //const enum LineNumberFormat DISPLAY_LINE_FROMAT = ABSOLUTE;
 
 static Smacs smacs = {0};
 
-//TODO: write function cut
 //TODO: forward-word/backward-word
-//TODO: show line numbers
 //TODO: undo/redo
 
 void ctrl_leader_mapping(SDL_Event event);
@@ -78,9 +68,7 @@ int smacs_launch(char *ttf_path, char *file_path)
     bool quit = false;
     message_timeout = 0;
 
-    smacs.bg = (SDL_Color) {BG_COLOR >> 16, BG_COLOR >> 8 & 0xFF, (Uint8) BG_COLOR & 0xFFFF, 0};
-    smacs.fg = (SDL_Color) {FG_COLOR >> 16, FG_COLOR >> 8 & 0xFF, (Uint8) FG_COLOR & 0xFFFF, 0};
-    smacs.rg = (SDL_Color) {RG_COLOR >> 16, RG_COLOR >> 8 & 0xFF, (Uint8) RG_COLOR & 0xFFFF, 0};
+    themes_naysayer(&smacs);
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.editor = (Editor) {0};
 
@@ -270,9 +258,9 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         break;
     case SDLK_RETURN:
         //TODO: write start_with function
-        if (strncmp(smacs.editor.user_input.data, ":", 1) == 0) {
+        if (starts_with(smacs.editor.user_input.data, ":")) {
             editor_goto_line(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
-        } else if (strncmp(smacs.editor.user_input.data, "s", 1) == 0) {
+        } else if (strcmp(smacs.editor.user_input.data, "s") == 0) {
             if (editor_save(&smacs.editor) == 0) {
                 sprintf(smacs.notification, "Saved");
                 *message_timeout = MESSAGE_TIMEOUT;

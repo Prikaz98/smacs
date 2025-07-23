@@ -32,4 +32,10 @@ typedef struct {
         sb->cap = 0;                            \
     } while(0)
 
+
+/**
+ * a starts_with b
+ */
+bool starts_with(char *a, char *b);
+
 #endif
