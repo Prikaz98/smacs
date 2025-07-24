@@ -24,11 +24,30 @@ typedef struct {
 
 typedef struct {
     Content content;
+
     Line *lines;
     size_t lines_count;
+    size_t lines_cap;
+
     Arena arena;
     char *file_path;
 } Buffer;
+
+#define buf_line_append(buf, ln)                                                            \
+    do {                                                                                    \
+        if (buf->lines_count >= buf->lines_cap) {                                           \
+            buf->lines_cap = buf->lines_cap == 0 ? 10 : buf->lines_cap * 2; \
+            buf->lines = realloc(buf->lines, buf->lines_cap * sizeof(*buf->lines));         \
+            memset(&buf->lines[buf->lines_count], 0, buf->lines_cap - buf->lines_count);    \
+        }                                                                                   \
+        buf->lines[buf->lines_count++] = ln;                                                \
+    } while(0)
+
+#define buf_line_clean(buf)                                       \
+    do {                                                          \
+        buf->lines_count = 0;                                     \
+        memset(&buf->lines[buf->lines_count], 0, buf->lines_cap); \
+    } while(0)
 
 typedef struct {
     size_t position;

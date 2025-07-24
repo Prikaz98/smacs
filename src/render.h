@@ -16,12 +16,15 @@ typedef struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
     TTF_Font *font;
+    int font_size;
 
     Editor editor;
 
     SDL_Color bg;
     SDL_Color fg;
     SDL_Color rg;
+
+    int leading;
 
     enum LineNumberFormat line_number_format;
     char *notification;

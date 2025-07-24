@@ -13,12 +13,13 @@
 
 #define SCREEN_WIDTH    1000
 #define SCREEN_HEIGHT   600
-#define FONT_SIZE       17
+#define FONT_SIZE       16
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define NEWLINE         "\n"
 #define SPACE           " "
 #define TAB             "\t"
+#define LEADING         3
 
 const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE;
 //const enum LineNumberFormat DISPLAY_LINE_FROMAT = ABSOLUTE;
@@ -47,7 +48,8 @@ int smacs_launch(char *ttf_path, char *file_path)
         return 1;
     }
 
-    smacs.font = TTF_OpenFont(ttf_path, FONT_SIZE);
+    smacs.font_size = FONT_SIZE;
+    smacs.font = TTF_OpenFont(ttf_path, smacs.font_size);
     if (smacs.font == NULL) {
         fprintf(stderr, "Could not open ttf: %s\n", SDL_GetError());
         return 1;
@@ -73,8 +75,9 @@ int smacs_launch(char *ttf_path, char *file_path)
     smacs.editor = (Editor) {0};
 
     editor_read_file(&smacs.editor, file_path);
-    smacs.editor.buffer.arena = (Arena) {0, SCREEN_HEIGHT / FONT_SIZE};
+    smacs.editor.buffer.arena = (Arena) {0, SCREEN_HEIGHT / smacs.font_size};
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
+    smacs.leading = LEADING;
 
     SDL_Event event = {0};
 
@@ -214,6 +217,12 @@ void ctrl_leader_mapping(SDL_Event event)
             break;
         case SDLK_x:
             editor_user_extend_command(&smacs.editor);
+            break;
+        case SDLK_EQUALS:
+            TTF_SetFontSize(smacs.font, ++smacs.font_size);
+            break;
+        case SDLK_MINUS:
+            TTF_SetFontSize(smacs.font, --smacs.font_size);
             break;
         }
     }

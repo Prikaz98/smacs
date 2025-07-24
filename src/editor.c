@@ -37,8 +37,6 @@ void editor_delete_backward(Editor *editor)
     Content *content;
     size_t delete_len, reg_beg, reg_end;
 
-    if (editor->position == 0) return;
-
     buf = &editor->buffer;
     content = &buf->content;
 
@@ -51,6 +49,8 @@ void editor_delete_backward(Editor *editor)
         content->len -= delete_len;
         editor->position = reg_beg;
     } else {
+        if (editor->position == 0) return;
+
         delete_len = utf8_size_char_backward(content->data, editor->position - 1);
         memmove(&content->data[editor->position - delete_len], &content->data[editor->position], content->len - editor->position + delete_len);
         content->len -= delete_len;
@@ -93,7 +93,7 @@ void editor_insert(Editor *editor, char *str)
     }
 
     size_t str_size = strlen(str);
-    for (i = 0; i < str_size; i++) {
+    for (i = 0; i < str_size; ++i) {
         append_char(content, str[i], editor->position + i);
     }
 
@@ -109,7 +109,7 @@ size_t editor_get_current_line_number(Editor *editor)
 
     if (editor->buffer.lines_count == 0) return 0;
 
-    for (i = 0; i < editor->buffer.lines_count; i++) {
+    for (i = 0; i < editor->buffer.lines_count; ++i) {
         line = editor->buffer.lines[i];
         if (line.start <= editor->position && editor->position <= line.end) {
             return i;
@@ -197,7 +197,7 @@ void editor_move_end_of_line(Editor *editor)
     size_t i;
     Line line;
 
-    for (i = 0; i < editor->buffer.lines_count; i++) {
+    for (i = 0; i < editor->buffer.lines_count; ++i) {
         line = editor->buffer.lines[i];
         if (line.start <= editor->position && editor->position <= line.end) {
             editor->position = line.end;
@@ -211,7 +211,7 @@ void editor_move_begginning_of_line(Editor *editor)
     size_t i;
     Line line;
 
-    for (i = 0; i < editor->buffer.lines_count; i++) {
+    for (i = 0; i < editor->buffer.lines_count; ++i) {
         line = editor->buffer.lines[i];
         if (line.start <= editor->position && editor->position <= line.end) {
             editor->position = line.start;
@@ -222,38 +222,23 @@ void editor_move_begginning_of_line(Editor *editor)
 
 void editor_determine_lines(Editor *editor)
 {
-    size_t n, i, beg;
+    size_t i, beg;
     Buffer *buffer;
 
     buffer = &editor->buffer;
 
-    if (buffer->lines_count > 0) {
-        free(buffer->lines);
-        buffer->lines = NULL;
-        buffer->lines_count = 0;
-    }
-
+    buf_line_clean(buffer);
     if (buffer->content.len == 0) return;
 
-    n = 1;
-    for (i = 0; i < buffer->content.len; i++) {
-        if (buffer->content.data[i] == '\n') {
-            n++;
-        }
-    }
-
-
-    buffer->lines = calloc(n + 1, sizeof(Line));
-
     beg = 0;
-    for (i = 0; i < buffer->content.len; i++) {
+    for (i = 0; i < buffer->content.len; ++i) {
         if (buffer->content.data[i] == '\n') {
-            buffer->lines[buffer->lines_count++] = (Line) {beg, i};
+            buf_line_append(buffer, ((Line) {beg, i}));
             beg = i + 1;
         }
     }
 
-    buffer->lines[buffer->lines_count++] = (Line) {beg, i};
+    buf_line_append(buffer, ((Line) {beg, i}));
 }
 
 int editor_save(Editor* editor)
@@ -318,7 +303,7 @@ int editor_read_file(Editor *editor, char *file_path)
 
     fclose(in);
 
-    editor->buffer = (Buffer) {content, NULL, 0, {0, 0}, 0};
+    editor->buffer = (Buffer) {content, NULL, 0, 0, {0}, 0};
     editor->buffer.file_path = file_path;
     editor->position = 0;
 
@@ -333,10 +318,10 @@ void editor_kill_line(Editor *editor)
     size_t i, del_count;
     Line line;
 
-    for (i = 0; i < editor->buffer.lines_count; i++) {
+    for (i = 0; i < editor->buffer.lines_count; ++i) {
         line = editor->buffer.lines[i];
         if (line.start <= editor->position && editor->position <= line.end) {
-            del_count = line.end - editor->position;
+            del_count = (size_t) line.end - editor->position;
             if (del_count > 0) {
                 memmove(&editor->buffer.content.data[editor->position], &editor->buffer.content.data[line.end], editor->buffer.content.len - editor->position);
                 editor->buffer.content.len -= del_count;
@@ -388,7 +373,7 @@ void editor_recenter_top_bottom(Editor *editor)
 void editor_scroll_up(Editor *editor)
 {
     size_t i;
-    for (i = 0; i < (editor->buffer.arena.show_lines / 2); i++) {
+    for (i = 0; i < (editor->buffer.arena.show_lines / 2); ++i) {
         editor_next_line(editor);
     }
 }
@@ -396,7 +381,7 @@ void editor_scroll_up(Editor *editor)
 void editor_scroll_down(Editor *editor)
 {
     size_t i;
-    for (i = 0; i < (editor->buffer.arena.show_lines / 2); i++) {
+    for (i = 0; i < (editor->buffer.arena.show_lines / 2); ++i) {
         editor_previous_line(editor);
     }
 }
@@ -461,11 +446,11 @@ void editor_mwheel_scroll(Editor *editor, Sint32 y)
     Sint32 i;
 
     if (y > 0) {
-        for (i = 0; i < y; i++) {
+        for (i = 0; i < y; ++i) {
             editor_mwheel_scroll_up(editor);
         }
     } else {
-        for (i = y; i < 0; i++) {
+        for (i = y; i < 0; ++i) {
             editor_mwheel_scroll_down(editor);
         }
     }
@@ -513,6 +498,7 @@ void editor_paste(Editor *editor)
 
     clipboard = SDL_GetClipboardText();
     editor_insert(editor, clipboard);
+    editor_recognize_arena(editor);
 
     free(clipboard);
 }
@@ -531,6 +517,8 @@ void editor_duplicate_line(Editor *editor)
     editor_move_begginning_of_line(editor);
     editor_insert(editor, copy);
     editor_insert(editor, "\n");
+
+    editor_recognize_arena(editor);
 
     free(copy);
 }
@@ -585,7 +573,7 @@ void editor_user_input_insert(Editor *editor, char *text)
 
     sb = &editor->user_input;
 
-    for (i = 0; i < strlen(text); i++) {
+    for (i = 0; i < strlen(text); ++i) {
         sb_append(sb, text[i]);
     }
 }
@@ -616,7 +604,7 @@ bool editor_user_search_next(Editor *editor, char *notification)
     tmp = calloc(to_find_len, sizeof(char));
 
     if (editor->reverse_searching) {
-        for (i = editor->position - 1; i > 0; i--) {
+        for (i = editor->position - 1; i > 0; --i) {
             memcpy(tmp, &editor->buffer.content.data[i], to_find_len);
             if (strcmp(tmp, to_find) == 0) {
                 editor->position = i;
@@ -626,7 +614,7 @@ bool editor_user_search_next(Editor *editor, char *notification)
             }
         }
     } else {
-        for (i = editor->position + 1; i < editor->buffer.content.len; i++) {
+        for (i = editor->position + 1; i < editor->buffer.content.len; ++i) {
             memcpy(tmp, &editor->buffer.content.data[i], to_find_len);
             if (strcmp(tmp, to_find) == 0) {
                 editor->position = i;

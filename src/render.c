@@ -54,11 +54,11 @@ void render_draw_cursor(Smacs *smacs, SDL_Rect cursor_rect, StringBuilder *sb)
     switch (data[cursor]) {
     case '\t':
         //"»"
-        sb_append(sb, (char)0xc2);
-        sb_append(sb, (char)0xbb);
+        sb_append(sb, (char)0xC2);
+        sb_append(sb, (char)0xBB);
         break;
     default:
-        for (i = 0; i < char_len; i++) {
+        for (i = 0; i < char_len; ++i) {
             sb_append(sb, data[cursor + i] == '\n' ? ' ' : data[cursor + i]);
         }
         break;
@@ -187,7 +187,7 @@ void render_draw_smacs(Smacs *smacs)
     common_indention = char_w * 2;
     text_indention = common_indention + char_w * strlen(line_number) + (char_w * 1);
     cursor_rect = (SDL_Rect) {text_indention, 0, char_w, char_h};
-    region_rect = (SDL_Rect) {text_indention, 0, char_w, char_h};
+    region_rect = (SDL_Rect) {text_indention, 0, char_w, char_h + smacs->leading};
 
     x = 0;
     y = char_h;
@@ -205,7 +205,7 @@ void render_draw_smacs(Smacs *smacs)
         content_line_index = arena.start;
         content_hight = 0;
 
-        for (li = 0; (li + arena.start) < arena_end; li++) {
+        for (li = 0; (li + arena.start) < arena_end; ++li) {
             line = lines[content_line_index++];
 
             render_format_display_line_number(smacs, &line_number, line_number_len, content_line_index, current_line);
@@ -222,7 +222,7 @@ void render_draw_smacs(Smacs *smacs)
                 }
             }
 
-            for (ci = line.start; ci <= line.end; ci++) {
+            for (ci = line.start; ci <= line.end; ++ci) {
                 if (is_line_region) {
                     if (region_beg == ci) {
                         TTF_SizeUTF8(smacs->font, sb->data, &x, NULL);
@@ -245,16 +245,15 @@ void render_draw_smacs(Smacs *smacs)
                     switch (data[ci]) {
                     case '\t': {
                         //"»"
-                        sb_append(sb, (char)0xc2);
-                        sb_append(sb, (char)0xbb);
-                        for (i = 0; i < 3; i++) sb_append(sb, ' ');
-
+                        sb_append(sb, (char)0xC2);
+                        sb_append(sb, (char)0xBB);
+                        for (i = 0; i < 3; ++i) sb_append(sb, ' ');
                         break;
                     }
                     default: {
                         sb_append(sb, data[ci]);
 
-                        for (char_len = utf8_size_char(data[ci]); char_len > 1; char_len--) {
+                        for (char_len = utf8_size_char(data[ci]); char_len > 1; --char_len) {
                             sb_append(sb, data[++ci]);
                         }
                         break;
@@ -279,7 +278,7 @@ void render_draw_smacs(Smacs *smacs)
                         render_draw_text(smacs, text_indention, content_hight, sb->data);
 
                         sb_clean(sb);
-                        content_hight += y;
+                        content_hight += (y + smacs->leading);
                     }
                 }
             }
@@ -302,7 +301,7 @@ void render_draw_smacs(Smacs *smacs)
 
             render_draw_text(smacs, text_indention, content_hight, sb->data);
             sb_clean(sb);
-            content_hight += y;
+            content_hight += (y + smacs->leading);
         }
 
         render_draw_cursor(smacs, cursor_rect, sb);

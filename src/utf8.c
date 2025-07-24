@@ -25,7 +25,7 @@ int utf8_size_char_backward(char *text, size_t from)
 {
     int i;
 
-    for (i = from; i >= 0; i--) {
+    for (i = from; i >= 0; --i) {
         if ((text[i] & 0xC0) == 0x80) {
             continue;
         }
