@@ -4,7 +4,7 @@
 #include "common.h"
 #include "utf8.h"
 
-void render_draw_text(Smacs *smacs, int x, int y, char *text)
+void render_draw_text(Smacs *smacs, int x, int y, char *text, SDL_Color fg)
 {
     SDL_Texture *texture = NULL;
     SDL_Rect rect = (SDL_Rect) {0};
@@ -14,7 +14,7 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text)
     if (strlen(text) > 0) {
         int text_width, text_height;
 
-        SDL_Surface *surface = TTF_RenderUTF8_Blended(smacs->font, text, smacs->fg);
+        SDL_Surface *surface = TTF_RenderUTF8_Blended(smacs->font, text, fg);
         texture = SDL_CreateTextureFromSurface(smacs->renderer, surface);
 
         text_width = surface->w;
@@ -47,9 +47,6 @@ void render_draw_cursor(Smacs *smacs, SDL_Rect cursor_rect, StringBuilder *sb)
     SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
     SDL_RenderFillRect(smacs->renderer, &cursor_rect);
 
-    SDL_Color tmp;
-    tmp = smacs->fg;
-    smacs->fg = smacs->bg;
     char_len = utf8_size_char(data[cursor]);
     switch (data[cursor]) {
     case '\t':
@@ -63,8 +60,7 @@ void render_draw_cursor(Smacs *smacs, SDL_Rect cursor_rect, StringBuilder *sb)
         }
         break;
     }
-    render_draw_text(smacs, cursor_rect.x, cursor_rect.y, sb->data);
-    smacs->fg = tmp;
+    render_draw_text(smacs, cursor_rect.x, cursor_rect.y, sb->data, smacs->bg);
 }
 
 void render_draw_modeline(Smacs *smacs)
@@ -90,9 +86,9 @@ void render_draw_modeline(Smacs *smacs)
 
     //TODO: Move it in minibuffer rendering
     if (smacs->editor.searching || smacs->editor.extend_command) {
-        render_draw_text(smacs, padding_left, win_h - char_h, smacs->editor.user_input.data);
+        render_draw_text(smacs, padding_left, win_h - char_h, smacs->editor.user_input.data, smacs->fg);
     } else {
-        render_draw_text(smacs, padding_left, win_h - char_h, smacs->notification);
+        render_draw_text(smacs, padding_left, win_h - char_h, smacs->notification, smacs->fg);
     }
 
     sprintf(mode_line_info,
@@ -101,7 +97,7 @@ void render_draw_modeline(Smacs *smacs)
             smacs->editor.reverse_searching ? "Re-" : "",
             smacs->editor.searching ? "Search[:enter next :C-g stop]" : smacs->editor.extend_command ? "M-x" : "");
 
-    render_draw_text(smacs, padding_left, win_h - (char_h * 2), mode_line_info);
+    render_draw_text(smacs, padding_left, win_h - (char_h * 2), mode_line_info, smacs->fg);
 }
 
 int count_digits(size_t num)
@@ -209,7 +205,11 @@ void render_draw_smacs(Smacs *smacs)
             line = lines[content_line_index++];
 
             render_format_display_line_number(smacs, &line_number, line_number_len, content_line_index, current_line);
-            render_draw_text(smacs, common_indention, content_hight, line_number);
+            if (current_line == content_line_index) {
+                render_draw_text(smacs, common_indention, content_hight, line_number, smacs->fg);
+            } else {
+                render_draw_text(smacs, common_indention, content_hight, line_number, smacs->ln);
+            }
 
             is_line_region = smacs->editor.selection &&
                 ((line.start <= region_beg && region_beg <= line.end) ||
@@ -275,7 +275,7 @@ void render_draw_smacs(Smacs *smacs)
                             region_rect.w = 0;
                         }
 
-                        render_draw_text(smacs, text_indention, content_hight, sb->data);
+                        render_draw_text(smacs, text_indention, content_hight, sb->data, smacs->fg);
 
                         sb_clean(sb);
                         content_hight += (y + smacs->leading);
@@ -299,7 +299,7 @@ void render_draw_smacs(Smacs *smacs)
                 SDL_RenderFillRect(smacs->renderer, &region_rect);
             }
 
-            render_draw_text(smacs, text_indention, content_hight, sb->data);
+            render_draw_text(smacs, text_indention, content_hight, sb->data, smacs->fg);
             sb_clean(sb);
             content_hight += (y + smacs->leading);
         }

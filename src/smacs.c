@@ -13,13 +13,13 @@
 
 #define SCREEN_WIDTH    1000
 #define SCREEN_HEIGHT   600
-#define FONT_SIZE       16
+#define FONT_SIZE       17
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define NEWLINE         "\n"
 #define SPACE           " "
 #define TAB             "\t"
-#define LEADING         3
+#define LEADING         1
 
 const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE;
 //const enum LineNumberFormat DISPLAY_LINE_FROMAT = ABSOLUTE;
@@ -266,8 +266,11 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         editor_user_input_delete_backward(&smacs.editor);
         break;
     case SDLK_RETURN:
-        //TODO: write start_with function
-        if (starts_with(smacs.editor.user_input.data, ":")) {
+        if (starts_with(smacs.editor.user_input.data, "n")) {
+            editor_goto_line_forward(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
+        } else if (starts_with(smacs.editor.user_input.data, "p")) {
+            editor_goto_line_backward(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
+        } else if (starts_with(smacs.editor.user_input.data, ":")) {
             editor_goto_line(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
         } else if (strcmp(smacs.editor.user_input.data, "s") == 0) {
             if (editor_save(&smacs.editor) == 0) {

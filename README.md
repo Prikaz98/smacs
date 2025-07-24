@@ -24,12 +24,17 @@ General:
 - C-a - move cursor to the beginning of the line
 - C-e - move cursor to the end of the line
 - C-v - scroll up
+- C-w - cut
 - M-v - scroll down
 - M-< - beginning of the buffer
 - M-> - end of the buffer
-- F2 - save file
 - C-, - duplicate line
 - C-s - search
+
+- M-x s    Enter - save file
+- M-x :{N} Enter - go to line {N}
+- M-x n{N} Enter - go to next {N} line
+- M-x p{N} Enter - go to previous {N} line
 
 Deleting:
 
@@ -46,6 +51,8 @@ Selection:
 View manipulation:
 
 - C-l recenter
+- C-- font size decrease
+- C-= font size increase
 
 # Information line
 [${file_path} ($current_line_number)]
@@ -53,6 +60,5 @@ View manipulation:
 # Thanks
 Everything works using [SDL](https://www.libsdl.org/).
 
-Color theme inspired by [mindre-theme](https://github.com/erikbackman/mindre-theme).
-
-Font [Iosevka](https://typeof.net/Iosevka/)
+Color theme in image inspired by [mindre-theme](https://github.com/erikbackman/mindre-theme).
+Font in image [Iosevka](https://typeof.net/Iosevka/)

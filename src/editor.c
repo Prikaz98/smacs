@@ -512,7 +512,7 @@ void editor_duplicate_line(Editor *editor)
     line_num = editor_get_current_line_number(editor);
     line = &editor->buffer.lines[line_num];
     line_len = line->end - line->start;
-    copy = calloc(line_len, sizeof(char));
+    copy = calloc(line_len + 1, sizeof(char));
     memcpy(copy, &editor->buffer.content.data[line->start], line_len);
     editor_move_begginning_of_line(editor);
     editor_insert(editor, copy);
@@ -639,4 +639,14 @@ void editor_goto_line(Editor *editor, size_t line)
 
     editor->position = editor->buffer.lines[goto_line].start;
     editor_recognize_arena(editor);
+}
+
+void editor_goto_line_forward(Editor *editor, size_t line)
+{
+    for (size_t i = 0; i < line; ++i) editor_next_line(editor);
+}
+
+void editor_goto_line_backward(Editor *editor, size_t line)
+{
+    for (size_t i = 0; i < line; ++i) editor_previous_line(editor);
 }

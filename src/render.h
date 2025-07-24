@@ -23,6 +23,7 @@ typedef struct {
     SDL_Color bg;
     SDL_Color fg;
     SDL_Color rg;
+    SDL_Color ln;
 
     int leading;
 
@@ -30,7 +31,7 @@ typedef struct {
     char *notification;
 } Smacs;
 
-void render_draw_text(Smacs *smacs, int x, int y, char *text);
+void render_draw_text(Smacs *smacs, int x, int y, char *text, SDL_Color fg);
 void render_draw_smacs(Smacs *smacs);
 void render_destroy_smacs(Smacs *smacs);
 

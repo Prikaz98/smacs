@@ -103,5 +103,7 @@ void editor_user_input_delete_backward(Editor *editor);
 bool editor_user_search_next(Editor *editor, char *notification);
 
 void editor_goto_line(Editor *editor, size_t line);
+void editor_goto_line_forward(Editor *editor, size_t line);
+void editor_goto_line_backward(Editor *editor, size_t line);
 
 #endif
