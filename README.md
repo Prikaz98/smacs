@@ -56,11 +56,7 @@ View manipulation:
 - C-- font size decrease
 - C-= font size increase
 
-# Information line
-[${file_path} ($current_line_number)]
-
 # Thanks
 Everything works using [SDL](https://www.libsdl.org/).
 
-Color theme in image inspired by [mindre-theme](https://github.com/erikbackman/mindre-theme).
-Font in image [Iosevka](https://typeof.net/Iosevka/)
+Color theme in image inspired by [naysayer-theme](https://github.com/nickav/naysayer-theme.el) and [mindre-theme](https://github.com/erikbackman/mindre-theme).
