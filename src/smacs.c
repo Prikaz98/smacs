@@ -21,8 +21,7 @@
 #define TAB             "\t"
 #define LEADING         1
 
-const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE;
-//const enum LineNumberFormat DISPLAY_LINE_FROMAT = ABSOLUTE;
+const enum LineNumberFormat DISPLAY_LINE_FROMAT = ABSOLUTE; //[ABSOLUTE, RELATIVE]
 
 static Smacs smacs = {0};
 
@@ -70,7 +69,8 @@ int smacs_launch(char *ttf_path, char *file_path)
     bool quit = false;
     message_timeout = 0;
 
-    themes_naysayer(&smacs);
+    themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre]
+
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.editor = (Editor) {0};
 
