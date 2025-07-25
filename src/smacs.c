@@ -89,25 +89,22 @@ int smacs_launch(char *ttf_path, char *file_path)
         }
 
         switch (event.type) {
-        case SDL_QUIT: {
+        case SDL_QUIT:
             quit = true;
             break;
-        }
-        case SDL_TEXTINPUT: {
-            if (!(event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT))) {
-                if (smacs.editor.searching || smacs.editor.extend_command) {
-                    editor_user_input_insert(&smacs.editor, event.text.text);
-                } else {
-                    editor_insert(&smacs.editor, event.text.text);
-                }
+        case SDL_TEXTINPUT:
+            if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
+
+            if (smacs.editor.searching || smacs.editor.extend_command) {
+                editor_user_input_insert(&smacs.editor, event.text.text);
+            } else {
+                editor_insert(&smacs.editor, event.text.text);
             }
             break;
-        }
-        case SDL_MOUSEWHEEL: {
+        case SDL_MOUSEWHEEL:
             editor_mwheel_scroll(&smacs.editor, event.wheel.y);
             break;
-        }
-        case SDL_KEYDOWN: {
+        case SDL_KEYDOWN:
             if (search_mapping(event, &message_timeout)) break;
             if (extend_command_mapping(event, &message_timeout)) break;
 
@@ -131,7 +128,6 @@ int smacs_launch(char *ttf_path, char *file_path)
             }
             break;
         }
-        }
 
         SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
         SDL_RenderClear(smacs.renderer);
@@ -148,7 +144,6 @@ int smacs_launch(char *ttf_path, char *file_path)
         } else {
             memset(&smacs.notification[0], 0, RENDER_NOTIFICATION_LEN);
         }
-
     }
 
     render_destroy_smacs(&smacs);

@@ -323,8 +323,9 @@ void editor_kill_line(Editor *editor)
         if (line.start <= editor->position && editor->position <= line.end) {
             del_count = (size_t) line.end - editor->position;
             if (del_count > 0) {
-                memmove(&editor->buffer.content.data[editor->position], &editor->buffer.content.data[line.end], editor->buffer.content.len - editor->position);
-                editor->buffer.content.len -= del_count;
+                editor_set_mark(editor);
+                editor_move_end_of_line(editor);
+                editor_cut(editor);
             } else {
                 editor_delete_forward(editor);
             }
