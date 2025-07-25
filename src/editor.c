@@ -650,3 +650,61 @@ void editor_goto_line_backward(Editor *editor, size_t line)
 {
     for (size_t i = 0; i < line; ++i) editor_previous_line(editor);
 }
+
+bool editor_is_editing_text(Editor *editor)
+{
+    return !editor->selection ||
+        !editor->searching ||
+        !editor->reverse_searching ||
+        !editor->extend_command;
+}
+
+void editor_move_line_down(Editor *editor)
+{
+    size_t curr_line;
+
+    curr_line = editor_get_current_line_number(editor);
+
+    if ((editor->buffer.lines_count - 1) <= curr_line) return;
+    if (!editor_is_editing_text(editor)) return;
+
+    editor_move_begginning_of_line(editor);
+    editor_set_mark(editor);
+    editor_move_end_of_line(editor);
+    editor_cut(editor);
+    editor_next_line(editor);
+    editor_move_begginning_of_line(editor);
+    editor_paste(editor);
+    editor_set_mark(editor);
+    editor_move_end_of_line(editor);
+    editor_cut(editor);
+    editor_previous_line(editor);
+    editor_paste(editor);
+    editor_next_line(editor);
+    editor_move_begginning_of_line(editor);
+}
+
+void editor_move_line_up(Editor *editor)
+{
+    size_t curr_line;
+
+    curr_line = editor_get_current_line_number(editor);
+
+    if (curr_line == 0) return;
+    if (!editor_is_editing_text(editor)) return;
+
+    editor_move_begginning_of_line(editor);
+    editor_set_mark(editor);
+    editor_move_end_of_line(editor);
+    editor_cut(editor);
+    editor_previous_line(editor);
+    editor_move_begginning_of_line(editor);
+    editor_paste(editor);
+    editor_set_mark(editor);
+    editor_move_end_of_line(editor);
+    editor_cut(editor);
+    editor_next_line(editor);
+    editor_paste(editor);
+    editor_previous_line(editor);
+    editor_move_begginning_of_line(editor);
+}

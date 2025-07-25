@@ -245,6 +245,12 @@ void alt_leader_mapping(SDL_Event event)
             editor_copy_to_clipboard(&smacs.editor);
             smacs.editor.selection = false;
             break;
+        case SDLK_n:
+            editor_move_line_down(&smacs.editor);
+            break;
+        case SDLK_p:
+            editor_move_line_up(&smacs.editor);
+            break;
         }
     }
 }

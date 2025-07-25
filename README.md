@@ -28,6 +28,8 @@ General:
 - M-v - scroll down
 - M-< - beginning of the buffer
 - M-> - end of the buffer
+- M-n - move line down
+- M-p - move line up
 - C-, - duplicate line
 - C-s - search
 

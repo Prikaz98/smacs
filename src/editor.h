@@ -91,6 +91,8 @@ void editor_copy_to_clipboard(Editor *editor);
 void editor_paste(Editor *editor);
 void editor_cut(Editor *editor);
 void editor_duplicate_line(Editor *editor);
+void editor_move_line_up(Editor *editor);
+void editor_move_line_down(Editor *editor);
 
 void editor_user_search_forward(Editor *editor);
 void editor_user_search_backward(Editor *editor);
@@ -105,5 +107,7 @@ bool editor_user_search_next(Editor *editor, char *notification);
 void editor_goto_line(Editor *editor, size_t line);
 void editor_goto_line_forward(Editor *editor, size_t line);
 void editor_goto_line_backward(Editor *editor, size_t line);
+
+bool editor_is_editing_text(Editor *editor);
 
 #endif
