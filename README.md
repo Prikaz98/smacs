@@ -15,7 +15,7 @@ In the following keybinding description I use standard Emacs key definition:
 - C - Ctrl
 - M - Alt (Meta)
 
-General:
+Bindings:
 
 - C-f - forward char
 - C-b - backward char
@@ -32,29 +32,21 @@ General:
 - M-p - move line up
 - C-, - duplicate line
 - C-s - search
+- C-k - delete from cursor position to the end of the line
+- C-d - delete forward char
+- BACKSPACE - delete backward char
+- C-SPC - set mark
+- M-w - copy to clipboard
+- C-y - paste from clipboard
+- C-l recenter
+- C-- font size decrease
+- C-= font size increase
 
+Extended commands:
 - M-x s    Enter - save file
 - M-x :{N} Enter - go to line {N}
 - M-x n{N} Enter - go to next {N} line
 - M-x p{N} Enter - go to previous {N} line
-
-Deleting:
-
-- C-k - delete from cursor position to the end of the line
-- C-d - delete forward char
-- BACKSPACE - delete backward char
-
-Selection:
-
-- C-SPC - set mark
-- M-w - copy to clipboard
-- C-y - paste from clipboard
-
-View manipulation:
-
-- C-l recenter
-- C-- font size decrease
-- C-= font size increase
 
 # Thanks
 Everything works using [SDL](https://www.libsdl.org/).
