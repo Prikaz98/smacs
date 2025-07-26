@@ -268,6 +268,7 @@ void render_draw_smacs(Smacs *smacs)
                     TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
                     if (win_w < (text_indention + x)) {
                         if (is_line_region) {
+                            region_rect.x = text_indention;
                             region_rect.y = content_hight;
 
                             if (region_end == line.end || region_end > ci) {
