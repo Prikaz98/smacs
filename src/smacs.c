@@ -13,7 +13,7 @@
 
 #define SCREEN_WIDTH    1200
 #define SCREEN_HEIGHT   1000
-#define FONT_SIZE       17
+#define FONT_SIZE       18
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define NEWLINE         "\n"
@@ -25,8 +25,8 @@ const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE; //[ABSOLUTE, RELATIV
 
 static Smacs smacs = {0};
 
-//TODO: forward-word/backward-word
 //TODO: undo/redo
+//TODO: implement M-@ selection forward
 
 void ctrl_leader_mapping(SDL_Event event);
 void alt_leader_mapping(SDL_Event event);
@@ -227,6 +227,14 @@ void ctrl_leader_mapping(SDL_Event event)
 void alt_leader_mapping(SDL_Event event)
 {
     if (event.key.keysym.mod & KMOD_ALT) {
+		if (event.key.keysym.mod & KMOD_SHIFT) {
+	        switch (event.key.keysym.sym) {
+			case SDLK_2: //means @
+				editor_mark_forward_word(&smacs.editor);
+				break;
+			}
+		}
+
         switch (event.key.keysym.sym) {
         case SDLK_v:
             editor_scroll_down(&smacs.editor);

@@ -6,6 +6,7 @@ CFLAGS:=-Wall -Wextra -std=c11 -pedantic -ggdb
 SOURCES:=./src/common.c ./src/utf8.c ./src/editor.c ./src/themes.c ./src/render.c ./src/smacs.c
 EXEC:=smacs
 TTF_FILE:=fonts/Consolas.ttf
+#TTF_FILE:=fonts/iosevka-regular.ttf
 
 build:
 	PWD=$(shell pwd)

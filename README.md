@@ -30,6 +30,10 @@ Bindings:
 - M-> - end of the buffer
 - M-n - move line down
 - M-p - move line up
+- M-f - jump word forward
+- M-b - jump word backward
+- M-d - delete forward word
+- M-@ - mark forward word
 - C-, - duplicate line
 - C-s - search
 - C-k - delete from cursor position to the end of the line
@@ -45,8 +49,14 @@ Bindings:
 Extended commands:
 - M-x s    Enter - save file
 - M-x :{N} Enter - go to line {N}
-- M-x n{N} Enter - go to next {N} line
-- M-x p{N} Enter - go to previous {N} line
+- M-x n{N} Enter - go to Next {N} line
+- M-x p{N} Enter - go to Previous {N} line
+
+- M-x ff {file_path} Enter - open new file by {file_path} as a new buffer
+
+- M-x bl    Enter - show Buffers List
+- M-x b{N}  Enter - switch to buffer {N}
+- M-x bk{N} Enter - kill buffer {N}
 
 # Thanks
 Everything works using [SDL](https://www.libsdl.org/).

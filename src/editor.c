@@ -67,8 +67,16 @@ void editor_delete_backward(Editor *editor)
 void editor_delete_forward(Editor *editor)
 {
     size_t char_len;
-    Buffer *buf = editor->buffer;
-    Content *content = &buf->content;
+    Buffer *buf;
+    Content *content;
+
+	if (editor->selection) {
+		editor_delete_backward(editor);
+		return;
+	}
+
+	buf = editor->buffer;
+    content = &buf->content;
     if (editor->buffer->position >= content->len) return;
 
     char_len = utf8_size_char(content->data[editor->buffer->position]);
@@ -760,7 +768,7 @@ void editor_print_buffers_names(Editor *editor, char *notification)
 
     sb_append(str, '{');
     for (i = 0; i < editor->buffer_list.len; ++i) {
-        sprintf(buffer_index, "%ld", i);
+        sprintf(buffer_index, "%ld", i+1);
         sb_append_many(str, buffer_index);
 
         sb_append(str, ':');
@@ -780,6 +788,7 @@ void editor_print_buffers_names(Editor *editor, char *notification)
 
 void editor_switch_buffer(Editor *editor, size_t buf_index)
 {
+	--buf_index;
 	if (buf_index >= editor->buffer_list.len) return;
 
     editor->buffer = &editor->buffer_list.buffers[buf_index];
@@ -789,7 +798,7 @@ void editor_switch_buffer(Editor *editor, size_t buf_index)
 void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
 {
 	size_t i;
-
+	--buf_index;
 	if (&editor->buffer_list.buffers[buf_index] == editor->buffer) return;
 	if (buf_index >= editor->buffer_list.len) return;
 
@@ -832,6 +841,23 @@ void editor_word_forward(Editor *editor)
         }
     }
     editor->buffer->position = editor->buffer->content.len;
+}
+
+void editor_mark_forward_word(Editor *editor)
+{
+	size_t pos;
+
+	pos = editor->buffer->position;
+
+    if (editor->selection) {
+		editor->buffer->position = editor->buffer->position > editor->mark ? editor->buffer->position : editor->mark;
+	}
+
+	editor_word_forward(editor);
+
+    editor->mark = editor->buffer->position;
+	editor->buffer->position = pos;
+	editor->selection = true;
 }
 
 void editor_delete_word_forward(Editor *editor)
