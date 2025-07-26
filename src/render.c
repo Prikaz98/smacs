@@ -42,7 +42,7 @@ void render_draw_cursor(Smacs *smacs, SDL_Rect cursor_rect, StringBuilder *sb)
     size_t cursor, char_len, i;
 
     data = smacs->editor.buffer->content.data;
-    cursor = smacs->editor.position;
+    cursor = smacs->editor.buffer->position;
 
     SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
     SDL_RenderFillRect(smacs->renderer, &cursor_rect);
@@ -168,7 +168,7 @@ void render_draw_smacs(Smacs *smacs)
     lines = smacs->editor.buffer->lines;
     arena = smacs->editor.buffer->arena;
     data = smacs->editor.buffer->content.data;
-    cursor = smacs->editor.position;
+    cursor = smacs->editor.buffer->position;
     region_beg = smacs->editor.mark < cursor ? smacs->editor.mark : cursor;
     region_end = smacs->editor.mark > cursor ? smacs->editor.mark : cursor;
     assert(region_beg <= region_end);
@@ -246,10 +246,10 @@ void render_draw_smacs(Smacs *smacs)
                     case '\t': {
                         //"»"
                         if (is_line_region && region_beg <= ci && region_end > ci) {
-                        	sb_append(sb, (char)0xC2);
-                        	sb_append(sb, (char)0xBB);
-	                        for (i = 0; i < 3; ++i) sb_append(sb, ' ');
-	                        break;
+                            sb_append(sb, (char)0xC2);
+                            sb_append(sb, (char)0xBB);
+                            for (i = 0; i < 3; ++i) sb_append(sb, ' ');
+                            break;
                         }
 
                         for (i = 0; i < 4; ++i) sb_append(sb, ' ');

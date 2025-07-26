@@ -23,6 +23,8 @@ typedef struct {
 } Arena;
 
 typedef struct {
+    size_t position;
+
     Content content;
 
     Line *lines;
@@ -72,8 +74,6 @@ typedef struct {
     } while(0)
 
 typedef struct {
-	//TODO: move it to buffer
-    size_t position;
     Buffer *buffer;
 
     size_t mark;
