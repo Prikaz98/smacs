@@ -11,8 +11,8 @@
 #include "themes.h"
 #include "common.h"
 
-#define SCREEN_WIDTH    1000
-#define SCREEN_HEIGHT   600
+#define SCREEN_WIDTH    1200
+#define SCREEN_HEIGHT   1000
 #define FONT_SIZE       17
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
@@ -21,7 +21,7 @@
 #define TAB             "\t"
 #define LEADING         1
 
-const enum LineNumberFormat DISPLAY_LINE_FROMAT = ABSOLUTE; //[ABSOLUTE, RELATIVE]
+const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE; //[ABSOLUTE, RELATIVE]
 
 static Smacs smacs = {0};
 
@@ -54,7 +54,7 @@ int smacs_launch(char *ttf_path, char *file_path)
         return 1;
     }
 
-    smacs.window = SDL_CreateWindow("smacs", 300, 100, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
+    smacs.window = SDL_CreateWindow("smacs", 100, 100, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
     if (smacs.window == NULL) {
         fprintf(stderr, "Could not open SDL window: %s\n", SDL_GetError());
         return 1;
@@ -74,8 +74,9 @@ int smacs_launch(char *ttf_path, char *file_path)
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.editor = (Editor) {0};
 
+    smacs.editor.buffer_list = (Buffer_List) {0};
     editor_read_file(&smacs.editor, file_path);
-    smacs.editor.buffer.arena = (Arena) {0, SCREEN_HEIGHT / smacs.font_size};
+    smacs.editor.buffer->arena = (Arena) {0, SCREEN_HEIGHT / smacs.font_size};
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
     smacs.leading = LEADING;
 
@@ -135,7 +136,7 @@ int smacs_launch(char *ttf_path, char *file_path)
         SDL_GetWindowSize(smacs.window, NULL, &win_h);
         TTF_SizeUTF8(smacs.font, "|", NULL, &font_y);
 
-        smacs.editor.buffer.arena.show_lines = (win_h / font_y) + 1;
+        smacs.editor.buffer->arena.show_lines = (win_h / font_y) + 1;
         render_draw_smacs(&smacs);
         SDL_RenderPresent(smacs.renderer);
 
@@ -246,6 +247,12 @@ void alt_leader_mapping(SDL_Event event)
         case SDLK_p:
             editor_move_line_up(&smacs.editor);
             break;
+        case SDLK_f:
+            editor_word_forward(&smacs.editor);
+            break;
+        case SDLK_b:
+            editor_word_backward(&smacs.editor);
+            break;
         }
     }
 }
@@ -267,7 +274,14 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         editor_user_input_delete_backward(&smacs.editor);
         break;
     case SDLK_RETURN:
-        if (starts_with(smacs.editor.user_input.data, "n")) {
+        if (starts_with(smacs.editor.user_input.data, "ff")) {
+            editor_read_file(&smacs.editor, &smacs.editor.user_input.data[3]);
+        } else if (starts_with(smacs.editor.user_input.data, "bl")) {
+            editor_print_buffers_names(&smacs.editor, smacs.notification);
+            *message_timeout = MESSAGE_TIMEOUT;
+        } else if (starts_with(smacs.editor.user_input.data, "b")) {
+            editor_swtich_buffer(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
+        } else if (starts_with(smacs.editor.user_input.data, "n")) {
             editor_goto_line_forward(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
         } else if (starts_with(smacs.editor.user_input.data, "p")) {
             editor_goto_line_backward(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
@@ -297,6 +311,9 @@ bool search_mapping(SDL_Event event, int *message_timeout)
         case SDLK_g:
             editor_user_input_clear(&smacs.editor);
             break;
+//        case SDLK_y:
+//			editor_user_input_insert_from_clipboard(&smacs.editor);
+//			break;
         }
     }
 

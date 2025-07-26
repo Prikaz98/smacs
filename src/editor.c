@@ -37,7 +37,7 @@ void editor_delete_backward(Editor *editor)
     Content *content;
     size_t delete_len, reg_beg, reg_end;
 
-    buf = &editor->buffer;
+    buf = editor->buffer;
     content = &buf->content;
 
     if (editor->selection) {
@@ -66,7 +66,7 @@ void editor_delete_backward(Editor *editor)
 void editor_delete_forward(Editor *editor)
 {
     size_t char_len;
-    Buffer *buf = &editor->buffer;
+    Buffer *buf = editor->buffer;
     Content *content = &buf->content;
     if (editor->position >= content->len) return;
 
@@ -80,7 +80,7 @@ void editor_delete_forward(Editor *editor)
 
 void editor_insert(Editor *editor, char *str)
 {
-    Buffer *buf = &editor->buffer;
+    Buffer *buf = editor->buffer;
     size_t i;
 
     if (str == NULL) return;
@@ -107,10 +107,10 @@ size_t editor_get_current_line_number(Editor *editor)
     size_t i;
     Line line;
 
-    if (editor->buffer.lines_count == 0) return 0;
+    if (editor->buffer->lines_count == 0) return 0;
 
-    for (i = 0; i < editor->buffer.lines_count; ++i) {
-        line = editor->buffer.lines[i];
+    for (i = 0; i < editor->buffer->lines_count; ++i) {
+        line = editor->buffer->lines[i];
         if (line.start <= editor->position && editor->position <= line.end) {
             return i;
         }
@@ -125,10 +125,10 @@ void editor_recognize_arena(Editor *editor)
     Arena *arena;
 
     line_num = editor_get_current_line_number(editor);
-    arena = &editor->buffer.arena;
+    arena = &editor->buffer->arena;
 
     if (line_num >= ((arena->start + arena->show_lines) - 3)) {
-        arena->start = MIN(editor->buffer.lines_count - 1, line_num - arena->show_lines / 2);
+        arena->start = MIN(editor->buffer->lines_count - 1, line_num - arena->show_lines / 2);
     } else if (line_num < arena->start) {
         arena->start = line_num;
     }
@@ -141,13 +141,13 @@ void editor_next_line(Editor *editor)
 
     line_num = editor_get_current_line_number(editor);
 
-    if (editor->buffer.lines_count > 0) {
-        line = editor->buffer.lines[line_num];
+    if (editor->buffer->lines_count > 0) {
+        line = editor->buffer->lines[line_num];
         col = editor->position - line.start;
 
         line_num++;
-        if (editor->buffer.lines_count > line_num) {
-            line = editor->buffer.lines[line_num];
+        if (editor->buffer->lines_count > line_num) {
+            line = editor->buffer->lines[line_num];
             next_pos = line.start + col;
             editor->position = next_pos > line.end ? line.end : next_pos;
 
@@ -162,12 +162,12 @@ void editor_previous_line(Editor *editor)
     Line line;
 
     line_num = editor_get_current_line_number(editor);
-    line = editor->buffer.lines[line_num];
+    line = editor->buffer->lines[line_num];
     col = editor->position - line.start;
 
     if (line_num != 0) {
         line_num--;
-        line = editor->buffer.lines[line_num];
+        line = editor->buffer->lines[line_num];
 
         next_pos = line.start + col;
         editor->position = next_pos > line.end ? line.end : next_pos;
@@ -180,15 +180,15 @@ void editor_char_forward(Editor *editor)
 {
     size_t char_len;
 
-    char_len = utf8_size_char(editor->buffer.content.data[editor->position]);
-    editor->position = MIN(editor->position + char_len, editor->buffer.content.len);
+    char_len = utf8_size_char(editor->buffer->content.data[editor->position]);
+    editor->position = MIN(editor->position + char_len, editor->buffer->content.len);
 }
 
 void editor_char_backward(Editor *editor)
 {
     int char_len;
 
-    char_len = utf8_size_char_backward(editor->buffer.content.data, editor->position - 1);
+    char_len = utf8_size_char_backward(editor->buffer->content.data, editor->position - 1);
     editor->position = (size_t) MAX(((int)editor->position) - char_len, 0);
 }
 
@@ -197,8 +197,8 @@ void editor_move_end_of_line(Editor *editor)
     size_t i;
     Line line;
 
-    for (i = 0; i < editor->buffer.lines_count; ++i) {
-        line = editor->buffer.lines[i];
+    for (i = 0; i < editor->buffer->lines_count; ++i) {
+        line = editor->buffer->lines[i];
         if (line.start <= editor->position && editor->position <= line.end) {
             editor->position = line.end;
             return;
@@ -211,8 +211,8 @@ void editor_move_begginning_of_line(Editor *editor)
     size_t i;
     Line line;
 
-    for (i = 0; i < editor->buffer.lines_count; ++i) {
-        line = editor->buffer.lines[i];
+    for (i = 0; i < editor->buffer->lines_count; ++i) {
+        line = editor->buffer->lines[i];
         if (line.start <= editor->position && editor->position <= line.end) {
             editor->position = line.start;
             return;
@@ -225,7 +225,7 @@ void editor_determine_lines(Editor *editor)
     size_t i, beg;
     Buffer *buffer;
 
-    buffer = &editor->buffer;
+    buffer = editor->buffer;
 
     buf_line_clean(buffer);
     if (buffer->content.len == 0) return;
@@ -247,8 +247,7 @@ int editor_save(Editor* editor)
     Content content;
     Buffer *buf;
 
-
-    buf = &editor->buffer;
+    buf = editor->buffer;
 
     if (buf->file_path == NULL) {
         fprintf(stderr, "No file_path\n");
@@ -276,8 +275,21 @@ int editor_save(Editor* editor)
     }
 
     fclose(out);
-    fprintf(stderr, "Wrote file %s\n", buf->file_path);
     return 0;
+}
+
+Buffer* editor_create_buffer(Editor *editor, char *file_path)
+{
+    size_t i;
+
+    for (i = 0; i < editor->buffer_list.len; ++i) {
+        if (strcmp(editor->buffer_list.buffers[i].file_path, file_path) == 0) {
+            return &editor->buffer_list.buffers[i];
+        }
+    }
+
+    buffer_list_append((&editor->buffer_list), ((Buffer) {0}));
+    return &editor->buffer_list.buffers[editor->buffer_list.len - 1];
 }
 
 int editor_read_file(Editor *editor, char *file_path)
@@ -286,10 +298,9 @@ int editor_read_file(Editor *editor, char *file_path)
     Content content;
     char next;
     size_t len;
+    Buffer *buf;
 
-    editor->buffer.file_path = file_path;
-
-    in = fopen(file_path, "r");
+    in = fopen(file_path, "a+");
     if (in == NULL) {
         fprintf(stderr, "Could not read file %s\n", file_path);
         return 1;
@@ -303,13 +314,18 @@ int editor_read_file(Editor *editor, char *file_path)
 
     fclose(in);
 
-    editor->buffer = (Buffer) {content, NULL, 0, 0, {0}, 0};
-    editor->buffer.file_path = file_path;
+    buf = editor_create_buffer(editor, file_path);
+    buf->content = content;
+    buf->file_path = (char*) calloc(strlen(file_path) + 1, sizeof(char));
+    strcpy(buf->file_path, file_path);
+
+    editor->buffer = buf;
     editor->position = 0;
 
     editor_determine_lines(editor);
 
-    fprintf(stderr, "Read file %s\n", file_path);
+    //fprintf(stderr, "Read file %s\n", file_path);
+
     return 0;
 }
 
@@ -318,8 +334,8 @@ void editor_kill_line(Editor *editor)
     size_t i, del_count;
     Line line;
 
-    for (i = 0; i < editor->buffer.lines_count; ++i) {
-        line = editor->buffer.lines[i];
+    for (i = 0; i < editor->buffer->lines_count; ++i) {
+        line = editor->buffer->lines[i];
         if (line.start <= editor->position && editor->position <= line.end) {
             del_count = (size_t) line.end - editor->position;
             if (del_count > 0) {
@@ -338,15 +354,25 @@ void editor_kill_line(Editor *editor)
 
 void editor_destroy(Editor *editor)
 {
-    if (editor->buffer.lines_count > 0) {
-        free(editor->buffer.lines);
-        editor->buffer.lines = NULL;
+    size_t i;
+    Buffer buf;
+
+    if (editor->buffer->lines_count > 0) {
+        free(editor->buffer->lines);
+        editor->buffer->lines = NULL;
     }
 
-    if (editor->buffer.content.len > 0) {
-        free(editor->buffer.content.data);
-        editor->buffer.content.data = NULL;
+    for (i = 0; i < editor->buffer_list.len; ++i) {
+        buf = editor->buffer_list.buffers[i];
+        if (buf.content.len > 0) {
+            free(buf.file_path);
+            buf.file_path = NULL;
+
+            free(buf.content.data);
+            buf.content.data = NULL;
+        }
     }
+
 }
 
 void editor_recenter_top_bottom(Editor *editor)
@@ -355,9 +381,9 @@ void editor_recenter_top_bottom(Editor *editor)
     Arena *arena;
 
     line_num = (int) editor_get_current_line_number(editor);
-    arena = &editor->buffer.arena;
+    arena = &editor->buffer->arena;
     half_screen = (int) arena->show_lines / 2;
-    center = MIN(editor->buffer.lines_count, arena->start + half_screen);
+    center = MIN(editor->buffer->lines_count, arena->start + half_screen);
 
     //top -> bottom
     if (arena->start == (size_t) line_num) {
@@ -374,7 +400,7 @@ void editor_recenter_top_bottom(Editor *editor)
 void editor_scroll_up(Editor *editor)
 {
     size_t i;
-    for (i = 0; i < (editor->buffer.arena.show_lines / 2); ++i) {
+    for (i = 0; i < (editor->buffer->arena.show_lines / 2); ++i) {
         editor_next_line(editor);
     }
 }
@@ -382,7 +408,7 @@ void editor_scroll_up(Editor *editor)
 void editor_scroll_down(Editor *editor)
 {
     size_t i;
-    for (i = 0; i < (editor->buffer.arena.show_lines / 2); ++i) {
+    for (i = 0; i < (editor->buffer->arena.show_lines / 2); ++i) {
         editor_previous_line(editor);
     }
 }
@@ -395,7 +421,7 @@ void editor_beginning_of_buffer(Editor *editor)
 
 void editor_end_of_buffer(Editor *editor)
 {
-    editor->position = editor->buffer.content.len - 1;
+    editor->position = editor->buffer->content.len - 1;
     editor_recognize_arena(editor);
 }
 
@@ -405,17 +431,17 @@ void editor_mwheel_scroll_up(Editor *editor)
     size_t line_to_move;
     Line next_line;
 
-    if (editor->buffer.arena.start > 0) {
-        editor->buffer.arena.start--;
+    if (editor->buffer->arena.start > 0) {
+        editor->buffer->arena.start--;
 
         line_num = editor_get_current_line_number(editor);
 
         //out of arena range
-        if (line_num > (editor->buffer.arena.start + editor->buffer.arena.show_lines)) {
-            line_to_move = editor->buffer.arena.start + editor->buffer.arena.show_lines;
-            line_to_move = line_to_move > editor->buffer.lines_count ? (editor->buffer.lines_count - 1) : line_to_move;
+        if (line_num > (editor->buffer->arena.start + editor->buffer->arena.show_lines)) {
+            line_to_move = editor->buffer->arena.start + editor->buffer->arena.show_lines;
+            line_to_move = line_to_move > editor->buffer->lines_count ? (editor->buffer->lines_count - 1) : line_to_move;
 
-            next_line = editor->buffer.lines[line_to_move - 5];
+            next_line = editor->buffer->lines[line_to_move - 5];
             editor->position = next_line.start;
         }
     }
@@ -427,16 +453,16 @@ void editor_mwheel_scroll_down(Editor *editor)
     size_t line_to_move;
     Line next_line;
 
-    if (editor->buffer.arena.start < (editor->buffer.lines_count - 1)) {
-        editor->buffer.arena.start++;
+    if (editor->buffer->arena.start < (editor->buffer->lines_count - 1)) {
+        editor->buffer->arena.start++;
 
         line_num = editor_get_current_line_number(editor);
 
         //out of arena range
-        if (line_num < editor->buffer.arena.start) {
-            line_to_move = editor->buffer.arena.start;
+        if (line_num < editor->buffer->arena.start) {
+            line_to_move = editor->buffer->arena.start;
 
-            next_line = editor->buffer.lines[line_to_move];
+            next_line = editor->buffer->lines[line_to_move];
             editor->position = next_line.start;
         }
     }
@@ -474,7 +500,7 @@ void editor_copy_to_clipboard(Editor *editor)
     len = MAX(editor->mark, editor->position) - reg_beg;
 
     copy = calloc(len + 1, sizeof(char));
-    memcpy(copy, &editor->buffer.content.data[reg_beg], len);
+    memcpy(copy, &editor->buffer->content.data[reg_beg], len);
 
     if (SDL_SetClipboardText(copy) < 0) {
         fprintf(stderr, "Could not copy to clipboard: %s\n", SDL_GetError());
@@ -511,10 +537,10 @@ void editor_duplicate_line(Editor *editor)
     char *copy;
 
     line_num = editor_get_current_line_number(editor);
-    line = &editor->buffer.lines[line_num];
+    line = &editor->buffer->lines[line_num];
     line_len = line->end - line->start;
     copy = calloc(line_len + 1, sizeof(char));
-    memcpy(copy, &editor->buffer.content.data[line->start], line_len);
+    memcpy(copy, &editor->buffer->content.data[line->start], line_len);
     editor_move_begginning_of_line(editor);
     editor_insert(editor, copy);
     editor_insert(editor, "\n");
@@ -606,7 +632,7 @@ bool editor_user_search_next(Editor *editor, char *notification)
 
     if (editor->reverse_searching) {
         for (i = editor->position - 1; i > 0; --i) {
-            memcpy(tmp, &editor->buffer.content.data[i], to_find_len);
+            memcpy(tmp, &editor->buffer->content.data[i], to_find_len);
             if (strcmp(tmp, to_find) == 0) {
                 editor->position = i;
                 editor_recognize_arena(editor);
@@ -615,8 +641,8 @@ bool editor_user_search_next(Editor *editor, char *notification)
             }
         }
     } else {
-        for (i = editor->position + 1; i < editor->buffer.content.len; ++i) {
-            memcpy(tmp, &editor->buffer.content.data[i], to_find_len);
+        for (i = editor->position + 1; i < editor->buffer->content.len; ++i) {
+            memcpy(tmp, &editor->buffer->content.data[i], to_find_len);
             if (strcmp(tmp, to_find) == 0) {
                 editor->position = i;
                 editor_recognize_arena(editor);
@@ -636,9 +662,9 @@ bool editor_user_search_next(Editor *editor, char *notification)
 void editor_goto_line(Editor *editor, size_t line)
 {
     size_t goto_line;
-    goto_line = MIN(editor->buffer.lines_count - 1, line - 1);
+    goto_line = MIN(editor->buffer->lines_count - 1, line - 1);
 
-    editor->position = editor->buffer.lines[goto_line].start;
+    editor->position = editor->buffer->lines[goto_line].start;
     editor_recognize_arena(editor);
 }
 
@@ -666,7 +692,7 @@ void editor_move_line_down(Editor *editor)
 
     curr_line = editor_get_current_line_number(editor);
 
-    if ((editor->buffer.lines_count - 1) <= curr_line) return;
+    if ((editor->buffer->lines_count - 1) <= curr_line) return;
     if (!editor_is_editing_text(editor)) return;
 
     editor_move_begginning_of_line(editor);
@@ -708,4 +734,102 @@ void editor_move_line_up(Editor *editor)
     editor_paste(editor);
     editor_previous_line(editor);
     editor_move_begginning_of_line(editor);
+}
+
+void editor_print_buffers_names(Editor *editor, char *notification)
+{
+    size_t i;
+    StringBuilder *str;
+    char buffer_index[100];
+
+    str = &((StringBuilder) {0});
+
+    sb_append(str, '{');
+    for (i = 0; i < editor->buffer_list.len; ++i) {
+        sprintf(buffer_index, "%ld", i);
+        sb_append_many(str, buffer_index);
+
+        sb_append(str, ':');
+        sb_append_many(str, editor->buffer_list.buffers[i].file_path);
+
+        if (i < (editor->buffer_list.len - 1)) {
+            sb_append(str, ' ');
+            sb_append(str, '|');
+            sb_append(str, ' ');
+        }
+    }
+    sb_append(str, '}');
+
+    strcpy(notification, str->data);
+    sb_free(str);
+}
+
+void editor_swtich_buffer(Editor *editor, size_t buf_index)
+{
+    editor->buffer = &editor->buffer_list.buffers[buf_index];
+    editor->position = 0;
+    editor_recognize_arena(editor);
+}
+
+void editor_word_forward(Editor *editor)
+{
+	size_t i;
+	char ch;
+	bool word_beginning, found_word_ending;
+
+	word_beginning = false;
+	found_word_ending = false;
+
+	for (i = editor->position; i < editor->buffer->content.len; ++i) {
+		ch = editor->buffer->content.data[i];
+
+		if (!word_beginning) {
+			if (0x40 < ch && ch < 0x5B) word_beginning = true;
+			else if (0x60 < ch && ch < 0x7B) word_beginning = true;
+		}
+
+		if (word_beginning) {
+			if (0x0 < ch && ch < 0x41) found_word_ending = true;
+			else if (0x5A < ch && ch < 0x61) found_word_ending = true;
+			else if (0x7A < ch) found_word_ending = true;
+		}
+
+		if (found_word_ending) {
+			editor->position = i;
+			return;
+		}
+	}
+	editor->position = editor->buffer->content.len;
+}
+
+void editor_word_backward(Editor *editor)
+{
+	size_t i;
+	char ch;
+	bool word_beginning, found_word_ending;
+
+	word_beginning = false;
+	found_word_ending = false;
+
+	for (i = editor->position; i > 0; --i) {
+		ch = editor->buffer->content.data[i];
+
+		if (!word_beginning) {
+			if (0x40 < ch && ch < 0x5B) word_beginning = true;
+			else if (0x60 < ch && ch < 0x7B) word_beginning = true;
+		}
+
+		if (word_beginning) {
+			if (0x0 < ch && ch < 0x41) found_word_ending = true;
+			else if (0x5A < ch && ch < 0x61) found_word_ending = true;
+			else if (0x7A < ch) found_word_ending = true;
+		}
+
+		if (found_word_ending) {
+			editor->position = i;
+			return;
+		}
+	}
+
+	editor->position = 0;
 }

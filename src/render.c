@@ -41,7 +41,7 @@ void render_draw_cursor(Smacs *smacs, SDL_Rect cursor_rect, StringBuilder *sb)
     char *data;
     size_t cursor, char_len, i;
 
-    data = smacs->editor.buffer.content.data;
+    data = smacs->editor.buffer->content.data;
     cursor = smacs->editor.position;
 
     SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
@@ -93,7 +93,7 @@ void render_draw_modeline(Smacs *smacs)
 
     sprintf(mode_line_info,
             "%s %s%s",
-            smacs->editor.buffer.file_path,
+            smacs->editor.buffer->file_path,
             smacs->editor.reverse_searching ? "Re-" : "",
             smacs->editor.searching ? "Search[:enter next :C-g stop]" : smacs->editor.extend_command ? "M-x" : "");
 
@@ -165,9 +165,9 @@ void render_draw_smacs(Smacs *smacs)
     SDL_Rect cursor_rect, region_rect;
     bool is_line_region;
 
-    lines = smacs->editor.buffer.lines;
-    arena = smacs->editor.buffer.arena;
-    data = smacs->editor.buffer.content.data;
+    lines = smacs->editor.buffer->lines;
+    arena = smacs->editor.buffer->arena;
+    data = smacs->editor.buffer->content.data;
     cursor = smacs->editor.position;
     region_beg = smacs->editor.mark < cursor ? smacs->editor.mark : cursor;
     region_end = smacs->editor.mark > cursor ? smacs->editor.mark : cursor;
@@ -188,9 +188,9 @@ void render_draw_smacs(Smacs *smacs)
     x = 0;
     y = char_h;
 
-    arena_end = MIN(arena.start + arena.show_lines, smacs->editor.buffer.lines_count);
+    arena_end = MIN(arena.start + arena.show_lines, smacs->editor.buffer->lines_count);
 
-    if(smacs->editor.buffer.content.len > 0) {
+    if(smacs->editor.buffer->content.len > 0) {
         assert(arena.start < arena_end);
 
         sb = &(StringBuilder) {0};
@@ -245,9 +245,14 @@ void render_draw_smacs(Smacs *smacs)
                     switch (data[ci]) {
                     case '\t': {
                         //"»"
-                        sb_append(sb, (char)0xC2);
-                        sb_append(sb, (char)0xBB);
-                        for (i = 0; i < 3; ++i) sb_append(sb, ' ');
+                        if (is_line_region && region_beg <= ci && region_end > ci) {
+                        	sb_append(sb, (char)0xC2);
+                        	sb_append(sb, (char)0xBB);
+	                        for (i = 0; i < 3; ++i) sb_append(sb, ' ');
+	                        break;
+                        }
+
+                        for (i = 0; i < 4; ++i) sb_append(sb, ' ');
                         break;
                     }
                     default: {

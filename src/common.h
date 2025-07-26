@@ -19,6 +19,13 @@ typedef struct {
         sb->data[sb->len++] = ch;                                       \
     } while(0)
 
+#define sb_append_many(sb, str)                    \
+    do {                                           \
+        for (size_t z = 0; z < strlen(str); ++z) { \
+            sb_append(sb, str[z]);                 \
+        }                                          \
+    } while(0)
+
 #define sb_clean(sb)                            \
     do {                                        \
         sb->len = 0;                            \

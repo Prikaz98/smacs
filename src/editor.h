@@ -50,8 +50,32 @@ typedef struct {
     } while(0)
 
 typedef struct {
+    Buffer *buffers;
+    size_t len;
+    size_t cap;
+} Buffer_List;
+
+#define buffer_list_append(bl, buf)                                             \
+    do {                                                                        \
+        if (bl->len >= bl->cap) {                                               \
+            bl->cap = bl->cap == 0 ? 5 : bl->cap * 2;                           \
+            bl->buffers = realloc(bl->buffers, bl->cap * sizeof(*bl->buffers)); \
+            memset(&bl->buffers[bl->len], 0, bl->cap - bl->len);                \
+        }                                                                       \
+        bl->buffers[bl->len++] = buf;                                           \
+    } while(0)
+
+#define buffer_list_clean(bl)                      \
+    do {                                           \
+        bl->len = 0;                               \
+        memset(&bl->buffers[bl->len], 0, bl->cap); \
+    } while(0)
+
+typedef struct {
+	//TODO: move it to buffer
     size_t position;
-    Buffer buffer;
+    Buffer *buffer;
+
     size_t mark;
 
     bool selection;
@@ -59,6 +83,7 @@ typedef struct {
     bool reverse_searching;
     bool extend_command;
     StringBuilder user_input;
+    Buffer_List buffer_list;
 } Editor;
 
 #define EDITOR_CONTENT_CAP 256
@@ -75,6 +100,8 @@ void editor_next_line(Editor *editor);
 void editor_previous_line(Editor *editor);
 void editor_char_backward(Editor *editor);
 void editor_char_forward(Editor *editor);
+void editor_word_forward(Editor *editor);
+void editor_word_backward(Editor *editor);
 void editor_move_end_of_line(Editor *editor);
 void editor_move_begginning_of_line(Editor *editor);
 void editor_kill_line(Editor *editor);
@@ -94,6 +121,7 @@ void editor_duplicate_line(Editor *editor);
 void editor_move_line_up(Editor *editor);
 void editor_move_line_down(Editor *editor);
 
+//TODO: ignore case
 void editor_user_search_forward(Editor *editor);
 void editor_user_search_backward(Editor *editor);
 
@@ -109,5 +137,7 @@ void editor_goto_line_forward(Editor *editor, size_t line);
 void editor_goto_line_backward(Editor *editor, size_t line);
 
 bool editor_is_editing_text(Editor *editor);
+void editor_print_buffers_names(Editor *editor, char *notification);
+void editor_swtich_buffer(Editor *editor, size_t buf_index);
 
 #endif
