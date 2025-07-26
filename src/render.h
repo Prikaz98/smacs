@@ -24,6 +24,8 @@ typedef struct {
     SDL_Color fg;
     SDL_Color rg;
     SDL_Color ln;
+    SDL_Color mlbg;
+    SDL_Color mlfg;
 
     int leading;
 
