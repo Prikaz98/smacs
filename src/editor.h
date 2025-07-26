@@ -33,6 +33,8 @@ typedef struct {
 
     Arena arena;
     char *file_path;
+
+    bool need_to_save;
 } Buffer;
 
 #define buf_line_append(buf, ln)                                                            \
@@ -102,6 +104,8 @@ void editor_char_backward(Editor *editor);
 void editor_char_forward(Editor *editor);
 void editor_word_forward(Editor *editor);
 void editor_word_backward(Editor *editor);
+void editor_delete_word_forward(Editor *editor);
+
 void editor_move_end_of_line(Editor *editor);
 void editor_move_begginning_of_line(Editor *editor);
 void editor_kill_line(Editor *editor);
@@ -138,6 +142,7 @@ void editor_goto_line_backward(Editor *editor, size_t line);
 
 bool editor_is_editing_text(Editor *editor);
 void editor_print_buffers_names(Editor *editor, char *notification);
-void editor_swtich_buffer(Editor *editor, size_t buf_index);
+void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification);
+void editor_switch_buffer(Editor *editor, size_t buf_index);
 
 #endif

@@ -61,6 +61,7 @@ void editor_delete_backward(Editor *editor)
 
     editor_determine_lines(editor);
     editor->selection = false;
+    editor->buffer->need_to_save = true;
 }
 
 void editor_delete_forward(Editor *editor)
@@ -76,6 +77,7 @@ void editor_delete_forward(Editor *editor)
 
     editor_determine_lines(editor);
     editor->selection = false;
+    editor->buffer->need_to_save = true;
 }
 
 void editor_insert(Editor *editor, char *str)
@@ -92,12 +94,17 @@ void editor_insert(Editor *editor, char *str)
         return;
     }
 
+    if (editor->selection) {
+		editor_delete_backward(editor);
+	}
+
     size_t str_size = strlen(str);
     for (i = 0; i < str_size; ++i) {
         append_char(content, str[i], editor->buffer->position + i);
     }
 
     editor->buffer->position += str_size;
+    editor->buffer->need_to_save = true;
     editor_determine_lines(editor);
     editor->selection = false;
 }
@@ -259,7 +266,7 @@ int editor_save(Editor* editor)
         return 1;
     }
 
-    out = fopen(buf->file_path, "w");
+    out = fopen(buf->file_path, "w+");
     if (out == NULL) {
         fprintf(stderr, "Could not save file %s\n", buf->file_path);
         return 1;
@@ -275,6 +282,8 @@ int editor_save(Editor* editor)
     }
 
     fclose(out);
+    editor->buffer->need_to_save = false;
+
     return 0;
 }
 
@@ -300,19 +309,17 @@ int editor_read_file(Editor *editor, char *file_path)
     size_t len;
     Buffer *buf;
 
-    in = fopen(file_path, "a+");
-    if (in == NULL) {
-        fprintf(stderr, "Could not read file %s\n", file_path);
-        return 1;
-    }
-
+    in = fopen(file_path, "r");
     content = (Content) {0};
     len = 0;
-    while ((next = fgetc(in)) != EOF) {
-        append_char(&content, next, len++);
-    }
 
-    fclose(in);
+    if (in != NULL) {
+        while ((next = fgetc(in)) != EOF) {
+            append_char(&content, next, len);
+            ++len;
+        }
+        fclose(in);
+    }
 
     buf = editor_create_buffer(editor, file_path);
     buf->content = content;
@@ -352,10 +359,20 @@ void editor_kill_line(Editor *editor)
     editor->selection = false;
 }
 
+void editor_destory_buffer(Buffer *buf)
+{
+	if (buf->content.len > 0) {
+		free(buf->file_path);
+		buf->file_path = NULL;
+
+		free(buf->content.data);
+		buf->content.data = NULL;
+	}
+}
+
 void editor_destroy(Editor *editor)
 {
     size_t i;
-    Buffer buf;
 
     if (editor->buffer->lines_count > 0) {
         free(editor->buffer->lines);
@@ -363,14 +380,7 @@ void editor_destroy(Editor *editor)
     }
 
     for (i = 0; i < editor->buffer_list.len; ++i) {
-        buf = editor->buffer_list.buffers[i];
-        if (buf.content.len > 0) {
-            free(buf.file_path);
-            buf.file_path = NULL;
-
-            free(buf.content.data);
-            buf.content.data = NULL;
-        }
+        editor_destory_buffer(&editor->buffer_list.buffers[i]);
     }
 
 }
@@ -523,6 +533,10 @@ void editor_paste(Editor *editor)
 
     if (!SDL_HasClipboardText()) return;
 
+	if (editor->selection) {
+		editor_delete_backward(editor);
+	}
+
     clipboard = SDL_GetClipboardText();
     editor_insert(editor, clipboard);
     editor_recognize_arena(editor);
@@ -652,8 +666,8 @@ bool editor_user_search_next(Editor *editor, char *notification)
         }
     }
 
-    editor->searching = false;
     sprintf(notification, "Not found: %s", to_find);
+    editor_user_input_clear(editor);
 
     free(tmp);
     return false;
@@ -764,10 +778,29 @@ void editor_print_buffers_names(Editor *editor, char *notification)
     sb_free(str);
 }
 
-void editor_swtich_buffer(Editor *editor, size_t buf_index)
+void editor_switch_buffer(Editor *editor, size_t buf_index)
 {
+	if (buf_index >= editor->buffer_list.len) return;
+
     editor->buffer = &editor->buffer_list.buffers[buf_index];
     editor_recognize_arena(editor);
+}
+
+void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
+{
+	size_t i;
+
+	if (&editor->buffer_list.buffers[buf_index] == editor->buffer) return;
+	if (buf_index >= editor->buffer_list.len) return;
+
+	editor_destory_buffer(&editor->buffer_list.buffers[buf_index]);
+
+	--editor->buffer_list.len;
+	for (i = buf_index; i < editor->buffer_list.len; ++i) {
+		editor->buffer_list.buffers[i] = editor->buffer_list.buffers[i+1];
+	}
+
+    sprintf(notification, "Buffer killed");
 }
 
 void editor_word_forward(Editor *editor)
@@ -801,16 +834,24 @@ void editor_word_forward(Editor *editor)
     editor->buffer->position = editor->buffer->content.len;
 }
 
+void editor_delete_word_forward(Editor *editor)
+{
+	editor_set_mark(editor);
+	editor_word_forward(editor);
+	editor_delete_backward(editor);
+}
+
 void editor_word_backward(Editor *editor)
 {
-    size_t i;
+    size_t i, starting_point;
     char ch;
     bool word_beginning, found_word_ending;
 
     word_beginning = false;
     found_word_ending = false;
+    starting_point = editor->buffer->position == 0 ? 0 : (editor->buffer->position - 1);
 
-    for (i = editor->buffer->position; i > 0; --i) {
+    for (i = starting_point; i > 0; --i) {
         ch = editor->buffer->content.data[i];
 
         if (!word_beginning) {
@@ -825,7 +866,7 @@ void editor_word_backward(Editor *editor)
         }
 
         if (found_word_ending) {
-            editor->buffer->position = i;
+            editor->buffer->position = i + 1;
             return;
         }
     }

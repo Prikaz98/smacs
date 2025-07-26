@@ -96,7 +96,8 @@ void render_draw_modeline(Smacs *smacs)
     }
 
     sprintf(mode_line_info,
-            "%s %s%s",
+            "%s%s %s%s",
+            smacs->editor.buffer->need_to_save ? "*" : "",
             smacs->editor.buffer->file_path,
             smacs->editor.reverse_searching ? "Re-" : "",
             smacs->editor.searching ? "Search[:enter next :C-g stop]" : smacs->editor.extend_command ? "M-x" : "");
@@ -279,7 +280,6 @@ void render_draw_smacs(Smacs *smacs)
                     TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
                     if (win_w < (text_indention + x)) {
                         if (is_line_region) {
-                            region_rect.x = text_indention;
                             region_rect.y = content_hight;
 
                             if (region_end == line.end || region_end > ci) {
@@ -290,6 +290,7 @@ void render_draw_smacs(Smacs *smacs)
                             SDL_SetRenderDrawColor(smacs->renderer, smacs->rg.r, smacs->rg.g, smacs->rg.b, smacs->rg.a);
                             SDL_RenderFillRect(smacs->renderer, &region_rect);
                             region_rect.w = 0;
+                            region_rect.x = 0;
                         }
 
                         render_draw_text(smacs, text_indention, content_hight, sb->data, smacs->fg);

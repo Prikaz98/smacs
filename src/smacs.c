@@ -253,6 +253,9 @@ void alt_leader_mapping(SDL_Event event)
         case SDLK_b:
             editor_word_backward(&smacs.editor);
             break;
+        case SDLK_d:
+            editor_delete_word_forward(&smacs.editor);
+            break;
         }
     }
 }
@@ -279,8 +282,11 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         } else if (starts_with(smacs.editor.user_input.data, "bl")) {
             editor_print_buffers_names(&smacs.editor, smacs.notification);
             *message_timeout = MESSAGE_TIMEOUT;
+        } else if (starts_with(smacs.editor.user_input.data, "bk")) {
+            editor_kill_buffer(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[2]), smacs.notification);
+            *message_timeout = MESSAGE_TIMEOUT;
         } else if (starts_with(smacs.editor.user_input.data, "b")) {
-            editor_swtich_buffer(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
+            editor_switch_buffer(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
         } else if (starts_with(smacs.editor.user_input.data, "n")) {
             editor_goto_line_forward(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
         } else if (starts_with(smacs.editor.user_input.data, "p")) {
