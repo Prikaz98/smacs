@@ -70,12 +70,12 @@ void editor_delete_forward(Editor *editor)
     Buffer *buf;
     Content *content;
 
-	if (editor->selection) {
-		editor_delete_backward(editor);
-		return;
-	}
+    if (editor->selection) {
+        editor_delete_backward(editor);
+        return;
+    }
 
-	buf = editor->buffer;
+    buf = editor->buffer;
     content = &buf->content;
     if (editor->buffer->position >= content->len) return;
 
@@ -103,8 +103,8 @@ void editor_insert(Editor *editor, char *str)
     }
 
     if (editor->selection) {
-		editor_delete_backward(editor);
-	}
+        editor_delete_backward(editor);
+    }
 
     size_t str_size = strlen(str);
     for (i = 0; i < str_size; ++i) {
@@ -369,13 +369,13 @@ void editor_kill_line(Editor *editor)
 
 void editor_destory_buffer(Buffer *buf)
 {
-	if (buf->content.len > 0) {
-		free(buf->file_path);
-		buf->file_path = NULL;
+    if (buf->content.len > 0) {
+        free(buf->file_path);
+        buf->file_path = NULL;
 
-		free(buf->content.data);
-		buf->content.data = NULL;
-	}
+        free(buf->content.data);
+        buf->content.data = NULL;
+    }
 }
 
 void editor_destroy(Editor *editor)
@@ -541,9 +541,9 @@ void editor_paste(Editor *editor)
 
     if (!SDL_HasClipboardText()) return;
 
-	if (editor->selection) {
-		editor_delete_backward(editor);
-	}
+    if (editor->selection) {
+        editor_delete_backward(editor);
+    }
 
     clipboard = SDL_GetClipboardText();
     editor_insert(editor, clipboard);
@@ -788,8 +788,8 @@ void editor_print_buffers_names(Editor *editor, char *notification)
 
 void editor_switch_buffer(Editor *editor, size_t buf_index)
 {
-	--buf_index;
-	if (buf_index >= editor->buffer_list.len) return;
+    --buf_index;
+    if (buf_index >= editor->buffer_list.len) return;
 
     editor->buffer = &editor->buffer_list.buffers[buf_index];
     editor_recognize_arena(editor);
@@ -797,17 +797,17 @@ void editor_switch_buffer(Editor *editor, size_t buf_index)
 
 void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
 {
-	size_t i;
-	--buf_index;
-	if (&editor->buffer_list.buffers[buf_index] == editor->buffer) return;
-	if (buf_index >= editor->buffer_list.len) return;
+    size_t i;
+    --buf_index;
+    if (&editor->buffer_list.buffers[buf_index] == editor->buffer) return;
+    if (buf_index >= editor->buffer_list.len) return;
 
-	editor_destory_buffer(&editor->buffer_list.buffers[buf_index]);
+    editor_destory_buffer(&editor->buffer_list.buffers[buf_index]);
 
-	--editor->buffer_list.len;
-	for (i = buf_index; i < editor->buffer_list.len; ++i) {
-		editor->buffer_list.buffers[i] = editor->buffer_list.buffers[i+1];
-	}
+    --editor->buffer_list.len;
+    for (i = buf_index; i < editor->buffer_list.len; ++i) {
+        editor->buffer_list.buffers[i] = editor->buffer_list.buffers[i+1];
+    }
 
     sprintf(notification, "Buffer killed");
 }
@@ -845,26 +845,26 @@ void editor_word_forward(Editor *editor)
 
 void editor_mark_forward_word(Editor *editor)
 {
-	size_t pos;
+    size_t pos;
 
-	pos = editor->buffer->position;
+    pos = editor->buffer->position;
 
     if (editor->selection) {
-		editor->buffer->position = editor->buffer->position > editor->mark ? editor->buffer->position : editor->mark;
-	}
+        editor->buffer->position = editor->buffer->position > editor->mark ? editor->buffer->position : editor->mark;
+    }
 
-	editor_word_forward(editor);
+    editor_word_forward(editor);
 
     editor->mark = editor->buffer->position;
-	editor->buffer->position = pos;
-	editor->selection = true;
+    editor->buffer->position = pos;
+    editor->selection = true;
 }
 
 void editor_delete_word_forward(Editor *editor)
 {
-	editor_set_mark(editor);
-	editor_word_forward(editor);
-	editor_delete_backward(editor);
+    editor_set_mark(editor);
+    editor_word_forward(editor);
+    editor_delete_backward(editor);
 }
 
 void editor_word_backward(Editor *editor)
@@ -898,4 +898,18 @@ void editor_word_backward(Editor *editor)
     }
 
     editor->buffer->position = 0;
+}
+
+void editor_user_input_insert_from_clipboard(Editor *editor)
+{
+    char *clipboard;
+
+    clipboard = SDL_GetClipboardText();
+
+    if (strlen(clipboard) > EDITOR_MINI_BUFFER_CONTENT_LIMIT) {
+        fprintf(stderr, "Could not insert clipboard content to mini buffer because limit exceeded\n");
+        return;
+    }
+
+    sb_append_many((&editor->user_input), clipboard);
 }

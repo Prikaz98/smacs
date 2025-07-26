@@ -89,6 +89,7 @@ typedef struct {
 } Editor;
 
 #define EDITOR_CONTENT_CAP 256
+#define EDITOR_MINI_BUFFER_CONTENT_LIMIT 1000
 
 void editor_insert(Editor *editor, char *str);
 void editor_delete_backward(Editor *editor);
@@ -129,12 +130,12 @@ void editor_move_line_down(Editor *editor);
 //TODO: ignore case
 void editor_user_search_forward(Editor *editor);
 void editor_user_search_backward(Editor *editor);
-
 void editor_user_extend_command(Editor *editor);
-
 void editor_user_input_clear(Editor *editor);
 void editor_user_input_insert(Editor *editor, char *text);
 void editor_user_input_delete_backward(Editor *editor);
+void editor_user_input_insert_from_clipboard(Editor *editor);
+
 bool editor_user_search_next(Editor *editor, char *notification);
 
 void editor_goto_line(Editor *editor, size_t line);
@@ -145,5 +146,4 @@ bool editor_is_editing_text(Editor *editor);
 void editor_print_buffers_names(Editor *editor, char *notification);
 void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification);
 void editor_switch_buffer(Editor *editor, size_t buf_index);
-
 #endif

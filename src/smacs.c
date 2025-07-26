@@ -26,7 +26,7 @@ const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE; //[ABSOLUTE, RELATIV
 static Smacs smacs = {0};
 
 //TODO: undo/redo
-//TODO: implement M-@ selection forward
+//TODO: paren wrap function M-(
 
 void ctrl_leader_mapping(SDL_Event event);
 void alt_leader_mapping(SDL_Event event);
@@ -277,6 +277,9 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         case SDLK_g:
             editor_user_input_clear(&smacs.editor);
             break;
+        case SDLK_y:
+			editor_user_input_insert_from_clipboard(&smacs.editor);
+			break;
         }
     }
 
@@ -325,9 +328,9 @@ bool search_mapping(SDL_Event event, int *message_timeout)
         case SDLK_g:
             editor_user_input_clear(&smacs.editor);
             break;
-//        case SDLK_y:
-//			editor_user_input_insert_from_clipboard(&smacs.editor);
-//			break;
+        case SDLK_y:
+			editor_user_input_insert_from_clipboard(&smacs.editor);
+			break;
         }
     }
 
