@@ -69,7 +69,7 @@ int smacs_launch(char *ttf_path, char *file_path)
     bool quit = false;
     message_timeout = 0;
 
-    themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre]
+    themes_mindre(&smacs); // alternatives: [themes_naysayer, themes_mindre]
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.editor = (Editor) {0};
@@ -242,9 +242,12 @@ void alt_leader_mapping(SDL_Event event)
     if (event.key.keysym.mod & KMOD_ALT) {
         if (event.key.keysym.mod & KMOD_SHIFT) {
             switch (event.key.keysym.sym) {
-            case SDLK_2: //means @
+            case SDLK_2: // @
                 editor_mark_forward_word(&smacs.editor);
                 break;
+			case SDLK_9: // (
+				editor_wrap_region_in_parens(&smacs.editor);
+				break;
             }
         }
 

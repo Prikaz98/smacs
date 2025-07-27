@@ -223,7 +223,7 @@ void render_draw_smacs(Smacs *smacs)
 
             win_w = pane->w;
 
-            win_w -= char_w; //PADDING
+            win_w -= (char_w * 2); //PADDING
 
             content_line_index = arena.start;
             content_hight = 0;
@@ -356,7 +356,7 @@ void render_draw_smacs(Smacs *smacs)
         render_draw_modeline(smacs, *pane, is_active_pane);
 
         SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
-        SDL_RenderDrawLine(smacs->renderer, win_w, 0, win_w, pane->h);
+        SDL_RenderDrawLine(smacs->renderer, pane->w, 0, pane->w, pane->h);
 
     }
 

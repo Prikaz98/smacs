@@ -33,6 +33,16 @@ void append_char(Content *content, char ch, size_t pos)
     }
 }
 
+void editor_goto_point(Editor *editor, size_t pos)
+{
+    size_t max_len;
+
+    max_len = editor->pane->buffer->content.len;
+    if (pos > max_len) return;
+
+    editor->pane->position = pos;
+}
+
 void editor_delete_backward(Editor *editor)
 {
     Buffer *buf;
@@ -50,14 +60,14 @@ void editor_delete_backward(Editor *editor)
 
         memmove(&content->data[reg_beg], &content->data[reg_end], content->len - reg_end);
         content->len -= delete_len;
-        editor->pane->position = reg_beg;
+        editor_goto_point(editor, reg_beg);
     } else {
         if (editor->pane->position == 0) return;
 
         delete_len = utf8_size_char_backward(content->data, editor->pane->position - 1);
         memmove(&content->data[editor->pane->position - delete_len], &content->data[editor->pane->position], content->len - editor->pane->position + delete_len);
         content->len -= delete_len;
-        editor->pane->position -= delete_len;
+        editor_goto_point(editor, editor->pane->position - delete_len);
     }
 
     memset(&content->data[content->len], 0, content->capacity - content->len);
@@ -171,7 +181,8 @@ void editor_next_line(Editor *editor)
         if (editor->pane->buffer->lines_count > line_num) {
             line = editor->pane->buffer->lines[line_num];
             next_pos = line.start + editor->pane->buffer->column;
-            editor->pane->position = MIN(next_pos, line.end);
+
+            editor_goto_point(editor, MIN(next_pos, line.end));
 
             editor_recognize_arena(editor);
         }
@@ -192,7 +203,7 @@ void editor_previous_line(Editor *editor)
         line = editor->pane->buffer->lines[line_num];
 
         next_pos = line.start + editor->pane->buffer->column;
-        editor->pane->position = MIN(next_pos, line.end);
+        editor_goto_point(editor, MIN(next_pos, line.end));
 
         editor_recognize_arena(editor);
     }
@@ -203,7 +214,7 @@ void editor_char_forward(Editor *editor)
     uint8_t char_len;
 
     char_len = utf8_size_char(editor->pane->buffer->content.data[editor->pane->position]);
-    editor->pane->position = MIN(editor->pane->position + char_len, editor->pane->buffer->content.len);
+    editor_goto_point(editor, MIN(editor->pane->position + char_len, editor->pane->buffer->content.len));
 }
 
 void editor_char_backward(Editor *editor)
@@ -214,7 +225,7 @@ void editor_char_backward(Editor *editor)
     if (editor->pane->buffer->column > 0) {
         editor->pane->buffer->column--;
     }
-    editor->pane->position = (size_t) MAX(((int)editor->pane->position) - char_len, 0);
+    editor_goto_point(editor, (size_t) MAX(((int)editor->pane->position) - char_len, 0));
 }
 
 void editor_move_end_of_line(Editor *editor)
@@ -225,7 +236,7 @@ void editor_move_end_of_line(Editor *editor)
     for (i = 0; i < editor->pane->buffer->lines_count; ++i) {
         line = editor->pane->buffer->lines[i];
         if (line.start <= editor->pane->position && editor->pane->position <= line.end) {
-            editor->pane->position = line.end;
+            editor_goto_point(editor, line.end);
             return;
         }
     }
@@ -239,7 +250,7 @@ void editor_move_begginning_of_line(Editor *editor)
     for (i = 0; i < editor->pane->buffer->lines_count; ++i) {
         line = editor->pane->buffer->lines[i];
         if (line.start <= editor->pane->position && editor->pane->position <= line.end) {
-            editor->pane->position = line.start;
+            editor_goto_point(editor, line.start);
             editor->pane->buffer->column = 0;
             return;
         }
@@ -342,10 +353,10 @@ int editor_read_file(Editor *editor, char *file_path)
 
     pane = editor->pane;
 
-    pane->position = 0;
     pane->buffer = editor_create_buffer(editor, file_path);
     pane->buffer->content = content;
     pane->buffer->file_path = (char*) calloc(strlen(file_path) + 1, sizeof(char));
+    editor_goto_point(editor, 0);
 
     strcpy(pane->buffer->file_path, file_path);
 
@@ -444,13 +455,13 @@ void editor_scroll_down(Editor *editor)
 
 void editor_beginning_of_buffer(Editor *editor)
 {
-    editor->pane->position = 0;
+    editor_goto_point(editor, 0);
     editor_recognize_arena(editor);
 }
 
 void editor_end_of_buffer(Editor *editor)
 {
-    editor->pane->position = editor->pane->buffer->content.len - 1;
+    editor_goto_point(editor, editor->pane->buffer->content.len - 1);
     editor_recognize_arena(editor);
 }
 
@@ -471,7 +482,7 @@ void editor_mwheel_scroll_up(Editor *editor)
             line_to_move = line_to_move > editor->pane->buffer->lines_count ? (editor->pane->buffer->lines_count - 1) : line_to_move;
 
             next_line = editor->pane->buffer->lines[line_to_move - 5];
-            editor->pane->position = next_line.start;
+            editor_goto_point(editor, next_line.start);
         }
     }
 }
@@ -492,7 +503,7 @@ void editor_mwheel_scroll_down(Editor *editor)
             line_to_move = editor->pane->arena.start;
 
             next_line = editor->pane->buffer->lines[line_to_move];
-            editor->pane->position = next_line.start;
+            editor_goto_point(editor, next_line.start);
         }
     }
 }
@@ -579,7 +590,7 @@ void editor_duplicate_line(Editor *editor)
     editor_insert(editor, copy);
     editor_insert(editor, "\n");
 
-    editor->pane->position = pos;
+    editor_goto_point(editor, pos);
     editor_next_line(editor);
     editor_recognize_arena(editor);
 
@@ -670,7 +681,7 @@ bool editor_user_search_next(Editor *editor, char *notification)
         for (i = editor->pane->position - 1; i > 0; --i) {
             memcpy(tmp, &editor->pane->buffer->content.data[i], to_find_len);
             if (strcmp(tmp, to_find) == 0) {
-                editor->pane->position = i;
+                editor_goto_point(editor, i);
                 editor_recognize_arena(editor);
                 free(tmp);
                 return true;
@@ -680,7 +691,7 @@ bool editor_user_search_next(Editor *editor, char *notification)
         for (i = editor->pane->position + 1; i < editor->pane->buffer->content.len; ++i) {
             memcpy(tmp, &editor->pane->buffer->content.data[i], to_find_len);
             if (strcmp(tmp, to_find) == 0) {
-                editor->pane->position = i;
+                editor_goto_point(editor, i);
                 editor_recognize_arena(editor);
                 free(tmp);
                 return true;
@@ -700,7 +711,7 @@ void editor_goto_line(Editor *editor, size_t line)
     size_t goto_line;
     goto_line = MIN(editor->pane->buffer->lines_count - 1, line - 1);
 
-    editor->pane->position = editor->pane->buffer->lines[goto_line].start;
+    editor_goto_point(editor, editor->pane->buffer->lines[goto_line].start);
     editor_recognize_arena(editor);
 }
 
@@ -833,13 +844,13 @@ void editor_mark_forward_word(Editor *editor)
     pos = editor->pane->position;
 
     if (editor->selection) {
-        editor->pane->position = editor->pane->position > editor->mark ? editor->pane->position : editor->mark;
+        editor_goto_point(editor, MAX(editor->pane->position, editor->mark));
     }
 
     editor_word_forward(editor);
 
     editor->mark = editor->pane->position;
-    editor->pane->position = pos;
+    editor_goto_point(editor, pos);
     editor->selection = true;
 }
 
@@ -888,7 +899,7 @@ void editor_word_forward(Editor *editor)
         move_len = editor_find_word(&editor->pane->buffer->content.data[i], &word_beginning, &found_word_ending);
 
         if (found_word_ending) {
-            editor->pane->position = i;
+            editor_goto_point(editor, i);
             editor_recognize_arena(editor);
             return;
         }
@@ -896,7 +907,7 @@ void editor_word_forward(Editor *editor)
         i += move_len;
     }
 
-    editor->pane->position = editor->pane->buffer->content.len;
+    editor_goto_point(editor, editor->pane->buffer->content.len);
     editor_recognize_arena(editor);
 }
 
@@ -916,7 +927,7 @@ void editor_word_backward(Editor *editor)
         editor_find_word(&editor->pane->buffer->content.data[i - utf8_char_len], &word_beginning, &found_word_ending);
 
         if (found_word_ending) {
-            editor->pane->position = i;
+            editor_goto_point(editor, i);
             editor_recognize_arena(editor);
             return;
         }
@@ -924,7 +935,7 @@ void editor_word_backward(Editor *editor)
         i -= utf8_char_len;
     }
 
-    editor->pane->position = 0;
+    editor_goto_point(editor, 0);
     editor_recognize_arena(editor);
 }
 
@@ -949,10 +960,28 @@ void editor_split_pane(Editor *editor)
     assert(editor->panes_len < PANES_MAX_SIZE);
 
     pane = (Pane) {0};
-    pane.position = 0;
+
     pane.buffer = editor->pane->buffer;
     pane.arena = editor->pane->arena;
+    pane.position = 0;
 
     editor->panes[editor->panes_len++] = pane;
     editor_recognize_arena(editor);
+}
+
+void editor_wrap_region_in_parens(Editor *editor)
+{
+    size_t reg_beg, reg_end;
+
+    if (!editor->selection) return;
+
+    reg_beg = MIN(editor->mark, editor->pane->position);
+    reg_end = MAX(editor->mark, editor->pane->position);
+
+    editor->selection = false;
+    editor_goto_point(editor, reg_end);
+    editor_insert(editor, ")");
+
+    editor_goto_point(editor, reg_beg);
+    editor_insert(editor, "(");
 }

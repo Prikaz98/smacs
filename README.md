@@ -34,6 +34,7 @@ Bindings:
 - M-b - jump word backward
 - M-d - delete forward word
 - M-@ - mark forward word
+- M-( - wrap region in parenthesis
 - C-, - duplicate line
 - C-s - search
 - C-k - delete from cursor position to the end of the line

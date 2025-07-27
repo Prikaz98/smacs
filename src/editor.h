@@ -106,6 +106,8 @@ typedef struct {
 #define EDITOR_CONTENT_CAP 256
 #define EDITOR_MINI_BUFFER_CONTENT_LIMIT 1000
 
+void editor_goto_point(Editor *editor, size_t pos);
+
 void editor_insert(Editor *editor, char *str);
 void editor_delete_backward(Editor *editor);
 void editor_delete_forward(Editor *editor);
@@ -164,4 +166,6 @@ void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification);
 void editor_switch_buffer(Editor *editor, size_t buf_index);
 
 void editor_split_pane(Editor *editor);
+
+void editor_wrap_region_in_parens(Editor *editor);
 #endif
