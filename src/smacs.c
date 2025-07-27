@@ -35,7 +35,7 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout);
 
 int smacs_launch(char *ttf_path, char *file_path)
 {
-    int win_h, message_timeout, font_y;
+    int win_w, win_h, message_timeout, font_y, i, win_w_per_pane;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "Could not initialize SDL: %s\n", SDL_GetError());
@@ -69,14 +69,19 @@ int smacs_launch(char *ttf_path, char *file_path)
     bool quit = false;
     message_timeout = 0;
 
-    themes_mindre(&smacs); // alternatives: [themes_naysayer, themes_mindre]
+    themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre]
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.editor = (Editor) {0};
 
+    smacs.editor.panes_len = 0;
+    smacs.editor.panes[smacs.editor.panes_len] = (Pane) {0};
+    smacs.editor.pane = &smacs.editor.panes[smacs.editor.panes_len];
+    ++smacs.editor.panes_len;
+
     smacs.editor.buffer_list = (Buffer_List) {0};
     editor_read_file(&smacs.editor, file_path);
-    smacs.editor.buffer->arena = (Arena) {0, SCREEN_HEIGHT / smacs.font_size};
+    smacs.editor.pane->arena = (Arena) {0, SCREEN_HEIGHT / smacs.font_size};
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
     smacs.leading = LEADING;
 
@@ -133,10 +138,18 @@ int smacs_launch(char *ttf_path, char *file_path)
         SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
         SDL_RenderClear(smacs.renderer);
 
-        SDL_GetWindowSize(smacs.window, NULL, &win_h);
+        SDL_GetWindowSize(smacs.window, &win_w, &win_h);
         TTF_SizeUTF8(smacs.font, "|", NULL, &font_y);
 
-        smacs.editor.buffer->arena.show_lines = (win_h / font_y) + 1;
+        win_w_per_pane = win_w / smacs.editor.panes_len;
+
+        for (i = 0; i < (int) smacs.editor.panes_len; ++i) {
+            smacs.editor.panes[i].x = win_w_per_pane * i;
+            smacs.editor.panes[i].w = win_w_per_pane * i + win_w_per_pane;
+            smacs.editor.panes[i].h = win_h;
+            smacs.editor.panes[i].arena.show_lines = (win_h / font_y) + 1;
+        }
+
         render_draw_smacs(&smacs);
         SDL_RenderPresent(smacs.renderer);
 
@@ -270,6 +283,8 @@ void alt_leader_mapping(SDL_Event event)
 
 bool extend_command_mapping(SDL_Event event, int *message_timeout)
 {
+    size_t i;
+
     if (!smacs.editor.extend_command) return false;
 
     if (event.key.keysym.mod & KMOD_CTRL) {
@@ -296,6 +311,29 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         } else if (starts_with(smacs.editor.user_input.data, "bk")) {
             editor_kill_buffer(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[2]), smacs.notification);
             *message_timeout = MESSAGE_TIMEOUT;
+        } else if (starts_with(smacs.editor.user_input.data, "pn")) {
+            for (i = 0; i < smacs.editor.panes_len; ++i) {
+                if (&smacs.editor.panes[i] == smacs.editor.pane) {
+                    smacs.editor.pane = &smacs.editor.panes[(i+1) >= smacs.editor.panes_len ? 0 : (i+1)];
+                    break;
+                }
+            }
+        } else if (starts_with(smacs.editor.user_input.data, "pk")) {
+            if (smacs.editor.panes_len == 1) {
+                sprintf(smacs.notification, "Can not kill last pane");
+                *message_timeout = MESSAGE_TIMEOUT;
+            } else {
+                --smacs.editor.panes_len;
+                smacs.editor.pane = &smacs.editor.panes[0];
+            }
+
+        } else if (starts_with(smacs.editor.user_input.data, "sp")) {
+            if (smacs.editor.panes_len < PANES_MAX_SIZE) {
+                editor_split_pane(&smacs.editor);
+            } else {
+                sprintf(smacs.notification, "Can not create more than %d panes", PANES_MAX_SIZE);
+                *message_timeout = MESSAGE_TIMEOUT;
+            }
         } else if (starts_with(smacs.editor.user_input.data, "b")) {
             editor_switch_buffer(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
         } else if (starts_with(smacs.editor.user_input.data, "n")) {

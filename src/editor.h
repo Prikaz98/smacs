@@ -23,8 +23,7 @@ typedef struct {
 } Arena;
 
 typedef struct {
-    size_t position;
-	size_t column;
+    size_t column;
 
     Content content;
 
@@ -32,7 +31,6 @@ typedef struct {
     size_t lines_count;
     size_t lines_cap;
 
-    Arena arena;
     char *file_path;
 
     bool need_to_save;
@@ -79,6 +77,22 @@ typedef struct {
 typedef struct {
     Buffer *buffer;
 
+    size_t position;
+    Arena arena;
+
+    uint32_t x;
+    uint32_t w;
+    uint32_t h;
+} Pane;
+
+#define PANES_MAX_SIZE 3
+
+typedef struct {
+    Pane panes[PANES_MAX_SIZE];
+    size_t panes_len;
+
+    Pane *pane;
+
     size_t mark;
 
     bool selection;
@@ -98,7 +112,8 @@ void editor_delete_forward(Editor *editor);
 int  editor_save(Editor* editor);
 int  editor_read_file(Editor *editor, char *file_path);
 void editor_determine_lines(Editor *editor);
-size_t editor_get_current_line_number(Editor *editor);
+
+size_t editor_get_current_line_number(Pane *pane);
 
 void editor_next_line(Editor *editor);
 void editor_previous_line(Editor *editor);
@@ -147,4 +162,6 @@ bool editor_is_editing_text(Editor *editor);
 void editor_print_buffers_names(Editor *editor, char *notification);
 void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification);
 void editor_switch_buffer(Editor *editor, size_t buf_index);
+
+void editor_split_pane(Editor *editor);
 #endif

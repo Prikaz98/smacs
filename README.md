@@ -58,6 +58,10 @@ Extended commands:
 - M-x b{N}  Enter - switch to buffer {N}
 - M-x bk{N} Enter - kill buffer {N}
 
+- M-x sp Enter - split pane
+- M-x pn Enter - next pane
+- M-x pk Enter - kill current pane
+
 # Thanks
 Everything works using [SDL](https://www.libsdl.org/).
 
