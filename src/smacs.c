@@ -69,7 +69,7 @@ int smacs_launch(char *ttf_path, char *file_path)
     bool quit = false;
     message_timeout = 0;
 
-    themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre]
+    themes_mindre(&smacs); // alternatives: [themes_naysayer, themes_mindre]
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.editor = (Editor) {0};
@@ -227,13 +227,13 @@ void ctrl_leader_mapping(SDL_Event event)
 void alt_leader_mapping(SDL_Event event)
 {
     if (event.key.keysym.mod & KMOD_ALT) {
-		if (event.key.keysym.mod & KMOD_SHIFT) {
-	        switch (event.key.keysym.sym) {
-			case SDLK_2: //means @
-				editor_mark_forward_word(&smacs.editor);
-				break;
-			}
-		}
+        if (event.key.keysym.mod & KMOD_SHIFT) {
+            switch (event.key.keysym.sym) {
+            case SDLK_2: //means @
+                editor_mark_forward_word(&smacs.editor);
+                break;
+            }
+        }
 
         switch (event.key.keysym.sym) {
         case SDLK_v:
@@ -278,8 +278,8 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
             editor_user_input_clear(&smacs.editor);
             break;
         case SDLK_y:
-			editor_user_input_insert_from_clipboard(&smacs.editor);
-			break;
+            editor_user_input_insert_from_clipboard(&smacs.editor);
+            break;
         }
     }
 
@@ -329,8 +329,8 @@ bool search_mapping(SDL_Event event, int *message_timeout)
             editor_user_input_clear(&smacs.editor);
             break;
         case SDLK_y:
-			editor_user_input_insert_from_clipboard(&smacs.editor);
-			break;
+            editor_user_input_insert_from_clipboard(&smacs.editor);
+            break;
         }
     }
 

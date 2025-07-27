@@ -8,8 +8,6 @@
 #include "utf8.h"
 #include "common.h"
 
-//привет как дела
-
 void append_char(Content *content, char ch, size_t pos)
 {
     if (content == NULL) {
@@ -162,13 +160,13 @@ void editor_next_line(Editor *editor)
 
     if (editor->buffer->lines_count > 0) {
         line = editor->buffer->lines[line_num];
-        col = editor->buffer->position - line.start;
+		editor->buffer->column = MAX(editor->buffer->column, editor->buffer->position - line.start);
 
         line_num++;
         if (editor->buffer->lines_count > line_num) {
             line = editor->buffer->lines[line_num];
-            next_pos = line.start + col;
-            editor->buffer->position = next_pos > line.end ? line.end : next_pos;
+            next_pos = line.start + editor->buffer->column;
+            editor->buffer->position = MIN(next_pos, line.end);
 
             editor_recognize_arena(editor);
         }
@@ -177,19 +175,19 @@ void editor_next_line(Editor *editor)
 
 void editor_previous_line(Editor *editor)
 {
-    size_t col, next_pos, line_num;
+    size_t next_pos, line_num;
     Line line;
 
     line_num = editor_get_current_line_number(editor);
     line = editor->buffer->lines[line_num];
-    col = editor->buffer->position - line.start;
+	editor->buffer->column = MAX(editor->buffer->column, editor->buffer->position - line.start);
 
     if (line_num != 0) {
         line_num--;
         line = editor->buffer->lines[line_num];
 
-        next_pos = line.start + col;
-        editor->buffer->position = next_pos > line.end ? line.end : next_pos;
+        next_pos = line.start + editor->buffer->column;
+        editor->buffer->position = MIN(next_pos, line.end);
 
         editor_recognize_arena(editor);
     }
@@ -208,6 +206,9 @@ void editor_char_backward(Editor *editor)
     uint8_t char_len;
 
     char_len = utf8_size_char_backward(editor->buffer->content.data, editor->buffer->position - 1);
+	if (editor->buffer->column > 0) {
+		editor->buffer->column--;
+	}
     editor->buffer->position = (size_t) MAX(((int)editor->buffer->position) - char_len, 0);
 }
 
@@ -234,6 +235,7 @@ void editor_move_begginning_of_line(Editor *editor)
         line = editor->buffer->lines[i];
         if (line.start <= editor->buffer->position && editor->buffer->position <= line.end) {
             editor->buffer->position = line.start;
+			editor->buffer->column = 0;
             return;
         }
     }

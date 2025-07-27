@@ -24,6 +24,7 @@ typedef struct {
 
 typedef struct {
     size_t position;
+	size_t column;
 
     Content content;
 
