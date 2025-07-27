@@ -44,5 +44,9 @@ typedef struct {
  * a starts_with b
  */
 bool starts_with(char *a, char *b);
+/**
+ * cast utf8 char sequence to an interger value
+ */
+int utf8_chars_to_int(char *str, int len);
 
 #endif

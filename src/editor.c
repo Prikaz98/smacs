@@ -6,6 +6,9 @@
 
 #include "editor.h"
 #include "utf8.h"
+#include "common.h"
+
+//привет как дела
 
 void append_char(Content *content, char ch, size_t pos)
 {
@@ -35,7 +38,8 @@ void editor_delete_backward(Editor *editor)
 {
     Buffer *buf;
     Content *content;
-    size_t delete_len, reg_beg, reg_end;
+    size_t reg_beg, reg_end;
+    uint8_t delete_len;
 
     buf = editor->buffer;
     content = &buf->content;
@@ -66,7 +70,7 @@ void editor_delete_backward(Editor *editor)
 
 void editor_delete_forward(Editor *editor)
 {
-    size_t char_len;
+    int8_t char_len;
     Buffer *buf;
     Content *content;
 
@@ -193,7 +197,7 @@ void editor_previous_line(Editor *editor)
 
 void editor_char_forward(Editor *editor)
 {
-    size_t char_len;
+    uint8_t char_len;
 
     char_len = utf8_size_char(editor->buffer->content.data[editor->buffer->position]);
     editor->buffer->position = MIN(editor->buffer->position + char_len, editor->buffer->content.len);
@@ -201,7 +205,7 @@ void editor_char_forward(Editor *editor)
 
 void editor_char_backward(Editor *editor)
 {
-    int char_len;
+    uint8_t char_len;
 
     char_len = utf8_size_char_backward(editor->buffer->content.data, editor->buffer->position - 1);
     editor->buffer->position = (size_t) MAX(((int)editor->buffer->position) - char_len, 0);
@@ -630,7 +634,7 @@ void editor_user_input_insert(Editor *editor, char *text)
 void editor_user_input_delete_backward(Editor *editor)
 {
     StringBuilder *sb;
-    int char_len;
+    uint8_t char_len;
 
     sb = &editor->user_input;
     char_len = utf8_size_char_backward(sb->data, sb->len - 1);
@@ -812,37 +816,6 @@ void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
     sprintf(notification, "Buffer killed");
 }
 
-void editor_word_forward(Editor *editor)
-{
-    size_t i;
-    char ch;
-    bool word_beginning, found_word_ending;
-
-    word_beginning = false;
-    found_word_ending = false;
-
-    for (i = editor->buffer->position; i < editor->buffer->content.len; ++i) {
-        ch = editor->buffer->content.data[i];
-
-        if (!word_beginning) {
-            if (0x40 < ch && ch < 0x5B) word_beginning = true;
-            else if (0x60 < ch && ch < 0x7B) word_beginning = true;
-        }
-
-        if (word_beginning) {
-            if (0x0 < ch && ch < 0x41) found_word_ending = true;
-            else if (0x5A < ch && ch < 0x61) found_word_ending = true;
-            else if (0x7A < ch) found_word_ending = true;
-        }
-
-        if (found_word_ending) {
-            editor->buffer->position = i;
-            return;
-        }
-    }
-    editor->buffer->position = editor->buffer->content.len;
-}
-
 void editor_mark_forward_word(Editor *editor)
 {
     size_t pos;
@@ -867,37 +840,82 @@ void editor_delete_word_forward(Editor *editor)
     editor_delete_backward(editor);
 }
 
-void editor_word_backward(Editor *editor)
+
+int editor_find_word(char *ch, bool *word_beginning, bool *found_word_ending)
 {
-    size_t i, starting_point;
-    char ch;
+    uint8_t char_len;
+    uint32_t utf8_char_int;
+
+    char_len = utf8_size_char(ch[0]);
+    utf8_char_int = utf8_chars_to_int(ch, char_len);
+
+    if (!*word_beginning) {
+        if (0x40 < utf8_char_int && utf8_char_int < 0x5B) *word_beginning = true;
+        else if (0x60 < utf8_char_int && utf8_char_int < 0x7B) *word_beginning = true;
+        else if (0xCFBE < utf8_char_int && utf8_char_int < 0xD4B0) *word_beginning = true;
+    }
+
+    if (*word_beginning) {
+        if (0x0 < utf8_char_int && utf8_char_int <= 0x40) *found_word_ending = true;
+        else if (0x5B <= utf8_char_int && utf8_char_int <= 0x60) *found_word_ending = true;
+        else if (0x7B <= utf8_char_int && utf8_char_int <= 0xCFBE) *found_word_ending = true;
+        else if (0xD4B0 <= utf8_char_int) *found_word_ending = true;
+    }
+
+    return char_len;
+}
+
+void editor_word_forward(Editor *editor)
+{
+    size_t i, move_len;
     bool word_beginning, found_word_ending;
 
     word_beginning = false;
     found_word_ending = false;
-    starting_point = editor->buffer->position == 0 ? 0 : (editor->buffer->position - 1);
 
-    for (i = starting_point; i > 0; --i) {
-        ch = editor->buffer->content.data[i];
-
-        if (!word_beginning) {
-            if (0x40 < ch && ch < 0x5B) word_beginning = true;
-            else if (0x60 < ch && ch < 0x7B) word_beginning = true;
-        }
-
-        if (word_beginning) {
-            if (0x0 < ch && ch < 0x41) found_word_ending = true;
-            else if (0x5A < ch && ch < 0x61) found_word_ending = true;
-            else if (0x7A < ch) found_word_ending = true;
-        }
+    i = editor->buffer->position;
+    while (i < editor->buffer->content.len) {
+        move_len = editor_find_word(&editor->buffer->content.data[i], &word_beginning, &found_word_ending);
 
         if (found_word_ending) {
-            editor->buffer->position = i + 1;
+            editor->buffer->position = i;
+            editor_recognize_arena(editor);
             return;
         }
+
+        i += move_len;
+    }
+
+    editor->buffer->position = editor->buffer->content.len;
+    editor_recognize_arena(editor);
+}
+
+void editor_word_backward(Editor *editor)
+{
+    size_t i, starting_point;
+    uint8_t utf8_char_len;
+    bool word_beginning, found_word_ending;
+
+    word_beginning = false;
+    found_word_ending = false;
+    starting_point = editor->buffer->position == 0 ? 0 : editor->buffer->position;
+    i = starting_point;
+
+    while (i > 0) {
+        utf8_char_len = utf8_size_char_backward(editor->buffer->content.data, i-1);
+        editor_find_word(&editor->buffer->content.data[i - utf8_char_len], &word_beginning, &found_word_ending);
+
+        if (found_word_ending) {
+            editor->buffer->position = i;
+            editor_recognize_arena(editor);
+            return;
+        }
+
+        i -= utf8_char_len;
     }
 
     editor->buffer->position = 0;
+    editor_recognize_arena(editor);
 }
 
 void editor_user_input_insert_from_clipboard(Editor *editor)

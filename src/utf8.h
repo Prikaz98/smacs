@@ -2,8 +2,9 @@
 #define UTF8_H
 
 #include <stdio.h>
+#include <stdint.h>
 
-int utf8_size_char(char ch);
-int utf8_size_char_backward(char *text, size_t from);
+uint8_t utf8_size_char(char ch);
+uint8_t utf8_size_char_backward(char *text, size_t from);
 
 #endif

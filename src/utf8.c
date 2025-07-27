@@ -1,6 +1,6 @@
 #include "utf8.h"
 
-int utf8_size_char(char ch)
+uint8_t utf8_size_char(char ch)
 {
     if ((ch & 0x80) == 0) {
         return 1;
@@ -21,9 +21,9 @@ int utf8_size_char(char ch)
     return 1;
 }
 
-int utf8_size_char_backward(char *text, size_t from)
+uint8_t utf8_size_char_backward(char *text, size_t from)
 {
-    int i;
+    long i;
 
     for (i = from; i >= 0; --i) {
         if ((text[i] & 0xC0) == 0x80) {

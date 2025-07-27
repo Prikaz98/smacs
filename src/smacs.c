@@ -13,7 +13,7 @@
 
 #define SCREEN_WIDTH    1200
 #define SCREEN_HEIGHT   1000
-#define FONT_SIZE       18
+#define FONT_SIZE       17
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define NEWLINE         "\n"
