@@ -153,7 +153,7 @@ void editor_recognize_arena(Editor *editor)
 
 void editor_next_line(Editor *editor)
 {
-    size_t col, next_pos, line_num;
+    size_t next_pos, line_num;
     Line line;
 
     line_num = editor_get_current_line_number(editor);
