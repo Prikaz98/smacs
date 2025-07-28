@@ -13,7 +13,7 @@
 
 #define SCREEN_WIDTH    1200
 #define SCREEN_HEIGHT   1000
-#define FONT_SIZE       17
+#define FONT_SIZE       12
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define NEWLINE         "\n"
@@ -25,6 +25,9 @@ const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE; //[ABSOLUTE, RELATIV
 
 static Smacs smacs = {0};
 
+//TODO: Clean up whitespaces before saving
+//TODO: M-& emacs command
+//TODO: Multicursor
 //TODO: undo/redo
 //TODO: paren wrap function M-(
 
@@ -90,9 +93,7 @@ int smacs_launch(char *ttf_path, char *file_path)
     while (!quit) {
         SDL_WaitEvent(&event);
 
-        if (event.type == SDL_MOUSEMOTION) {
-            continue;
-        }
+        if (event.type == SDL_MOUSEMOTION) continue;
 
         switch (event.type) {
         case SDL_QUIT:
@@ -341,13 +342,13 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
                 sprintf(smacs.notification, "Can not create more than %d panes", PANES_MAX_SIZE);
                 *message_timeout = MESSAGE_TIMEOUT;
             }
-        } else if (starts_with(data, "b") && data_len > 2) {
+        } else if (starts_with(data, "b") && data_len > 1) {
             editor_switch_buffer(&smacs.editor, (size_t) atoi(&data[1]));
-        } else if (starts_with(data, "n") && data_len > 2) {
+        } else if (starts_with(data, "n") && data_len > 1) {
             editor_goto_line_forward(&smacs.editor, (size_t) atoi(&data[1]));
-        } else if (starts_with(data, "p") && data_len > 2) {
+        } else if (starts_with(data, "p") && data_len > 1) {
             editor_goto_line_backward(&smacs.editor, (size_t) atoi(&data[1]));
-        } else if (starts_with(data, ":") && data_len > 2) {
+        } else if (starts_with(data, ":") && data_len > 1) {
             editor_goto_line(&smacs.editor, (size_t) atoi(&data[1]));
         } else if (strcmp(data, "s") == 0) {
             if (editor_save(&smacs.editor) == 0) {
