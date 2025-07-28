@@ -413,6 +413,9 @@ void editor_destroy(Editor *editor)
         editor_destory_buffer(&editor->buffer_list.buffers[i]);
     }
 
+    editor->buffer_list.len = 0;
+    free(editor->buffer_list.buffers);
+    editor->buffer_list.buffers = NULL;
 }
 
 void editor_recenter_top_bottom(Editor *editor)

@@ -245,9 +245,9 @@ void alt_leader_mapping(SDL_Event event)
             case SDLK_2: // @
                 editor_mark_forward_word(&smacs.editor);
                 break;
-			case SDLK_9: // (
-				editor_wrap_region_in_parens(&smacs.editor);
-				break;
+            case SDLK_9: // (
+                editor_wrap_region_in_parens(&smacs.editor);
+                break;
             }
         }
 
@@ -286,7 +286,8 @@ void alt_leader_mapping(SDL_Event event)
 
 bool extend_command_mapping(SDL_Event event, int *message_timeout)
 {
-    size_t i;
+    size_t i, data_len;
+	char *data;
 
     if (!smacs.editor.extend_command) return false;
 
@@ -306,22 +307,25 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         editor_user_input_delete_backward(&smacs.editor);
         break;
     case SDLK_RETURN:
-        if (starts_with(smacs.editor.user_input.data, "ff")) {
-            editor_read_file(&smacs.editor, &smacs.editor.user_input.data[3]);
-        } else if (starts_with(smacs.editor.user_input.data, "bl")) {
+		data = smacs.editor.user_input.data;
+		data_len = strlen(data);
+
+        if (starts_with(data, "ff") && data_len > 4) {
+            editor_read_file(&smacs.editor, &data[3]);
+        } else if (starts_with(data, "bl")) {
             editor_print_buffers_names(&smacs.editor, smacs.notification);
             *message_timeout = MESSAGE_TIMEOUT;
-        } else if (starts_with(smacs.editor.user_input.data, "bk")) {
-            editor_kill_buffer(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[2]), smacs.notification);
+        } else if (starts_with(data, "bk") && data_len > 3) {
+            editor_kill_buffer(&smacs.editor, (size_t) atoi(&data[2]), smacs.notification);
             *message_timeout = MESSAGE_TIMEOUT;
-        } else if (starts_with(smacs.editor.user_input.data, "pn")) {
+        } else if (starts_with(data, "pn")) {
             for (i = 0; i < smacs.editor.panes_len; ++i) {
                 if (&smacs.editor.panes[i] == smacs.editor.pane) {
                     smacs.editor.pane = &smacs.editor.panes[(i+1) >= smacs.editor.panes_len ? 0 : (i+1)];
                     break;
                 }
             }
-        } else if (starts_with(smacs.editor.user_input.data, "pk")) {
+        } else if (starts_with(data, "pk")) {
             if (smacs.editor.panes_len == 1) {
                 sprintf(smacs.notification, "Can not kill last pane");
                 *message_timeout = MESSAGE_TIMEOUT;
@@ -330,22 +334,22 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
                 smacs.editor.pane = &smacs.editor.panes[0];
             }
 
-        } else if (starts_with(smacs.editor.user_input.data, "sp")) {
+        } else if (starts_with(data, "sp")) {
             if (smacs.editor.panes_len < PANES_MAX_SIZE) {
                 editor_split_pane(&smacs.editor);
             } else {
                 sprintf(smacs.notification, "Can not create more than %d panes", PANES_MAX_SIZE);
                 *message_timeout = MESSAGE_TIMEOUT;
             }
-        } else if (starts_with(smacs.editor.user_input.data, "b")) {
-            editor_switch_buffer(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
-        } else if (starts_with(smacs.editor.user_input.data, "n")) {
-            editor_goto_line_forward(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
-        } else if (starts_with(smacs.editor.user_input.data, "p")) {
-            editor_goto_line_backward(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
-        } else if (starts_with(smacs.editor.user_input.data, ":")) {
-            editor_goto_line(&smacs.editor, (size_t) atoi(&smacs.editor.user_input.data[1]));
-        } else if (strcmp(smacs.editor.user_input.data, "s") == 0) {
+        } else if (starts_with(data, "b") && data_len > 2) {
+            editor_switch_buffer(&smacs.editor, (size_t) atoi(&data[1]));
+        } else if (starts_with(data, "n") && data_len > 2) {
+            editor_goto_line_forward(&smacs.editor, (size_t) atoi(&data[1]));
+        } else if (starts_with(data, "p") && data_len > 2) {
+            editor_goto_line_backward(&smacs.editor, (size_t) atoi(&data[1]));
+        } else if (starts_with(data, ":") && data_len > 2) {
+            editor_goto_line(&smacs.editor, (size_t) atoi(&data[1]));
+        } else if (strcmp(data, "s") == 0) {
             if (editor_save(&smacs.editor) == 0) {
                 sprintf(smacs.notification, "Saved");
                 *message_timeout = MESSAGE_TIMEOUT;
@@ -353,6 +357,7 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         } else {
             fprintf(stderr, "Unknown cmd %s\n", smacs.editor.user_input.data);
         }
+
         editor_user_input_clear(&smacs.editor);
         break;
     }

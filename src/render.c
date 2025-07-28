@@ -204,7 +204,6 @@ void render_draw_smacs(Smacs *smacs)
         line_number = (char*) calloc(line_number_len, sizeof(char));
         render_format_line_number_padding(&line_number, line_number_len, max_line_num);
 
-
         TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
         common_indention = pane->x + char_w * 2;
         text_indention = common_indention + char_w * strlen(line_number) + (char_w * 1);
@@ -241,8 +240,8 @@ void render_draw_smacs(Smacs *smacs)
                 is_line_region = is_active_pane &&
                     smacs->editor.selection &&
                     ((line.start <= region_beg && region_beg <= line.end) ||
-                     (line.start < region_end && region_end <= line.end) ||
-                     (region_beg < line.start && region_end > line.end));
+                     (line.start <  region_end && region_end <= line.end) ||
+                     (region_beg <  line.start && region_end >  line.end));
 
                 if (is_line_region) {
                     if (region_beg < line.start) {
@@ -307,7 +306,7 @@ void render_draw_smacs(Smacs *smacs)
 
                                 if (region_end == line.end || region_end > ci) {
                                     TTF_SizeUTF8(smacs->font, sb->data, &x, NULL);
-                                    region_rect.w = text_indention + x - region_rect.x;
+                                    region_rect.w = pane->w - region_rect.x;
                                 }
 
                                 SDL_SetRenderDrawColor(smacs->renderer, smacs->rg.r, smacs->rg.g, smacs->rg.b, smacs->rg.a);
@@ -328,7 +327,7 @@ void render_draw_smacs(Smacs *smacs)
                     region_rect.y = content_hight;
 
                     if (region_end > line.end) {
-                        region_rect.w = win_w;
+                        region_rect.w = pane->w - region_rect.x;
                     }
 
                     if (region_end == line.end) {

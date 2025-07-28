@@ -9,6 +9,8 @@ bool starts_with(char *a, char *b)
     size_t len;
 
     len = strlen(b);
+    if (a == NULL || b == NULL) return false;
+    if (strlen(a) < len) return false;
 
     return strncmp(a, b, len) == 0;
 }
