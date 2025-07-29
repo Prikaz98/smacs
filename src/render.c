@@ -114,7 +114,7 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
             pane.buffer->need_to_save ? "*" : "",
             pane.buffer->file_path,
             !is_active_pane ? "" : smacs->editor.reverse_searching ? "Re-" : "",
-            !is_active_pane ? "" : smacs->editor.searching ? "Search[:enter next :C-g stop]" : smacs->editor.extend_command ? "M-x" : "");
+            !is_active_pane ? "" : smacs->editor.searching ? "Search[:enter next :C-g stop]" : smacs->editor.extend_command ? "C-x" : "");
 
     render_draw_text(smacs, mode_line_padding, win_h - (char_h * 2), mode_line_info, smacs->mlfg);
 }
@@ -184,6 +184,7 @@ void render_draw_smacs(Smacs *smacs)
     SDL_Rect cursor_rect, region_rect;
     bool is_line_region, is_active_pane;
     Pane *pane;
+    TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
 
     for (pi = 0; pi < smacs->editor.panes_len; ++pi) {
         pane = &smacs->editor.panes[pi];
@@ -204,7 +205,6 @@ void render_draw_smacs(Smacs *smacs)
         line_number = (char*) calloc(line_number_len, sizeof(char));
         render_format_line_number_padding(&line_number, line_number_len, max_line_num);
 
-        TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
         common_indention = pane->x + char_w * 2;
         text_indention = common_indention + char_w * strlen(line_number) + (char_w * 1);
         cursor_rect = (SDL_Rect) {text_indention, 0, char_w, char_h};
@@ -228,7 +228,9 @@ void render_draw_smacs(Smacs *smacs)
             content_hight = 0;
 
             for (li = 0; (li + arena.start) < arena_end; ++li) {
-                line = lines[content_line_index++];
+                line = lines[content_line_index];
+				if (content_line_index == (pane->buffer->lines_count-1) && line.start == line.end) continue;
+				++content_line_index;
 
                 render_format_display_line_number(smacs, &line_number, line_number_len, content_line_index, current_line);
                 if (current_line == content_line_index) {

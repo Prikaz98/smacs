@@ -48,20 +48,20 @@ Bindings:
 - C-= font size increase
 
 Extended commands:
-- M-x s    Enter - save file
-- M-x :{N} Enter - go to line {N}
-- M-x n{N} Enter - go to Next {N} line
-- M-x p{N} Enter - go to Previous {N} line
+- C-x s    Enter - save file
+- C-x :{N} Enter - go to line {N}
+- C-x n{N} Enter - go to Next {N} line
+- C-x p{N} Enter - go to Previous {N} line
 
-- M-x ff {file_path} Enter - open new file by {file_path} as a new buffer
+- C-x ff {file_path} Enter - open new file by {file_path} as a new buffer
 
-- M-x bl    Enter - show Buffers List
-- M-x b{N}  Enter - switch to buffer {N}
-- M-x bk{N} Enter - kill buffer {N}
+- C-x bl    Enter - show Buffers List
+- C-x b{N}  Enter - switch to buffer {N}
+- C-x bk{N} Enter - kill buffer {N}
 
-- M-x sp Enter - split pane (now allowed only 3 horizontal slitted panes)
-- M-x pn Enter - next pane
-- M-x pk Enter - kill current pane
+- C-x sp Enter - split pane (now allowed only 3 horizontal slitted panes)
+- C-x pn Enter - next pane
+- C-x pk Enter - kill current pane
 
 # Thanks
 Everything works using [SDL](https://www.libsdl.org/).

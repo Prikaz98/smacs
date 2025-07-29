@@ -13,7 +13,7 @@
 
 #define SCREEN_WIDTH    1200
 #define SCREEN_HEIGHT   1000
-#define FONT_SIZE       12
+#define FONT_SIZE       17
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define NEWLINE         "\n"
@@ -72,7 +72,7 @@ int smacs_launch(char *ttf_path, char *file_path)
     bool quit = false;
     message_timeout = 0;
 
-    themes_mindre(&smacs); // alternatives: [themes_naysayer, themes_mindre]
+    themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre]
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.editor = (Editor) {0};
@@ -99,22 +99,12 @@ int smacs_launch(char *ttf_path, char *file_path)
         case SDL_QUIT:
             quit = true;
             break;
-        case SDL_TEXTINPUT:
-            if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
-
-            if (smacs.editor.searching || smacs.editor.extend_command) {
-                editor_user_input_insert(&smacs.editor, event.text.text);
-            } else {
-                editor_insert(&smacs.editor, event.text.text);
-            }
-            break;
         case SDL_MOUSEWHEEL:
             editor_mwheel_scroll(&smacs.editor, event.wheel.y);
             break;
         case SDL_KEYDOWN:
             if (search_mapping(event, &message_timeout)) break;
             if (extend_command_mapping(event, &message_timeout)) break;
-
             ctrl_leader_mapping(event);
             alt_leader_mapping(event);
 
@@ -132,6 +122,15 @@ int smacs_launch(char *ttf_path, char *file_path)
             case SDLK_TAB:
                 editor_insert(&smacs.editor, TAB);
                 break;
+            }
+            break;
+        case SDL_TEXTINPUT:
+            if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
+
+            if (smacs.editor.searching || smacs.editor.extend_command) {
+                editor_user_input_insert(&smacs.editor, event.text.text);
+            } else {
+                editor_insert(&smacs.editor, event.text.text);
             }
             break;
         }
@@ -225,14 +224,14 @@ void ctrl_leader_mapping(SDL_Event event)
         case SDLK_w:
             editor_cut(&smacs.editor);
             break;
-        case SDLK_x:
-            editor_user_extend_command(&smacs.editor);
-            break;
         case SDLK_EQUALS:
             TTF_SetFontSize(smacs.font, ++smacs.font_size);
             break;
         case SDLK_MINUS:
             TTF_SetFontSize(smacs.font, --smacs.font_size);
+            break;
+        case SDLK_x:
+            editor_user_extend_command(&smacs.editor);
             break;
         }
     }
@@ -288,7 +287,7 @@ void alt_leader_mapping(SDL_Event event)
 bool extend_command_mapping(SDL_Event event, int *message_timeout)
 {
     size_t i, data_len;
-	char *data;
+    char *data;
 
     if (!smacs.editor.extend_command) return false;
 
@@ -308,8 +307,8 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         editor_user_input_delete_backward(&smacs.editor);
         break;
     case SDLK_RETURN:
-		data = smacs.editor.user_input.data;
-		data_len = strlen(data);
+        data = smacs.editor.user_input.data;
+        data_len = strlen(data);
 
         if (starts_with(data, "ff") && data_len > 4) {
             editor_read_file(&smacs.editor, &data[3]);
