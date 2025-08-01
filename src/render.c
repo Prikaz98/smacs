@@ -69,6 +69,14 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
     int win_w, win_h, char_w, char_h, mode_line_padding, mini_buffer_padding;
     char *mini_buffer_content;
     char mode_line_info[1000] = {0};
+    SDL_Color mlbg, mlfg;
+
+    mlbg = smacs->mlbg;
+    mlfg = smacs->mlfg;
+    if (!is_active_pane) {
+        mlbg = smacs->mlfg;
+        mlfg = smacs->mlbg;
+    }
 
     TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
     SDL_GetWindowSize(smacs->window, &win_w, &win_h);
@@ -80,17 +88,15 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
     mode_line_padding = char_w + pane.x;
     mini_buffer_padding = char_w;
 
-    SDL_SetRenderDrawColor(smacs->renderer, smacs->mlbg.r, smacs->mlbg.g, smacs->mlbg.b, smacs->mlbg.a);
+    SDL_SetRenderDrawColor(smacs->renderer, mlbg.r, mlbg.g, mlbg.b, mlbg.a);
     SDL_RenderFillRect(smacs->renderer, &mode_line);
 
     SDL_SetRenderDrawColor(smacs->renderer, smacs->bg.r, smacs->bg.g, smacs->bg.b, smacs->bg.a);
     SDL_RenderFillRect(smacs->renderer, &user_input_rect);
 
-    SDL_SetRenderDrawColor(smacs->renderer, smacs->mlfg.r, smacs->mlfg.g, smacs->mlfg.b, smacs->mlfg.a);
-    SDL_RenderDrawLine(smacs->renderer, 0, mode_line.y, mode_line.w, mode_line.y);
-
-    SDL_SetRenderDrawColor(smacs->renderer, smacs->mlfg.r, smacs->mlfg.g, smacs->mlfg.b, smacs->mlfg.a);
-    SDL_RenderDrawLine(smacs->renderer, 0, win_h - char_h, mode_line.w, win_h - char_h);
+    SDL_SetRenderDrawColor(smacs->renderer, mlfg.r, mlfg.g, mlfg.b, mlfg.a);
+    SDL_RenderDrawLine(smacs->renderer, pane.x, mode_line.y, mode_line.w, mode_line.y);
+    SDL_RenderDrawLine(smacs->renderer, pane.x, win_h - char_h, mode_line.w, win_h - char_h);
 
     if (is_active_pane) {
         if (smacs->editor.searching || smacs->editor.extend_command) {
@@ -116,7 +122,7 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
             !is_active_pane ? "" : smacs->editor.reverse_searching ? "Re-" : "",
             !is_active_pane ? "" : smacs->editor.searching ? "Search[:enter next :C-g stop]" : smacs->editor.extend_command ? "C-x" : "");
 
-    render_draw_text(smacs, mode_line_padding, win_h - (char_h * 2), mode_line_info, smacs->mlfg);
+    render_draw_text(smacs, mode_line_padding, win_h - (char_h * 2), mode_line_info, mlfg);
 }
 
 int count_digits(size_t num)
@@ -182,7 +188,7 @@ void render_draw_smacs(Smacs *smacs)
     StringBuilder *sb;
     char *data, *line_number;
     SDL_Rect cursor_rect, region_rect;
-    bool is_line_region, is_active_pane;
+    bool is_line_region, is_active_pane, skip_line;
     Pane *pane;
     TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
 
@@ -229,8 +235,13 @@ void render_draw_smacs(Smacs *smacs)
 
             for (li = 0; (li + arena.start) < arena_end; ++li) {
                 line = lines[content_line_index];
-				if (content_line_index == (pane->buffer->lines_count-1) && line.start == line.end) continue;
-				++content_line_index;
+
+                skip_line = false;
+                if (content_line_index == (pane->buffer->lines_count-1) && line.start == line.end) skip_line = true;
+                if (content_line_index == (current_line - 1)) skip_line = false;
+
+                if (skip_line) break;
+                ++content_line_index;
 
                 render_format_display_line_number(smacs, &line_number, line_number_len, content_line_index, current_line);
                 if (current_line == content_line_index) {
@@ -277,11 +288,11 @@ void render_draw_smacs(Smacs *smacs)
                             if (is_line_region && region_beg <= ci && region_end > ci) {
                                 sb_append(sb, (char)0xC2);
                                 sb_append(sb, (char)0xBB);
-                                for (i = 0; i < 3; ++i) sb_append(sb, ' ');
+                                for (i = 1; i < smacs->tab_size; ++i) sb_append(sb, ' ');
                                 break;
                             }
 
-                            for (i = 0; i < 4; ++i) sb_append(sb, ' ');
+                            for (i = 0; i < smacs->tab_size; ++i) sb_append(sb, ' ');
                             break;
                         case ' ':
                             //"·"

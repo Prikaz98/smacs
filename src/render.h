@@ -29,6 +29,7 @@ typedef struct {
     SDL_Color cfg;
 
     int leading;
+    int tab_size;
 
     enum LineNumberFormat line_number_format;
     char *notification;

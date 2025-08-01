@@ -87,6 +87,7 @@ int smacs_launch(char *ttf_path, char *file_path)
     smacs.editor.pane->arena = (Arena) {0, SCREEN_HEIGHT / smacs.font_size};
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
     smacs.leading = LEADING;
+    smacs.tab_size = TAB_SIZE;
 
     SDL_Event event = {0};
 
