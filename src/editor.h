@@ -87,6 +87,15 @@ typedef struct {
 
 #define PANES_MAX_SIZE 3
 
+typedef enum {
+    NONE            = 0x000,
+    SELECTION       = 0x001,
+    FORWARD_SEARCH  = 0x040,
+    BACKWARD_SEARCH = 0x080,
+    EXTEND_COMMAND  = 0x100,
+    SEARCH          = FORWARD_SEARCH | BACKWARD_SEARCH,
+} Editor_State;
+
 typedef struct {
     Pane panes[PANES_MAX_SIZE];
     size_t panes_len;
@@ -95,10 +104,7 @@ typedef struct {
 
     size_t mark;
 
-    bool selection;
-    bool searching;
-    bool reverse_searching;
-    bool extend_command;
+    Editor_State state;
     StringBuilder user_input;
     Buffer_List buffer_list;
 } Editor;

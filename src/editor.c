@@ -53,7 +53,7 @@ void editor_delete_backward(Editor *editor)
     buf = editor->pane->buffer;
     content = &buf->content;
 
-    if (editor->selection) {
+    if (editor->state == SELECTION) {
         reg_beg = MIN(editor->mark, editor->pane->position);
         reg_end = MAX(editor->mark, editor->pane->position);
         delete_len = reg_end - reg_beg;
@@ -73,7 +73,7 @@ void editor_delete_backward(Editor *editor)
     memset(&content->data[content->len], 0, content->capacity - content->len);
 
     editor_determine_lines(editor);
-    editor->selection = false;
+    editor->state = NONE;
     editor->pane->buffer->need_to_save = true;
 }
 
@@ -83,7 +83,7 @@ void editor_delete_forward(Editor *editor)
     Buffer *buf;
     Content *content;
 
-    if (editor->selection) {
+    if (editor->state == SELECTION) {
         editor_delete_backward(editor);
         return;
     }
@@ -97,7 +97,7 @@ void editor_delete_forward(Editor *editor)
     content->len -= char_len;
 
     editor_determine_lines(editor);
-    editor->selection = false;
+    editor->state = NONE;
     editor->pane->buffer->need_to_save = true;
 }
 
@@ -115,7 +115,7 @@ void editor_insert(Editor *editor, char *str)
         return;
     }
 
-    if (editor->selection) {
+    if (editor->state == SELECTION) {
         editor_delete_backward(editor);
     }
 
@@ -127,7 +127,7 @@ void editor_insert(Editor *editor, char *str)
     editor->pane->position += str_size;
     editor->pane->buffer->need_to_save = true;
     editor_determine_lines(editor);
-    editor->selection = false;
+    editor->state = NONE;
 }
 
 size_t editor_get_current_line_number(Pane *pane)
@@ -386,7 +386,7 @@ void editor_kill_line(Editor *editor)
     }
 
     editor_determine_lines(editor);
-    editor->selection = false;
+    editor->state = NONE;
 }
 
 void editor_destory_buffer(Buffer *buf)
@@ -529,7 +529,7 @@ void editor_mwheel_scroll(Editor *editor, Sint32 y)
 void editor_set_mark(Editor *editor)
 {
     editor->mark = editor->pane->position;
-    editor->selection = true;
+    editor->state = SELECTION;
 }
 
 void editor_copy_to_clipboard(Editor *editor)
@@ -537,7 +537,7 @@ void editor_copy_to_clipboard(Editor *editor)
     char *copy;
     size_t len, reg_beg;
 
-    if (!editor->selection) return;
+    if (editor->state != SELECTION) return;
 
     reg_beg = MIN(editor->mark, editor->pane->position);
     len = MAX(editor->mark, editor->pane->position) - reg_beg;
@@ -554,7 +554,7 @@ void editor_copy_to_clipboard(Editor *editor)
 
 void editor_cut(Editor *editor)
 {
-    if (!editor->selection) return;
+    if (editor->state != SELECTION) return;
 
     editor_copy_to_clipboard(editor);
     editor_delete_backward(editor);
@@ -566,7 +566,7 @@ void editor_paste(Editor *editor)
 
     if (!SDL_HasClipboardText()) return;
 
-    if (editor->selection) {
+    if (editor->state == SELECTION) {
         editor_delete_backward(editor);
     }
 
@@ -607,9 +607,7 @@ void editor_user_input_clear(Editor *editor)
     sb = &editor->user_input;
 
     sb_clean(sb);
-    editor->searching = false;
-    editor->reverse_searching = false;
-    editor->extend_command = false;
+    editor->state = NONE;
 }
 
 void editor_user_search_forward(Editor *editor)
@@ -618,7 +616,7 @@ void editor_user_search_forward(Editor *editor)
 
     sb = &editor->user_input;
 
-    editor->searching = true;
+    editor->state = FORWARD_SEARCH;
     sb_clean(sb);
 }
 
@@ -627,9 +625,8 @@ void editor_user_search_backward(Editor *editor)
     StringBuilder *sb;
 
     sb = &editor->user_input;
-    editor->searching = true;
-    editor->reverse_searching = true;
 
+    editor->state = BACKWARD_SEARCH;
     sb_clean(sb);
 }
 
@@ -638,7 +635,7 @@ void editor_user_extend_command(Editor *editor)
     StringBuilder *sb;
 
     sb = &editor->user_input;
-    editor->extend_command = true;
+    editor->state = EXTEND_COMMAND;
 
     sb_clean(sb);
 }
@@ -668,9 +665,10 @@ void editor_user_input_delete_backward(Editor *editor)
 
 bool editor_user_search_next(Editor *editor, char *notification)
 {
-    size_t i, to_find_len;
+    size_t to_find_len;
     char *to_find;
-    char *tmp;
+    long i, threshold;
+    bool forward;
 
     to_find = editor->user_input.data;
 
@@ -678,34 +676,34 @@ bool editor_user_search_next(Editor *editor, char *notification)
     if (strlen(to_find) == 0) return false;
 
     to_find_len = strlen(to_find);
-    tmp = calloc(to_find_len, sizeof(char));
+    forward = true;
 
-    if (editor->reverse_searching) {
-        for (i = editor->pane->position - 1; i > 0; --i) {
-            memcpy(tmp, &editor->pane->buffer->content.data[i], to_find_len);
-            if (strcmp(tmp, to_find) == 0) {
-                editor_goto_point(editor, i);
-                editor_recognize_arena(editor);
-                free(tmp);
-                return true;
-            }
+    switch (editor->state) {
+    case BACKWARD_SEARCH:
+        forward = false;
+        i = (long) editor->pane->position - 1;
+        threshold = 0;
+        break;
+    case FORWARD_SEARCH:
+        i = (long) editor->pane->position + 1;
+        threshold = editor->pane->buffer->content.len;
+        break;
+    default:
+        return false;
+    }
+
+    while (i != threshold) {
+        if (strncasecmp(&editor->pane->buffer->content.data[i], to_find, to_find_len) == 0) {
+            editor_goto_point(editor, i);
+            editor_recognize_arena(editor);
+            return true;
         }
-    } else {
-        for (i = editor->pane->position + 1; i < editor->pane->buffer->content.len; ++i) {
-            memcpy(tmp, &editor->pane->buffer->content.data[i], to_find_len);
-            if (strcmp(tmp, to_find) == 0) {
-                editor_goto_point(editor, i);
-                editor_recognize_arena(editor);
-                free(tmp);
-                return true;
-            }
-        }
+        i += forward ? 1 : -1;
     }
 
     sprintf(notification, "Not found: %s", to_find);
     editor_user_input_clear(editor);
 
-    free(tmp);
     return false;
 }
 
@@ -730,10 +728,7 @@ void editor_goto_line_backward(Editor *editor, size_t line)
 
 bool editor_is_editing_text(Editor *editor)
 {
-    return !editor->selection ||
-        !editor->searching ||
-        !editor->reverse_searching ||
-        !editor->extend_command;
+    return editor->state == NONE;
 }
 
 void editor_move_line_down(Editor *editor)
@@ -827,8 +822,9 @@ void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
 {
     size_t i;
     --buf_index;
-    if (&editor->buffer_list.buffers[buf_index] == editor->pane->buffer) return;
+
     if (buf_index >= editor->buffer_list.len) return;
+    if (&editor->buffer_list.buffers[buf_index] == editor->pane->buffer) return;
 
     editor_destory_buffer(&editor->buffer_list.buffers[buf_index]);
 
@@ -846,7 +842,7 @@ void editor_mark_forward_word(Editor *editor)
 
     pos = editor->pane->position;
 
-    if (editor->selection) {
+    if (editor->state == SELECTION) {
         editor_goto_point(editor, MAX(editor->pane->position, editor->mark));
     }
 
@@ -854,7 +850,7 @@ void editor_mark_forward_word(Editor *editor)
 
     editor->mark = editor->pane->position;
     editor_goto_point(editor, pos);
-    editor->selection = true;
+    editor->state = SELECTION;
 }
 
 void editor_delete_word_forward(Editor *editor)
@@ -976,12 +972,12 @@ void editor_wrap_region_in_parens(Editor *editor)
 {
     size_t reg_beg, reg_end;
 
-    if (!editor->selection) return;
+    if (editor->state != SELECTION) return;
 
     reg_beg = MIN(editor->mark, editor->pane->position);
     reg_end = MAX(editor->mark, editor->pane->position);
 
-    editor->selection = false;
+    editor->state = NONE;
     editor_goto_point(editor, reg_end);
     editor_insert(editor, ")");
 

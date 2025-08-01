@@ -16,10 +16,11 @@
 #define FONT_SIZE       17
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
+#define LEADING         2    /* space between raws */
+
 #define NEWLINE         "\n"
 #define SPACE           " "
 #define TAB             "\t"
-#define LEADING         1
 
 const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE; //[ABSOLUTE, RELATIVE]
 
@@ -29,7 +30,6 @@ static Smacs smacs = {0};
 //TODO: M-& emacs command
 //TODO: Multicursor
 //TODO: undo/redo
-//TODO: paren wrap function M-(
 
 void ctrl_leader_mapping(SDL_Event event);
 void alt_leader_mapping(SDL_Event event);
@@ -111,7 +111,7 @@ int smacs_launch(char *ttf_path, char *file_path)
 
             switch (event.key.keysym.sym) {
             case SDLK_BACKSPACE:
-                if (smacs.editor.searching) {
+                if (smacs.editor.state & SEARCH) {
                     editor_user_input_delete_backward(&smacs.editor);
                 } else {
                     editor_delete_backward(&smacs.editor);
@@ -128,7 +128,7 @@ int smacs_launch(char *ttf_path, char *file_path)
         case SDL_TEXTINPUT:
             if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
 
-            if (smacs.editor.searching || smacs.editor.extend_command) {
+            if (smacs.editor.state & (SEARCH | EXTEND_COMMAND)) {
                 editor_user_input_insert(&smacs.editor, event.text.text);
             } else {
                 editor_insert(&smacs.editor, event.text.text);
@@ -207,7 +207,7 @@ void ctrl_leader_mapping(SDL_Event event)
             editor_set_mark(&smacs.editor);
             break;
         case SDLK_g:
-            smacs.editor.selection = false;
+            smacs.editor.state = NONE;
             editor_user_input_clear(&smacs.editor);
             break;
         case SDLK_y:
@@ -264,7 +264,7 @@ void alt_leader_mapping(SDL_Event event)
             break;
         case SDLK_w:
             editor_copy_to_clipboard(&smacs.editor);
-            smacs.editor.selection = false;
+            smacs.editor.state = NONE;
             break;
         case SDLK_n:
             editor_move_line_down(&smacs.editor);
@@ -290,7 +290,7 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
     size_t i, data_len;
     char *data;
 
-    if (!smacs.editor.extend_command) return false;
+    if ((smacs.editor.state & EXTEND_COMMAND) == 0) return false;
 
     if (event.key.keysym.mod & KMOD_CTRL) {
         switch (event.key.keysym.sym) {
@@ -308,6 +308,8 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         editor_user_input_delete_backward(&smacs.editor);
         break;
     case SDLK_RETURN:
+        //TODO: need to simplify this shit
+
         data = smacs.editor.user_input.data;
         data_len = strlen(data);
 
@@ -316,7 +318,7 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         } else if (starts_with(data, "bl")) {
             editor_print_buffers_names(&smacs.editor, smacs.notification);
             *message_timeout = MESSAGE_TIMEOUT;
-        } else if (starts_with(data, "bk") && data_len > 3) {
+        } else if (starts_with(data, "bk") && data_len > 2) {
             editor_kill_buffer(&smacs.editor, (size_t) atoi(&data[2]), smacs.notification);
             *message_timeout = MESSAGE_TIMEOUT;
         } else if (starts_with(data, "pn")) {
@@ -368,7 +370,7 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
 
 bool search_mapping(SDL_Event event, int *message_timeout)
 {
-    if (!smacs.editor.searching) return false;
+    if ((smacs.editor.state & SEARCH) == 0) return false;
 
     if (event.key.keysym.mod & KMOD_CTRL) {
         switch (event.key.keysym.sym) {

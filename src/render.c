@@ -99,7 +99,7 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
     SDL_RenderDrawLine(smacs->renderer, pane.x, win_h - char_h, mode_line.w, win_h - char_h);
 
     if (is_active_pane) {
-        if (smacs->editor.searching || smacs->editor.extend_command) {
+        if (smacs->editor.state & (SEARCH | EXTEND_COMMAND)) {
             mini_buffer_content = smacs->editor.user_input.data;
 
             render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content, smacs->fg);
@@ -119,8 +119,8 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
             "%s%s %s%s",
             pane.buffer->need_to_save ? "*" : "",
             pane.buffer->file_path,
-            !is_active_pane ? "" : smacs->editor.reverse_searching ? "Re-" : "",
-            !is_active_pane ? "" : smacs->editor.searching ? "Search[:enter next :C-g stop]" : smacs->editor.extend_command ? "C-x" : "");
+            !is_active_pane ? "" : smacs->editor.state & BACKWARD_SEARCH ? "Re-" : "",
+            !is_active_pane ? "" : smacs->editor.state & SEARCH ? "Search[:enter next :C-g stop]" : smacs->editor.state & EXTEND_COMMAND ? "C-x" : "");
 
     render_draw_text(smacs, mode_line_padding, win_h - (char_h * 2), mode_line_info, mlfg);
 }
@@ -251,7 +251,7 @@ void render_draw_smacs(Smacs *smacs)
                 }
 
                 is_line_region = is_active_pane &&
-                    smacs->editor.selection &&
+                    smacs->editor.state & SELECTION &&
                     ((line.start <= region_beg && region_beg <= line.end) ||
                      (line.start <  region_end && region_end <= line.end) ||
                      (region_beg <  line.start && region_end >  line.end));

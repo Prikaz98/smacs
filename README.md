@@ -8,6 +8,9 @@ Custom implementation of Emacs-like text editor.
 
 I like [Emacs](https://emacsdocs.org/) and I want to learn how this kind of app works internally.
 
+## Warning
+This app can not work correctly in Mac OS by some reason.
+
 ## Mappings
 
 In the following keybinding description I use standard Emacs key definition:
