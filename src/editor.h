@@ -151,7 +151,6 @@ void editor_duplicate_line(Editor *editor);
 void editor_move_line_up(Editor *editor);
 void editor_move_line_down(Editor *editor);
 
-//TODO: ignore case
 void editor_user_search_forward(Editor *editor);
 void editor_user_search_backward(Editor *editor);
 void editor_user_extend_command(Editor *editor);

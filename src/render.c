@@ -147,15 +147,11 @@ int count_digits(size_t num)
 
 void render_format_line_number_padding(char **buffer, size_t buffer_len, size_t num)
 {
-    char *padding;
     int to_fill;
 
+    memset(*buffer, ' ', buffer_len);
     to_fill = ((int) buffer_len) - count_digits(num);
-    padding = (char*) calloc(to_fill + 1, sizeof(char));
-    memset(padding, ' ', to_fill);
-    sprintf(*buffer, "%s%ld", padding, num);
-
-    free(padding);
+    sprintf(&(*buffer)[to_fill], "%ld", num);
 }
 
 void render_format_display_line_number(Smacs *smacs, char **buffer, size_t buffer_len, size_t num, size_t cursor_line_num)
