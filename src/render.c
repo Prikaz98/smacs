@@ -259,20 +259,18 @@ void render_draw_smacs(Smacs *smacs)
                 }
 
                 for (ci = line.start; ci <= line.end; ++ci) {
+                    TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
                     if (is_line_region) {
                         if (region_beg == ci) {
-                            TTF_SizeUTF8(smacs->font, sb->data, &x, NULL);
                             region_rect.x = text_indention + x;
                         }
 
                         if (region_end == ci) {
-                            TTF_SizeUTF8(smacs->font, sb->data, &x, NULL);
                             region_rect.w = text_indention + x - region_rect.x;
                         }
                     }
 
                     if (cursor == ci) {
-                        TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
                         cursor_rect.x = text_indention + x;
                         cursor_rect.y = content_hight;
                     }
@@ -309,7 +307,7 @@ void render_draw_smacs(Smacs *smacs)
                         }
 
                         sb_append(sb, 0);
-                        sb->len--;
+                        --sb->len;
                         TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
                         if (win_w < (text_indention + x)) {
                             if (is_line_region) {
@@ -342,7 +340,6 @@ void render_draw_smacs(Smacs *smacs)
                     }
 
                     if (region_end == line.end) {
-                        TTF_SizeUTF8(smacs->font, sb->data, &x, NULL);
                         region_rect.w = text_indention + x - region_rect.x;
                     }
 
@@ -367,7 +364,6 @@ void render_draw_smacs(Smacs *smacs)
 
         SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
         SDL_RenderDrawLine(smacs->renderer, pane->w, 0, pane->w, pane->h);
-
     }
 
     free(line_number);
