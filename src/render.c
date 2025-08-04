@@ -204,7 +204,7 @@ void render_draw_smacs(Smacs *smacs)
         current_line = editor_get_current_line_number(pane) + 1;
         max_line_num = arena.start + arena.show_lines;
         line_number_len = count_digits(max_line_num);
-        line_number = (char*) calloc(line_number_len, sizeof(char));
+        line_number = (char*) calloc(line_number_len + 1, sizeof(char));
         render_format_line_number_padding(&line_number, line_number_len, max_line_num);
 
         common_indention = pane->x + char_w * 2;
@@ -308,6 +308,8 @@ void render_draw_smacs(Smacs *smacs)
                             break;
                         }
 
+                        sb_append(sb, 0);
+                        sb->len--;
                         TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
                         if (win_w < (text_indention + x)) {
                             if (is_line_region) {

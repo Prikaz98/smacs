@@ -9,36 +9,10 @@ typedef struct {
 
 #define SB_CAP_INIT 100
 
-#define sb_append(sb, ch)                                               \
-    do {                                                                \
-        if (sb->len >= sb->cap) {                                       \
-            sb->cap = sb->cap == 0 ? SB_CAP_INIT : sb->cap * 2;         \
-            sb->data = realloc(sb->data, sb->cap * sizeof(*sb->data));  \
-            memset(&sb->data[sb->len], 0, sb->cap - sb->len);           \
-        }                                                               \
-        sb->data[sb->len++] = ch;                                       \
-    } while(0)
-
-#define sb_append_many(sb, str)                    \
-    do {                                           \
-        for (size_t z = 0; z < strlen(str); ++z) { \
-            sb_append(sb, str[z]);                 \
-        }                                          \
-    } while(0)
-
-#define sb_clean(sb)                            \
-    do {                                        \
-        sb->len = 0;                            \
-        memset(&sb->data[sb->len], 0, sb->cap); \
-    } while(0)
-
-#define sb_free(sb)                             \
-    do {                                        \
-        free(sb->data);                         \
-        sb->len = 0;                            \
-        sb->cap = 0;                            \
-    } while(0)
-
+void sb_append(StringBuilder *sb, char ch);
+void sb_append_many(StringBuilder *sb, char *str);
+void sb_clean(StringBuilder *sb);
+void sb_free(StringBuilder *sb);
 
 /**
  * a starts_with b
@@ -47,6 +21,6 @@ bool starts_with(char *a, char *b);
 /**
  * cast utf8 char sequence to an interger value
  */
-int utf8_chars_to_int(char *str, int len);
+uint32_t utf8_chars_to_int(char *str, int len);
 
 #endif

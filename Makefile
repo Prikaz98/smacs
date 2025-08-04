@@ -2,11 +2,11 @@ PKGS=sdl2
 PKG_FLAGS:=$(shell pkg-config --cflags $(PKGS))
 PKG_LIBS:=$(shell pkg-config --libs $(PKGS))
 SDL2_LIBS:=-lSDL2_ttf
-CFLAGS:=-Wall -Wextra -std=c11 -pedantic -ggdb
+CFLAGS:=-Wall -Wextra -std=c11 -pedantic -ggdb #-fsanitize=address,undefined
 SOURCES:=./src/common.c ./src/utf8.c ./src/editor.c ./src/themes.c ./src/render.c ./src/smacs.c
 EXEC:=smacs
-#TTF_FILE:=fonts/IosevkaFixed-Medium.ttf
-TTF_FILE:=fonts/Consolas.ttf
+TTF_FILE:=fonts/IosevkaFixed-Medium.ttf
+#TTF_FILE:=fonts/Consolas.ttf
 
 build:
 	PWD=$(shell pwd)

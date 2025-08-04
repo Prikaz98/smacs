@@ -11,8 +11,6 @@
 #include "themes.h"
 #include "common.h"
 
-#define SCREEN_WIDTH    1200
-#define SCREEN_HEIGHT   1000
 #define FONT_SIZE       17
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
@@ -57,7 +55,7 @@ int smacs_launch(char *ttf_path, char *file_path)
         return 1;
     }
 
-    smacs.window = SDL_CreateWindow("smacs", 100, 100, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
+    smacs.window = SDL_CreateWindow("smacs", 0, 0, 0, 0, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
     if (smacs.window == NULL) {
         fprintf(stderr, "Could not open SDL window: %s\n", SDL_GetError());
         return 1;
@@ -84,7 +82,8 @@ int smacs_launch(char *ttf_path, char *file_path)
 
     smacs.editor.buffer_list = (Buffer_List) {0};
     editor_read_file(&smacs.editor, file_path);
-    smacs.editor.pane->arena = (Arena) {0, SCREEN_HEIGHT / smacs.font_size};
+    SDL_GetWindowSize(smacs.window, &win_w, &win_h);
+    smacs.editor.pane->arena = (Arena) {0, win_h / smacs.font_size};
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
     smacs.leading = LEADING;
     smacs.tab_size = TAB_SIZE;

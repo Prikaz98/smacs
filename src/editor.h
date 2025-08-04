@@ -36,43 +36,11 @@ typedef struct {
     bool need_to_save;
 } Buffer;
 
-#define buf_line_append(buf, ln)                                                            \
-    do {                                                                                    \
-        if (buf->lines_count >= buf->lines_cap) {                                           \
-            buf->lines_cap = buf->lines_cap == 0 ? 10 : buf->lines_cap * 2; \
-            buf->lines = realloc(buf->lines, buf->lines_cap * sizeof(*buf->lines));         \
-            memset(&buf->lines[buf->lines_count], 0, buf->lines_cap - buf->lines_count);    \
-        }                                                                                   \
-        buf->lines[buf->lines_count++] = ln;                                                \
-    } while(0)
-
-#define buf_line_clean(buf)                                       \
-    do {                                                          \
-        buf->lines_count = 0;                                     \
-        memset(&buf->lines[buf->lines_count], 0, buf->lines_cap); \
-    } while(0)
-
 typedef struct {
     Buffer *buffers;
     size_t len;
     size_t cap;
 } Buffer_List;
-
-#define buffer_list_append(bl, buf)                                             \
-    do {                                                                        \
-        if (bl->len >= bl->cap) {                                               \
-            bl->cap = bl->cap == 0 ? 5 : bl->cap * 2;                           \
-            bl->buffers = realloc(bl->buffers, bl->cap * sizeof(*bl->buffers)); \
-            memset(&bl->buffers[bl->len], 0, bl->cap - bl->len);                \
-        }                                                                       \
-        bl->buffers[bl->len++] = buf;                                           \
-    } while(0)
-
-#define buffer_list_clean(bl)                      \
-    do {                                           \
-        bl->len = 0;                               \
-        memset(&bl->buffers[bl->len], 0, bl->cap); \
-    } while(0)
 
 typedef struct {
     Buffer *buffer;

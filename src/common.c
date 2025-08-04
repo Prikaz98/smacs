@@ -1,8 +1,42 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
 #include <stdint.h>
+
+#include "common.h"
+
+void sb_append(StringBuilder *sb, char ch)
+{
+    if (sb->len >= sb->cap) {
+        sb->cap = sb->cap == 0 ? SB_CAP_INIT : sb->cap * 2;
+        sb->data = (char*) realloc(sb->data, sb->cap * sizeof(*sb->data));
+        memset(&sb->data[sb->len], 0, sb->cap - sb->len);
+    }
+    sb->data[sb->len++] = ch;
+}
+
+void sb_append_many(StringBuilder *sb, char *str)
+{
+    for (size_t i = 0; i < strlen(str); ++i) {
+        sb_append(sb, str[i]);
+    }
+}
+
+void sb_clean(StringBuilder *sb)
+{
+    sb->len = 0;
+    if (sb->cap) memset(&sb->data[sb->len], 0, sb->cap);
+}
+
+void sb_free(StringBuilder *sb)
+{
+    free(sb->data);
+    sb->data = NULL;
+    sb->len = 0;
+    sb->cap = 0;
+}
 
 bool starts_with(char *a, char *b)
 {

@@ -257,6 +257,41 @@ void editor_move_begginning_of_line(Editor *editor)
     }
 }
 
+void buffer_list_append(Buffer_List *bl, Buffer buf)
+{
+    if (bl->len >= bl->cap) {
+        bl->cap = bl->cap == 0 ? 5 : bl->cap * 2;
+        bl->buffers = realloc(bl->buffers, bl->cap * sizeof(*bl->buffers));
+        memset(&bl->buffers[bl->len], 0, bl->cap - bl->len);
+    }
+    bl->buffers[bl->len++] = buf;
+}
+
+void buffer_list_clean(Buffer_List *bl)
+{
+    bl->len = 0;
+    bl->cap = 0;
+    memset(&bl->buffers[bl->len], 0, bl->cap);
+}
+
+void buf_line_append(Buffer *buf, Line ln)
+{
+    if (buf->lines_count >= buf->lines_cap) {
+        buf->lines_cap = buf->lines_cap == 0 ? 10 : buf->lines_cap * 2;
+        buf->lines = realloc(buf->lines, buf->lines_cap * sizeof(*buf->lines));
+        memset(&buf->lines[buf->lines_count], 0, buf->lines_cap - buf->lines_count);
+    }
+    buf->lines[buf->lines_count++] = ln;
+}
+
+void buf_line_clean(Buffer *buf)
+{
+    if (buf == NULL) return;
+
+    buf->lines_count = 0;
+    if (buf->lines_cap) memset(&buf->lines[buf->lines_count], 0, buf->lines_cap);
+}
+
 void editor_determine_lines(Editor *editor)
 {
     size_t i, beg;
