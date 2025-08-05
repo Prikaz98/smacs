@@ -257,21 +257,11 @@ void editor_move_begginning_of_line(Editor *editor)
     }
 }
 
-void buffer_list_append(Buffer_List *bl, Buffer buf)
-{
-    if (bl->len >= bl->cap) {
-        bl->cap = bl->cap == 0 ? 5 : bl->cap * 2;
-        bl->buffers = realloc(bl->buffers, bl->cap * sizeof(*bl->buffers));
-        memset(&bl->buffers[bl->len], 0, bl->cap - bl->len);
-    }
-    bl->buffers[bl->len++] = buf;
-}
-
 void buffer_list_clean(Buffer_List *bl)
 {
     bl->len = 0;
     bl->cap = 0;
-    memset(&bl->buffers[bl->len], 0, bl->cap);
+    memset(&bl->data[bl->len], 0, bl->cap);
 }
 
 void buf_line_append(Buffer *buf, Line ln)
@@ -357,13 +347,13 @@ Buffer* editor_create_buffer(Editor *editor, char *file_path)
     size_t i;
 
     for (i = 0; i < editor->buffer_list.len; ++i) {
-        if (strcmp(editor->buffer_list.buffers[i].file_path, file_path) == 0) {
-            return &editor->buffer_list.buffers[i];
+        if (strcmp(editor->buffer_list.data[i].file_path, file_path) == 0) {
+            return &editor->buffer_list.data[i];
         }
     }
 
-    buffer_list_append((&editor->buffer_list), ((Buffer) {0}));
-    return &editor->buffer_list.buffers[editor->buffer_list.len - 1];
+    gb_append((&editor->buffer_list), ((Buffer) {0}));
+    return &editor->buffer_list.data[editor->buffer_list.len - 1];
 }
 
 int editor_read_file(Editor *editor, char *file_path)
@@ -452,12 +442,12 @@ void editor_destroy(Editor *editor)
     }
 
     for (i = 0; i < editor->buffer_list.len; ++i) {
-        editor_destory_buffer(&editor->buffer_list.buffers[i]);
+        editor_destory_buffer(&editor->buffer_list.data[i]);
     }
 
     editor->buffer_list.len = 0;
-    free(editor->buffer_list.buffers);
-    editor->buffer_list.buffers = NULL;
+    free(editor->buffer_list.data);
+    editor->buffer_list.data = NULL;
 }
 
 void editor_recenter_top_bottom(Editor *editor)
@@ -684,13 +674,14 @@ void editor_user_extend_command(Editor *editor)
 
 void editor_user_input_insert(Editor *editor, char *text)
 {
-    size_t i;
+    size_t i, len;
     StringBuilder *sb;
 
     sb = &editor->user_input;
+    len = strlen(text);
 
-    for (i = 0; i < strlen(text); ++i) {
-        sb_append(sb, text[i]);
+    for (i = 0; i < len; ++i) {
+        gb_append(sb, text[i]);
     }
 }
 
@@ -831,21 +822,21 @@ void editor_print_buffers_names(Editor *editor, char *notification)
 
     str = &((StringBuilder) {0});
 
-    sb_append(str, '{');
+    gb_append(str, '{');
     for (i = 0; i < editor->buffer_list.len; ++i) {
         sprintf(buffer_index, "%ld", i+1);
         sb_append_many(str, buffer_index);
 
-        sb_append(str, ':');
-        sb_append_many(str, editor->buffer_list.buffers[i].file_path);
+        gb_append(str, ':');
+        sb_append_many(str, editor->buffer_list.data[i].file_path);
 
         if (i < (editor->buffer_list.len - 1)) {
-            sb_append(str, ' ');
-            sb_append(str, '|');
-            sb_append(str, ' ');
+            gb_append(str, ' ');
+            gb_append(str, '|');
+            gb_append(str, ' ');
         }
     }
-    sb_append(str, '}');
+    gb_append(str, '}');
 
     strcpy(notification, str->data);
     sb_free(str);
@@ -856,7 +847,7 @@ void editor_switch_buffer(Editor *editor, size_t buf_index)
     --buf_index;
     if (buf_index >= editor->buffer_list.len) return;
 
-    editor->pane->buffer = &editor->buffer_list.buffers[buf_index];
+    editor->pane->buffer = &editor->buffer_list.data[buf_index];
     editor_recognize_arena(editor);
 }
 
@@ -866,13 +857,13 @@ void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
     --buf_index;
 
     if (buf_index >= editor->buffer_list.len) return;
-    if (&editor->buffer_list.buffers[buf_index] == editor->pane->buffer) return;
+    if (&editor->buffer_list.data[buf_index] == editor->pane->buffer) return;
 
-    editor_destory_buffer(&editor->buffer_list.buffers[buf_index]);
+    editor_destory_buffer(&editor->buffer_list.data[buf_index]);
 
     --editor->buffer_list.len;
     for (i = buf_index; i < editor->buffer_list.len; ++i) {
-        editor->buffer_list.buffers[i] = editor->buffer_list.buffers[i+1];
+        editor->buffer_list.data[i] = editor->buffer_list.data[i+1];
     }
 
     sprintf(notification, "Buffer killed");

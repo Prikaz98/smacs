@@ -7,20 +7,25 @@
 
 #include "common.h"
 
-void sb_append(StringBuilder *sb, char ch)
+//TODO: Write it more smarter pls
+void *gb_append_(void *data, size_t *pcap, size_t size)
 {
-    if (sb->len >= sb->cap) {
-        sb->cap = sb->cap == 0 ? SB_CAP_INIT : sb->cap * 2;
-        sb->data = (char*) realloc(sb->data, sb->cap * sizeof(*sb->data));
-        memset(&sb->data[sb->len], 0, sb->cap - sb->len);
-    }
-    sb->data[sb->len++] = ch;
+    size_t prev_cap;
+    void *ptr;
+
+    prev_cap = *pcap;
+    *pcap = *pcap == 0 ? 10 : *pcap * 2;
+    ptr = realloc(data, *pcap * size);
+    if (*pcap) memset(((char*)ptr) + prev_cap, 0, *pcap - prev_cap);
+    return ptr;
 }
 
 void sb_append_many(StringBuilder *sb, char *str)
 {
-    for (size_t i = 0; i < strlen(str); ++i) {
-        sb_append(sb, str[i]);
+    size_t len = strlen(str);
+
+    for (size_t i = 0; i < len; ++i) {
+        gb_append(sb, str[i]);
     }
 }
 

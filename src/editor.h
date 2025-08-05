@@ -37,7 +37,7 @@ typedef struct {
 } Buffer;
 
 typedef struct {
-    Buffer *buffers;
+    Buffer *data;
     size_t len;
     size_t cap;
 } Buffer_List;
