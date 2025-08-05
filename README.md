@@ -70,3 +70,4 @@ Extended commands:
 Everything works using [SDL](https://www.libsdl.org/).
 
 Color theme in image inspired by [naysayer-theme](https://github.com/nickav/naysayer-theme.el) and [mindre-theme](https://github.com/erikbackman/mindre-theme)
+

@@ -39,11 +39,13 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text, SDL_Color fg)
 void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBuilder *sb)
 {
     char *data;
-    size_t cursor, char_len, i;
+    size_t cursor, char_len, i, content_len;
 
     data = pane.buffer->content.data;
+    content_len = pane.buffer->content.len;
     cursor = pane.position;
 
+    assert(content_len >= cursor);
     SDL_SetRenderDrawColor(smacs->renderer, smacs->cfg.r, smacs->cfg.g, smacs->cfg.b, smacs->cfg.a);
     SDL_RenderFillRect(smacs->renderer, &cursor_rect);
 

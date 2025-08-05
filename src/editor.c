@@ -432,6 +432,13 @@ void editor_destory_buffer(Buffer *buf)
 
         free(buf->content.data);
         buf->content.data = NULL;
+        buf->content.len = 0;
+        buf->content.capacity = 0;
+
+        free(buf->lines);
+        buf->lines = NULL;
+        buf->lines_count = 0;
+        buf->lines_cap = 0;
     }
 }
 
