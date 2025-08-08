@@ -52,9 +52,8 @@ void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBui
     char_len = utf8_size_char(data[cursor]);
     switch (data[cursor]) {
     case '\t':
-        //"»"
-        sb_append(sb, (char)0xC2);
-        sb_append(sb, (char)0xBB);
+        //
+        sb_append_many(sb, "»");
         break;
     default:
         for (i = 0; i < char_len; ++i) {
@@ -254,10 +253,8 @@ void render_draw_smacs(Smacs *smacs)
                      (line.start <  region_end && region_end <= line.end) ||
                      (region_beg <  line.start && region_end >  line.end));
 
-                if (is_line_region) {
-                    if (region_beg < line.start) {
-                        region_rect.x = text_indention;
-                    }
+                if (is_line_region && region_beg < line.start) {
+                    region_rect.x = text_indention;
                 }
 
                 for (ci = line.start; ci <= line.end; ++ci) {
@@ -280,10 +277,8 @@ void render_draw_smacs(Smacs *smacs)
                     if (ci < line.end) {
                         switch (data[ci]) {
                         case '\t':
-                            //"»"
                             if (is_line_region && region_beg <= ci && region_end > ci) {
-                                sb_append(sb, (char)0xC2);
-                                sb_append(sb, (char)0xBB);
+                                sb_append_many(sb, "»");
                                 for (i = 1; i < smacs->tab_size; ++i) sb_append(sb, ' ');
                                 break;
                             }
@@ -291,10 +286,8 @@ void render_draw_smacs(Smacs *smacs)
                             for (i = 0; i < smacs->tab_size; ++i) sb_append(sb, ' ');
                             break;
                         case ' ':
-                            //"·"
                             if (is_line_region && region_beg <= ci && region_end > ci) {
-                                sb_append(sb, (char)0xC2);
-                                sb_append(sb, (char)0xB7);
+                                sb_append_many(sb, "·");
                             } else {
                                 sb_append(sb, data[ci]);
                             }
@@ -310,6 +303,7 @@ void render_draw_smacs(Smacs *smacs)
 
                         sb_append(sb, 0);
                         --sb->len;
+
                         TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
                         if (win_w < (text_indention + x)) {
                             if (is_line_region) {

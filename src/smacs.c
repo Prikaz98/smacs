@@ -399,4 +399,3 @@ bool search_mapping(SDL_Event event, int *message_timeout)
 
     return true;
 }
-
