@@ -41,21 +41,31 @@ void editor_goto_point(Editor *editor, size_t pos)
     if (pos > max_len) return;
 
     editor->pane->buffer->position = pos;
+    editor_recognize_arena(editor);
+}
+
+size_t editor_reg_beg(Editor *editor)
+{
+    return MIN(editor->mark, editor->pane->buffer->position);
+}
+
+size_t editor_reg_end(Editor *editor)
+{
+    return MIN(editor->pane->buffer->content.len, MAX(editor->mark, editor->pane->buffer->position));
 }
 
 void editor_delete_backward(Editor *editor)
 {
     Buffer *buf;
     Content *content;
-    size_t reg_beg, reg_end;
-    uint8_t delete_len;
+    size_t reg_beg, reg_end, delete_len;
 
     buf = editor->pane->buffer;
     content = &buf->content;
 
     if (editor->state == SELECTION) {
-        reg_beg = MIN(editor->mark, editor->pane->buffer->position);
-        reg_end = MAX(editor->mark, editor->pane->buffer->position);
+        reg_beg = editor_reg_beg(editor);
+        reg_end = editor_reg_end(editor);
         delete_len = reg_end - reg_beg;
 
         memmove(&content->data[reg_beg], &content->data[reg_end], content->len - reg_end);
@@ -567,12 +577,13 @@ void editor_set_mark(Editor *editor)
 void editor_copy_to_clipboard(Editor *editor)
 {
     char *copy;
-    size_t len, reg_beg;
+    size_t len, reg_beg, reg_end;
 
     if (editor->state != SELECTION) return;
 
-    reg_beg = MIN(editor->mark, editor->pane->buffer->position);
-    len = MAX(editor->mark, editor->pane->buffer->position) - reg_beg;
+    reg_beg = editor_reg_beg(editor);
+    reg_end = editor_reg_end(editor);
+    len = reg_end - reg_beg;
 
     copy = calloc(len + 1, sizeof(char));
     memcpy(copy, &editor->pane->buffer->content.data[reg_beg], len);
@@ -997,8 +1008,8 @@ void editor_wrap_region_in_parens(Editor *editor)
 
     if (editor->state != SELECTION) return;
 
-    reg_beg = MIN(editor->mark, editor->pane->buffer->position);
-    reg_end = MAX(editor->mark, editor->pane->buffer->position);
+    reg_beg = editor_reg_beg(editor);
+    reg_end = editor_reg_end(editor);
 
     editor->state = NONE;
     editor_goto_point(editor, reg_end);

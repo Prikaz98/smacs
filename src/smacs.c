@@ -147,7 +147,7 @@ int smacs_launch(char *ttf_path, char *file_path)
             smacs.editor.panes[i].x = win_w_per_pane * i;
             smacs.editor.panes[i].w = win_w_per_pane * i + win_w_per_pane;
             smacs.editor.panes[i].h = win_h;
-            smacs.editor.panes[i].buffer->arena.show_lines = (win_h / font_y) + 1;
+            smacs.editor.panes[i].buffer->arena.show_lines = (win_h / font_y);
         }
 
         render_draw_smacs(&smacs);
@@ -399,3 +399,4 @@ bool search_mapping(SDL_Event event, int *message_timeout)
 
     return true;
 }
+
