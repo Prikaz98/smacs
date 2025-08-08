@@ -34,6 +34,9 @@ typedef struct {
     char *file_path;
 
     bool need_to_save;
+
+    size_t position;
+    Arena arena;
 } Buffer;
 
 typedef struct {
@@ -44,9 +47,6 @@ typedef struct {
 
 typedef struct {
     Buffer *buffer;
-
-    size_t position;
-    Arena arena;
 
     uint32_t x;
     uint32_t w;

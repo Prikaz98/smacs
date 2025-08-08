@@ -43,7 +43,7 @@ void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBui
 
     data = pane.buffer->content.data;
     content_len = pane.buffer->content.len;
-    cursor = pane.position;
+    cursor = pane.buffer->position;
 
     assert(content_len >= cursor);
     SDL_SetRenderDrawColor(smacs->renderer, smacs->cfg.r, smacs->cfg.g, smacs->cfg.b, smacs->cfg.a);
@@ -53,12 +53,12 @@ void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBui
     switch (data[cursor]) {
     case '\t':
         //"»"
-        gb_append(sb, (char)0xC2);
-        gb_append(sb, (char)0xBB);
+        sb_append(sb, (char)0xC2);
+        sb_append(sb, (char)0xBB);
         break;
     default:
         for (i = 0; i < char_len; ++i) {
-            gb_append(sb, data[cursor + i] == '\n' ? ' ' : data[cursor + i]);
+            sb_append(sb, data[cursor + i] == '\n' ? ' ' : data[cursor + i]);
         }
         break;
     }
@@ -196,9 +196,9 @@ void render_draw_smacs(Smacs *smacs)
         is_active_pane = pane == smacs->editor.pane;
 
         lines = pane->buffer->lines;
-        arena = pane->arena;
+        arena = pane->buffer->arena;
         data = pane->buffer->content.data;
-        cursor = pane->position;
+        cursor = pane->buffer->position;
         region_beg = smacs->editor.mark < cursor ? smacs->editor.mark : cursor;
         region_end = smacs->editor.mark > cursor ? smacs->editor.mark : cursor;
         assert(region_beg <= region_end);
@@ -282,33 +282,33 @@ void render_draw_smacs(Smacs *smacs)
                         case '\t':
                             //"»"
                             if (is_line_region && region_beg <= ci && region_end > ci) {
-                                gb_append(sb, (char)0xC2);
-                                gb_append(sb, (char)0xBB);
-                                for (i = 1; i < smacs->tab_size; ++i) gb_append(sb, ' ');
+                                sb_append(sb, (char)0xC2);
+                                sb_append(sb, (char)0xBB);
+                                for (i = 1; i < smacs->tab_size; ++i) sb_append(sb, ' ');
                                 break;
                             }
 
-                            for (i = 0; i < smacs->tab_size; ++i) gb_append(sb, ' ');
+                            for (i = 0; i < smacs->tab_size; ++i) sb_append(sb, ' ');
                             break;
                         case ' ':
                             //"·"
                             if (is_line_region && region_beg <= ci && region_end > ci) {
-                                gb_append(sb, (char)0xC2);
-                                gb_append(sb, (char)0xB7);
+                                sb_append(sb, (char)0xC2);
+                                sb_append(sb, (char)0xB7);
                             } else {
-                                gb_append(sb, data[ci]);
+                                sb_append(sb, data[ci]);
                             }
                             break;
                         default:
-                            gb_append(sb, data[ci]);
+                            sb_append(sb, data[ci]);
 
                             for (char_len = utf8_size_char(data[ci]); char_len > 1; --char_len) {
-                                gb_append(sb, data[++ci]);
+                                sb_append(sb, data[++ci]);
                             }
                             break;
                         }
 
-                        gb_append(sb, 0);
+                        sb_append(sb, 0);
                         --sb->len;
                         TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
                         if (win_w < (text_indention + x)) {

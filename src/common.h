@@ -9,6 +9,7 @@ typedef struct {
 
 #define SB_CAP_INIT 100
 
+void sb_append(StringBuilder *sb, char ch);
 void sb_append_many(StringBuilder *sb, char *str);
 void sb_clean(StringBuilder *sb);
 void sb_free(StringBuilder *sb);

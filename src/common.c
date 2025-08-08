@@ -20,12 +20,22 @@ void *gb_append_(void *data, size_t *pcap, size_t size)
     return ptr;
 }
 
+void sb_append(StringBuilder *sb, char ch)
+{
+    if (sb->len >= sb->cap) {
+        sb->cap = sb->cap == 0 ? SB_CAP_INIT : sb->cap * 2;
+        sb->data = (char*) realloc(sb->data, sb->cap * sizeof(*sb->data));
+        memset(&sb->data[sb->len], 0, sb->cap - sb->len);
+    }
+    sb->data[sb->len++] = ch;
+}
+
 void sb_append_many(StringBuilder *sb, char *str)
 {
     size_t len = strlen(str);
 
     for (size_t i = 0; i < len; ++i) {
-        gb_append(sb, str[i]);
+        sb_append(sb, str[i]);
     }
 }
 
