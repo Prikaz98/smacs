@@ -43,7 +43,7 @@ void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBui
 
     data = pane.buffer->content.data;
     content_len = pane.buffer->content.len;
-    cursor = pane.buffer->position;
+    cursor = pane.position;
 
     assert(content_len >= cursor);
     SDL_SetRenderDrawColor(smacs->renderer, smacs->cfg.r, smacs->cfg.g, smacs->cfg.b, smacs->cfg.a);
@@ -195,9 +195,9 @@ void render_draw_smacs(Smacs *smacs)
         is_active_pane = pane == smacs->editor.pane;
 
         lines = pane->buffer->lines;
-        arena = pane->buffer->arena;
+        arena = pane->arena;
         data = pane->buffer->content.data;
-        cursor = pane->buffer->position;
+        cursor = pane->position;
         region_beg = smacs->editor.mark < cursor ? smacs->editor.mark : cursor;
         region_end = smacs->editor.mark > cursor ? smacs->editor.mark : cursor;
         assert(region_beg <= region_end);

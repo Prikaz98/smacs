@@ -83,7 +83,7 @@ int smacs_launch(char *ttf_path, char *file_path)
     smacs.editor.buffer_list = (Buffer_List) {0};
     editor_read_file(&smacs.editor, file_path);
     SDL_GetWindowSize(smacs.window, &win_w, &win_h);
-    smacs.editor.pane->buffer->arena = (Arena) {0, win_h / smacs.font_size};
+    smacs.editor.pane->arena = (Arena) {0, win_h / smacs.font_size};
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
     smacs.leading = LEADING;
     smacs.tab_size = TAB_SIZE;
@@ -147,7 +147,7 @@ int smacs_launch(char *ttf_path, char *file_path)
             smacs.editor.panes[i].x = win_w_per_pane * i;
             smacs.editor.panes[i].w = win_w_per_pane * i + win_w_per_pane;
             smacs.editor.panes[i].h = win_h;
-            smacs.editor.panes[i].buffer->arena.show_lines = (win_h / font_y);
+            smacs.editor.panes[i].arena.show_lines = (win_h / font_y);
         }
 
         render_draw_smacs(&smacs);

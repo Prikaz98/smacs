@@ -35,8 +35,7 @@ typedef struct {
 
     bool need_to_save;
 
-    size_t position;
-    Arena arena;
+    size_t last_position;
 } Buffer;
 
 typedef struct {
@@ -51,6 +50,9 @@ typedef struct {
     uint32_t x;
     uint32_t w;
     uint32_t h;
+
+    size_t position;
+    Arena arena;
 } Pane;
 
 #define PANES_MAX_SIZE 3
