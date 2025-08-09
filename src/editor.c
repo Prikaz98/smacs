@@ -693,6 +693,8 @@ void editor_user_input_delete_backward(Editor *editor)
     StringBuilder *sb;
     uint8_t char_len;
 
+    if (editor->user_input.len == 0) return;
+
     sb = &editor->user_input;
     char_len = utf8_size_char_backward(sb->data, sb->len - 1);
     sb->len -= char_len;
