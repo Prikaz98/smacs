@@ -82,7 +82,7 @@ void editor_delete_backward(Editor *editor)
 
     memset(&content->data[content->len], 0, content->capacity - content->len);
 
-	editor_determine_lines(editor);
+    editor_determine_lines(editor);
     editor->state = NONE;
     editor->pane->buffer->need_to_save = true;
 }
@@ -472,13 +472,13 @@ void editor_recenter_top_bottom(Editor *editor)
 
     //top -> bottom
     if (arena->start == (size_t) line_num) {
-        arena->start = (size_t) MAX(line_num - (int) arena->show_lines + 5, 0);
+        arena->start = (size_t) MAX(line_num - (int) arena->show_lines + 2, 0);
     //center -> top
     } else if (line_num == center) {
         arena->start = line_num;
     //any -> center
     } else {
-        arena->start = (size_t) MAX(line_num - ((int) arena->show_lines / 2), 0);
+        arena->start = (size_t) MAX(line_num - half_screen, 0);
     }
 }
 
@@ -645,42 +645,26 @@ void editor_duplicate_line(Editor *editor)
 
 void editor_user_input_clear(Editor *editor)
 {
-    StringBuilder *sb;
-
-    sb = &editor->user_input;
-
-    sb_clean(sb);
+    sb_clean((&editor->user_input));
     editor->state = NONE;
 }
 
 void editor_user_search_forward(Editor *editor)
 {
-    StringBuilder *sb;
-
-    sb = &editor->user_input;
-
     editor->state = FORWARD_SEARCH;
-    sb_clean(sb);
+    sb_clean((&editor->user_input));
 }
 
 void editor_user_search_backward(Editor *editor)
 {
-    StringBuilder *sb;
-
-    sb = &editor->user_input;
-
     editor->state = BACKWARD_SEARCH;
-    sb_clean(sb);
+    sb_clean((&editor->user_input));
 }
 
 void editor_user_extend_command(Editor *editor)
 {
-    StringBuilder *sb;
-
-    sb = &editor->user_input;
     editor->state = EXTEND_COMMAND;
-
-    sb_clean(sb);
+    sb_clean((&editor->user_input));
 }
 
 void editor_user_input_insert(Editor *editor, char *text)
@@ -867,14 +851,13 @@ void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
     if (buf_index >= editor->buffer_list.len) return;
     if (&editor->buffer_list.data[buf_index] == editor->pane->buffer) return;
 
+    sprintf(notification, "Buffer killed %s", editor->buffer_list.data[buf_index].file_path);
     editor_destory_buffer(&editor->buffer_list.data[buf_index]);
 
     --editor->buffer_list.len;
     for (i = buf_index; i < editor->buffer_list.len; ++i) {
         editor->buffer_list.data[i] = editor->buffer_list.data[i+1];
     }
-
-    sprintf(notification, "Buffer killed");
 }
 
 void editor_mark_forward_word(Editor *editor)

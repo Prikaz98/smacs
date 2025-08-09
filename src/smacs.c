@@ -25,7 +25,7 @@ const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE; //[ABSOLUTE, RELATIV
 static Smacs smacs = {0};
 
 //TODO: Clean up whitespaces before saving
-//TODO: M-& emacs command
+//TODO: M-& Emacs command
 //TODO: Multicursor
 //TODO: undo/redo
 
@@ -144,7 +144,7 @@ int smacs_launch(char *ttf_path, char *file_path)
             smacs.editor.panes[i].x = win_w_per_pane * i;
             smacs.editor.panes[i].w = win_w_per_pane * i + win_w_per_pane;
             smacs.editor.panes[i].h = win_h;
-            smacs.editor.panes[i].arena.show_lines = (win_h / font_y);
+            smacs.editor.panes[i].arena.show_lines = (win_h / (font_y + smacs.leading));
         }
 
         SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
