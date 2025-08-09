@@ -1,6 +1,9 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
 typedef struct {
     char *data;
     size_t len;
@@ -22,10 +25,19 @@ void *gb_append_(void *data, size_t *pcap, size_t size);
         (gb)->data + (gb)->len++                                              \
       : (gb)->data + (gb)->len++) = elem
 
+#define gb_free(gb)      \
+    do {                 \
+        free((gb)->data);  \
+        (gb)->len = 0;     \
+        (gb)->cap = 0;     \
+    } while (0)
+
+
 /**
  * a starts_with b
  */
 bool starts_with(char *a, char *b);
+
 /**
  * cast utf8 char sequence to an interger value
  */

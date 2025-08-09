@@ -35,7 +35,7 @@ typedef struct {
     char *notification;
 } Smacs;
 
-void render_draw_text(Smacs *smacs, int x, int y, char *text, SDL_Color fg);
+void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg);
 void render_draw_smacs(Smacs *smacs);
 void render_destroy_smacs(Smacs *smacs);
 

@@ -37,7 +37,7 @@ void editor_goto_point(Editor *editor, size_t pos)
 {
     size_t max_len;
 
-    max_len = editor->pane->buffer->content.len;
+    max_len = editor->pane->buffer->content.len-1;
     if (pos > max_len) return;
 
     editor->pane->position = pos;
@@ -82,7 +82,7 @@ void editor_delete_backward(Editor *editor)
 
     memset(&content->data[content->len], 0, content->capacity - content->len);
 
-    editor_determine_lines(editor);
+	editor_determine_lines(editor);
     editor->state = NONE;
     editor->pane->buffer->need_to_save = true;
 }
@@ -827,21 +827,21 @@ void editor_print_buffers_names(Editor *editor, char *notification)
 
     str = &((StringBuilder) {0});
 
-    gb_append(str, '{');
+    sb_append(str, '{');
     for (i = 0; i < editor->buffer_list.len; ++i) {
         sprintf(buffer_index, "%ld", i+1);
         sb_append_many(str, buffer_index);
 
-        gb_append(str, ':');
+        sb_append(str, ':');
         sb_append_many(str, editor->buffer_list.data[i].file_path);
 
         if (i < (editor->buffer_list.len - 1)) {
-            gb_append(str, ' ');
-            gb_append(str, '|');
-            gb_append(str, ' ');
+            sb_append(str, ' ');
+            sb_append(str, '|');
+            sb_append(str, ' ');
         }
     }
-    gb_append(str, '}');
+    sb_append(str, '}');
 
     strcpy(notification, str->data);
     sb_free(str);

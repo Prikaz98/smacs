@@ -11,7 +11,7 @@
 #include "themes.h"
 #include "common.h"
 
-#define FONT_SIZE       17
+#define FONT_SIZE       18
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define LEADING         2    /* space between raws */
@@ -135,9 +135,6 @@ int smacs_launch(char *ttf_path, char *file_path)
             break;
         }
 
-        SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
-        SDL_RenderClear(smacs.renderer);
-
         SDL_GetWindowSize(smacs.window, &win_w, &win_h);
         TTF_SizeUTF8(smacs.font, "|", NULL, &font_y);
 
@@ -150,6 +147,8 @@ int smacs_launch(char *ttf_path, char *file_path)
             smacs.editor.panes[i].arena.show_lines = (win_h / font_y);
         }
 
+        SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
+        SDL_RenderClear(smacs.renderer);
         render_draw_smacs(&smacs);
         SDL_RenderPresent(smacs.renderer);
 

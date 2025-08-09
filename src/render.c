@@ -1,37 +1,29 @@
 #include <assert.h>
 #include <sys/param.h>
-#include "render.h"
+
 #include "common.h"
+#include "render.h"
 #include "utf8.h"
 
-void render_draw_text(Smacs *smacs, int x, int y, char *text, SDL_Color fg)
+void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg)
 {
     SDL_Texture *texture = NULL;
     SDL_Rect rect = (SDL_Rect) {0};
+    SDL_Surface *surface = NULL;
 
     if (text == NULL) return;
+    if (text_len == 0) return;
 
-    if (strlen(text) > 0) {
-        int text_width, text_height;
+    surface = TTF_RenderUTF8_Blended(smacs->font, text, fg);
 
-        SDL_Surface *surface = TTF_RenderUTF8_Blended(smacs->font, text, fg);
-        texture = SDL_CreateTextureFromSurface(smacs->renderer, surface);
+    texture = SDL_CreateTextureFromSurface(smacs->renderer, surface);
 
-        text_width = surface->w;
-        text_height = surface->h;
+    rect.x = x;
+    rect.y = y;
+    rect.w = surface->w;
+    rect.h = surface->h;
 
-        SDL_FreeSurface(surface);
-        rect.x = x;
-        rect.y = y;
-        rect.w = text_width;
-        rect.h = text_height;
-    } else {
-        rect.x = 0;
-        rect.y = 0;
-        rect.w = 0;
-        rect.h = 0;
-    }
-
+    SDL_FreeSurface(surface);
     SDL_RenderCopy(smacs->renderer, texture, NULL, &rect);
     SDL_DestroyTexture(texture);
 }
@@ -61,7 +53,7 @@ void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBui
         }
         break;
     }
-    render_draw_text(smacs, cursor_rect.x, cursor_rect.y, sb->data, smacs->bg);
+    render_draw_text(smacs, cursor_rect.x, cursor_rect.y, sb->data, sb->len, smacs->bg);
 }
 
 void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
@@ -103,7 +95,7 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
         if (smacs->editor.state & (SEARCH | EXTEND_COMMAND)) {
             mini_buffer_content = smacs->editor.user_input.data;
 
-            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content, smacs->fg);
+            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content, smacs->editor.user_input.len, smacs->fg);
 
             TTF_SizeUTF8(smacs->font, mini_buffer_content, &mini_buffer_cursor.x, NULL);
             mini_buffer_cursor.x = mini_buffer_cursor.x + mini_buffer_padding;
@@ -112,7 +104,7 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
             SDL_RenderFillRect(smacs->renderer, &mini_buffer_cursor);
         } else {
             mini_buffer_content = smacs->notification;
-            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content, smacs->fg);
+            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content, strlen(mini_buffer_content), smacs->fg);
         }
     }
 
@@ -123,7 +115,7 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
             !is_active_pane ? "" : smacs->editor.state & BACKWARD_SEARCH ? "Re-" : "",
             !is_active_pane ? "" : smacs->editor.state & SEARCH ? "Search[:enter next :C-g stop]" : smacs->editor.state & EXTEND_COMMAND ? "C-x" : "");
 
-    render_draw_text(smacs, mode_line_padding, win_h - (char_h * 2), mode_line_info, mlfg);
+    render_draw_text(smacs, mode_line_padding, win_h - (char_h * 2), mode_line_info, strlen(mode_line_info), mlfg);
 }
 
 int count_digits(size_t num)
@@ -242,9 +234,9 @@ void render_draw_smacs(Smacs *smacs)
 
                 render_format_display_line_number(smacs, &line_number, line_number_len, content_line_index, current_line);
                 if (current_line == content_line_index) {
-                    render_draw_text(smacs, common_indention, content_hight, line_number, smacs->fg);
+                    render_draw_text(smacs, common_indention, content_hight, line_number, line_number_len, smacs->fg);
                 } else {
-                    render_draw_text(smacs, common_indention, content_hight, line_number, smacs->ln);
+                    render_draw_text(smacs, common_indention, content_hight, line_number, line_number_len, smacs->ln);
                 }
 
                 is_line_region = is_active_pane &&
@@ -320,7 +312,7 @@ void render_draw_smacs(Smacs *smacs)
                                 region_rect.x = text_indention;
                             }
 
-                            render_draw_text(smacs, text_indention, content_hight, sb->data, smacs->fg);
+                            render_draw_text(smacs, text_indention, content_hight, sb->data, sb->len, smacs->fg);
 
                             sb_clean(sb);
                             content_hight += (y + smacs->leading);
@@ -343,7 +335,7 @@ void render_draw_smacs(Smacs *smacs)
                     SDL_RenderFillRect(smacs->renderer, &region_rect);
                 }
 
-                render_draw_text(smacs, text_indention, content_hight, sb->data, smacs->fg);
+                render_draw_text(smacs, text_indention, content_hight, sb->data, sb->len, smacs->fg);
                 sb_clean(sb);
                 content_hight += (y + smacs->leading);
             }

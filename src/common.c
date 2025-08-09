@@ -10,13 +10,15 @@
 //TODO: Write it more smarter pls
 void *gb_append_(void *data, size_t *pcap, size_t size)
 {
-    size_t prev_cap;
     void *ptr;
 
-    prev_cap = *pcap;
     *pcap = *pcap == 0 ? 10 : *pcap * 2;
     ptr = realloc(data, *pcap * size);
-    if (*pcap) memset(((char*)ptr) + prev_cap, 0, *pcap - prev_cap);
+    if (ptr == NULL) {
+        fprintf(stderr, "No more free space\n");
+        free(data);
+        exit(EXIT_FAILURE);
+    }
     return ptr;
 }
 
