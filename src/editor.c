@@ -817,6 +817,9 @@ void editor_print_buffers_names(Editor *editor, char *notification)
         sb_append_many(str, buffer_index);
 
         sb_append(str, ':');
+		if (editor->buffer_list.data[i].need_to_save) {
+	        sb_append(str, '*');
+		}
         sb_append_many(str, editor->buffer_list.data[i].file_path);
 
         if (i < (editor->buffer_list.len - 1)) {
