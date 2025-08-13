@@ -26,6 +26,7 @@ Bindings:
 - C-p - previous line
 - C-a - move cursor to the beginning of the line
 - C-e - move cursor to the end of the line
+- C-c - save file
 - C-v - scroll up
 - C-w - cut
 - M-v - scroll down
@@ -51,9 +52,10 @@ Bindings:
 - C-= - font size increase
 - C-q - next pane
 - M-k - close pane
+- m-u - upper case (allowed only region now)
+- M-l - lower case (allowed only region now)
 
 Extended commands:
-- C-x s    Enter - save file
 - C-x :{N} Enter - go to line {N}
 - C-x n{N} Enter - go to Next {N} line
 - C-x p{N} Enter - go to Previous {N} line

@@ -29,7 +29,7 @@ static Smacs smacs = {0};
 //TODO: Multicursor
 //TODO: undo/redo
 
-bool ctrl_leader_mapping(SDL_Event event);
+bool ctrl_leader_mapping(SDL_Event event, int *message_timeout);
 bool alt_leader_mapping(SDL_Event event);
 bool search_mapping(SDL_Event event, int *message_timeout);
 bool extend_command_mapping(SDL_Event event, int *message_timeout);
@@ -82,6 +82,7 @@ int smacs_launch(char *ttf_path, char *file_path)
 
     smacs.editor.buffer_list = (Buffer_List) {0};
     editor_read_file(&smacs.editor, file_path);
+
     SDL_GetWindowSize(smacs.window, &win_w, &win_h);
     smacs.editor.pane->arena = (Arena) {0, win_h / smacs.font_size};
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
@@ -105,7 +106,7 @@ int smacs_launch(char *ttf_path, char *file_path)
         case SDL_KEYDOWN:
             if (search_mapping(event, &message_timeout)) break;
             if (extend_command_mapping(event, &message_timeout)) break;
-            if (ctrl_leader_mapping(event)) break;
+            if (ctrl_leader_mapping(event, &message_timeout)) break;
             if (alt_leader_mapping(event)) break;
 
             switch (event.key.keysym.sym) {
@@ -167,11 +168,17 @@ int smacs_launch(char *ttf_path, char *file_path)
     return 0;
 }
 
-bool ctrl_leader_mapping(SDL_Event event)
+bool ctrl_leader_mapping(SDL_Event event, int *message_timeout)
 {
     if ((event.key.keysym.mod & KMOD_CTRL) == 0) return false;
 
     switch (event.key.keysym.sym) {
+    case SDLK_c:
+        if (editor_save(&smacs.editor) == 0) {
+            sprintf(smacs.notification, "Saved");
+            *message_timeout = MESSAGE_TIMEOUT;
+        }
+        break;
     case SDLK_b:
         editor_char_backward(&smacs.editor);
         break;
@@ -287,6 +294,12 @@ bool alt_leader_mapping(SDL_Event event)
         case SDLK_k:
             editor_close_pane(&smacs.editor);
             break;
+        case SDLK_u:
+            editor_upper(&smacs.editor);
+            break;
+        case SDLK_l:
+            editor_lower(&smacs.editor);
+            break;
         }
     }
 
@@ -344,13 +357,8 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
             editor_goto_line_backward(&smacs.editor, (size_t) atoi(&data[1]));
         } else if (starts_with(data, ":") && data_len > 1) {
             editor_goto_line(&smacs.editor, (size_t) atoi(&data[1]));
-        } else if (strcmp(data, "s") == 0) {
-            if (editor_save(&smacs.editor) == 0) {
-                sprintf(smacs.notification, "Saved");
-                *message_timeout = MESSAGE_TIMEOUT;
-            }
         } else {
-            fprintf(stderr, "Unknown cmd %s\n", smacs.editor.user_input.data);
+            //fprintf(stderr, "Unknown cmd %s\n", smacs.editor.user_input.data);
         }
 
         editor_user_input_clear(&smacs.editor);

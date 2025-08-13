@@ -817,9 +817,9 @@ void editor_print_buffers_names(Editor *editor, char *notification)
         sb_append_many(str, buffer_index);
 
         sb_append(str, ':');
-		if (editor->buffer_list.data[i].need_to_save) {
-	        sb_append(str, '*');
-		}
+        if (editor->buffer_list.data[i].need_to_save) {
+            sb_append(str, '*');
+        }
         sb_append_many(str, editor->buffer_list.data[i].file_path);
 
         if (i < (editor->buffer_list.len - 1)) {
@@ -1012,20 +1012,68 @@ void editor_wrap_region_in_parens(Editor *editor)
 
 void editor_next_pane(Editor *editor)
 {
-	size_t i;
+    size_t i;
 
-	for (i = 0; i < editor->panes_len; ++i) {
-		if (&editor->panes[i] == editor->pane) {
-			editor->pane = &editor->panes[(i+1) >= editor->panes_len ? 0 : (i+1)];
-			break;
-		}
-	}
+    for (i = 0; i < editor->panes_len; ++i) {
+        if (&editor->panes[i] == editor->pane) {
+            editor->pane = &editor->panes[(i+1) >= editor->panes_len ? 0 : (i+1)];
+            break;
+        }
+    }
 }
 
 void editor_close_pane(Editor *editor)
 {
-	if (editor->panes_len > 1) {
-		--editor->panes_len;
-		editor->pane = &editor->panes[0];
-	}
+    if (editor->panes_len > 1) {
+        --editor->panes_len;
+        editor->pane = &editor->panes[0];
+    }
+}
+
+void editor_upper_region(Editor *editor)
+{
+    Content *content;
+    size_t reg_beg, reg_end, i;
+
+    if (editor->state != SELECTION) return;
+
+    reg_beg = editor_reg_beg(editor);
+    reg_end = editor_reg_end(editor);
+    content = &editor->pane->buffer->content;
+
+    for (i = reg_beg; i < reg_end; ++i) {
+        content->data[i] = (char) toupper((int)content->data[i]);
+    }
+}
+
+void editor_upper(Editor *editor)
+{
+    if (editor->state == SELECTION) {
+        editor_upper_region(editor);
+    }
+}
+
+
+void editor_lower_region(Editor *editor)
+{
+    Content *content;
+    size_t reg_beg, reg_end, i;
+
+    if (editor->state != SELECTION) return;
+
+    reg_beg = editor_reg_beg(editor);
+    reg_end = editor_reg_end(editor);
+    content = &editor->pane->buffer->content;
+
+    i = reg_beg;
+    for (i = reg_beg; i < reg_end; ++i) {
+        content->data[i] = (char) tolower((int)content->data[i]);
+    }
+}
+
+void editor_lower(Editor *editor)
+{
+    if (editor->state == SELECTION) {
+        editor_lower_region(editor);
+    }
 }

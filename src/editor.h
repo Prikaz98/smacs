@@ -147,4 +147,8 @@ void editor_wrap_region_in_parens(Editor *editor);
 
 void editor_next_pane(Editor *editor);
 void editor_close_pane(Editor *editor);
+
+void editor_upper(Editor *editor);
+void editor_lower(Editor *editor);
+
 #endif
