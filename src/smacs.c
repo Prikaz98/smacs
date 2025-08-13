@@ -125,7 +125,7 @@ int smacs_launch(char *ttf_path, char *file_path)
             }
             break;
         case SDL_TEXTINPUT:
-            //if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
+            if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
 
             if (smacs.editor.state & (SEARCH | EXTEND_COMMAND)) {
                 editor_user_input_insert(&smacs.editor, event.text.text);
