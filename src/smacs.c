@@ -11,7 +11,7 @@
 #include "themes.h"
 #include "common.h"
 
-#define FONT_SIZE       17
+#define FONT_SIZE       16
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define LEADING         2    /* space between raws */
