@@ -144,4 +144,7 @@ void editor_switch_buffer(Editor *editor, size_t buf_index);
 void editor_split_pane(Editor *editor);
 
 void editor_wrap_region_in_parens(Editor *editor);
+
+void editor_next_pane(Editor *editor);
+void editor_close_pane(Editor *editor);
 #endif

@@ -1006,3 +1006,23 @@ void editor_wrap_region_in_parens(Editor *editor)
     editor_goto_point(editor, reg_beg);
     editor_insert(editor, "(");
 }
+
+void editor_next_pane(Editor *editor)
+{
+	size_t i;
+
+	for (i = 0; i < editor->panes_len; ++i) {
+		if (&editor->panes[i] == editor->pane) {
+			editor->pane = &editor->panes[(i+1) >= editor->panes_len ? 0 : (i+1)];
+			break;
+		}
+	}
+}
+
+void editor_close_pane(Editor *editor)
+{
+	if (editor->panes_len > 1) {
+		--editor->panes_len;
+		editor->pane = &editor->panes[0];
+	}
+}

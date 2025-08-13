@@ -11,7 +11,7 @@
 #include "themes.h"
 #include "common.h"
 
-#define FONT_SIZE       18
+#define FONT_SIZE       17
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define LEADING         2    /* space between raws */
@@ -125,7 +125,7 @@ int smacs_launch(char *ttf_path, char *file_path)
             }
             break;
         case SDL_TEXTINPUT:
-            if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
+            //if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
 
             if (smacs.editor.state & (SEARCH | EXTEND_COMMAND)) {
                 editor_user_input_insert(&smacs.editor, event.text.text);
@@ -233,6 +233,9 @@ bool ctrl_leader_mapping(SDL_Event event)
     case SDLK_x:
         editor_user_extend_command(&smacs.editor);
         break;
+    case SDLK_q:
+        editor_next_pane(&smacs.editor);
+        break;
     }
 
     return true;
@@ -281,6 +284,9 @@ bool alt_leader_mapping(SDL_Event event)
         case SDLK_d:
             editor_delete_word_forward(&smacs.editor);
             break;
+        case SDLK_k:
+            editor_close_pane(&smacs.editor);
+            break;
         }
     }
 
@@ -289,7 +295,7 @@ bool alt_leader_mapping(SDL_Event event)
 
 bool extend_command_mapping(SDL_Event event, int *message_timeout)
 {
-    size_t i, data_len;
+    size_t data_len;
     char *data;
 
     if ((smacs.editor.state & EXTEND_COMMAND) == 0) return false;
@@ -323,22 +329,6 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         } else if (starts_with(data, "bk") && data_len > 2) {
             editor_kill_buffer(&smacs.editor, (size_t) atoi(&data[2]), smacs.notification);
             *message_timeout = MESSAGE_TIMEOUT;
-        } else if (starts_with(data, "pn")) {
-            for (i = 0; i < smacs.editor.panes_len; ++i) {
-                if (&smacs.editor.panes[i] == smacs.editor.pane) {
-                    smacs.editor.pane = &smacs.editor.panes[(i+1) >= smacs.editor.panes_len ? 0 : (i+1)];
-                    break;
-                }
-            }
-        } else if (starts_with(data, "pk")) {
-            if (smacs.editor.panes_len == 1) {
-                sprintf(smacs.notification, "Can not kill last pane");
-                *message_timeout = MESSAGE_TIMEOUT;
-            } else {
-                --smacs.editor.panes_len;
-                smacs.editor.pane = &smacs.editor.panes[0];
-            }
-
         } else if (starts_with(data, "sp")) {
             if (smacs.editor.panes_len < PANES_MAX_SIZE) {
                 editor_split_pane(&smacs.editor);

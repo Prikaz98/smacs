@@ -7,7 +7,6 @@
 
 #include "common.h"
 
-//TODO: Write it more smarter pls
 void *gb_append_(void *data, size_t *pcap, size_t size)
 {
     void *ptr;

@@ -44,7 +44,6 @@ void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBui
     char_len = utf8_size_char(data[cursor]);
     switch (data[cursor]) {
     case '\t':
-        //
         sb_append_many(sb, "»");
         break;
     default:

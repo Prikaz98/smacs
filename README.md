@@ -46,9 +46,11 @@ Bindings:
 - C-SPC - set mark
 - M-w - copy to clipboard
 - C-y - paste from clipboard
-- C-l recenter
-- C-- font size decrease
-- C-= font size increase
+- C-l - recenter
+- C-- - font size decrease
+- C-= - font size increase
+- C-q - next pane
+- M-k - close pane
 
 Extended commands:
 - C-x s    Enter - save file
@@ -63,11 +65,8 @@ Extended commands:
 - C-x bk{N} Enter - kill buffer {N}
 
 - C-x sp Enter - split pane (now allowed only 3 horizontal slitted panes)
-- C-x pn Enter - next pane
-- C-x pk Enter - kill current pane
 
 # Thanks
 Everything works using [SDL](https://www.libsdl.org/).
 
 Color theme in image inspired by [naysayer-theme](https://github.com/nickav/naysayer-theme.el) and [mindre-theme](https://github.com/erikbackman/mindre-theme)
-
