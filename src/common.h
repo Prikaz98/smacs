@@ -43,4 +43,6 @@ bool starts_with(char *a, char *b);
  */
 uint32_t utf8_chars_to_int(char *str, int len);
 
+bool contains_ignore_case(char *a, size_t a_len, char *b, size_t b_len);
+
 #endif

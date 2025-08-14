@@ -33,6 +33,7 @@ bool ctrl_leader_mapping(SDL_Event event, int *message_timeout);
 bool alt_leader_mapping(SDL_Event event);
 bool search_mapping(SDL_Event event, int *message_timeout);
 bool extend_command_mapping(SDL_Event event, int *message_timeout);
+bool completion_command_mapping(SDL_Event event);
 
 int smacs_launch(char *ttf_path, char *file_path)
 {
@@ -81,6 +82,7 @@ int smacs_launch(char *ttf_path, char *file_path)
     ++smacs.editor.panes_len;
 
     smacs.editor.buffer_list = (Buffer_List) {0};
+    smacs.editor.completor = (Completor) {0};
     editor_read_file(&smacs.editor, file_path);
 
     SDL_GetWindowSize(smacs.window, &win_w, &win_h);
@@ -106,20 +108,17 @@ int smacs_launch(char *ttf_path, char *file_path)
         case SDL_KEYDOWN:
             if (search_mapping(event, &message_timeout)) break;
             if (extend_command_mapping(event, &message_timeout)) break;
+            if (completion_command_mapping(event)) break;
             if (ctrl_leader_mapping(event, &message_timeout)) break;
             if (alt_leader_mapping(event)) break;
 
             switch (event.key.keysym.sym) {
             case SDLK_BACKSPACE:
-                if (smacs.editor.state & SEARCH) {
-                    editor_user_input_delete_backward(&smacs.editor);
-                } else {
-                    editor_delete_backward(&smacs.editor);
-                }
+                editor_delete_backward(&smacs.editor);
                 break;
             case SDLK_RETURN:
                 editor_insert(&smacs.editor, NEWLINE);
-                break;
+				break;
             case SDLK_TAB:
                 editor_insert(&smacs.editor, TAB);
                 break;
@@ -130,7 +129,10 @@ int smacs_launch(char *ttf_path, char *file_path)
 
             if (smacs.editor.state & (SEARCH | EXTEND_COMMAND)) {
                 editor_user_input_insert(&smacs.editor, event.text.text);
-            } else {
+            } else if (smacs.editor.state & COMPLETION) {
+                editor_user_input_insert(&smacs.editor, event.text.text);
+				editor_buffer_completion_actualize(&smacs.editor);
+			} else {
                 editor_insert(&smacs.editor, event.text.text);
             }
             break;
@@ -145,7 +147,7 @@ int smacs_launch(char *ttf_path, char *file_path)
             smacs.editor.panes[i].x = win_w_per_pane * i;
             smacs.editor.panes[i].w = win_w_per_pane * i + win_w_per_pane;
             smacs.editor.panes[i].h = win_h;
-            smacs.editor.panes[i].arena.show_lines = (win_h / (font_y + smacs.leading));
+            smacs.editor.panes[i].arena.show_lines = (win_h / (font_y /*+ smacs.leading*/));
         }
 
         SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
@@ -243,6 +245,9 @@ bool ctrl_leader_mapping(SDL_Event event, int *message_timeout)
     case SDLK_q:
         editor_next_pane(&smacs.editor);
         break;
+    case SDLK_i:
+        editor_buffer_switch(&smacs.editor);
+        break;
     }
 
     return true;
@@ -336,9 +341,6 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
 
         if (starts_with(data, "ff") && data_len > 4) {
             editor_read_file(&smacs.editor, &data[3]);
-        } else if (starts_with(data, "bl")) {
-            editor_print_buffers_names(&smacs.editor, smacs.notification);
-            *message_timeout = MESSAGE_TIMEOUT;
         } else if (starts_with(data, "bk") && data_len > 2) {
             editor_kill_buffer(&smacs.editor, (size_t) atoi(&data[2]), smacs.notification);
             *message_timeout = MESSAGE_TIMEOUT;
@@ -349,8 +351,6 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
                 sprintf(smacs.notification, "Can not create more than %d panes", PANES_MAX_SIZE);
                 *message_timeout = MESSAGE_TIMEOUT;
             }
-        } else if (starts_with(data, "b") && data_len > 1) {
-            editor_switch_buffer(&smacs.editor, (size_t) atoi(&data[1]));
         } else if (starts_with(data, "n") && data_len > 1) {
             editor_goto_line_forward(&smacs.editor, (size_t) atoi(&data[1]));
         } else if (starts_with(data, "p") && data_len > 1) {
@@ -395,4 +395,32 @@ bool search_mapping(SDL_Event event, int *message_timeout)
     }
 
     return true;
+}
+
+bool completion_command_mapping(SDL_Event event)
+{
+	if ((smacs.editor.state & COMPLETION) == 0) return false;
+
+    if (event.key.keysym.mod & KMOD_CTRL) {
+        switch (event.key.keysym.sym) {
+        case SDLK_g:
+            editor_user_input_clear(&smacs.editor);
+            break;
+        case SDLK_y:
+            editor_user_input_insert_from_clipboard(&smacs.editor);
+            break;
+        }
+    }
+
+	switch (event.key.keysym.sym) {
+    case SDLK_BACKSPACE:
+        editor_user_input_delete_backward(&smacs.editor);
+		editor_buffer_completion_actualize(&smacs.editor);
+		break;
+    case SDLK_RETURN:
+		editor_buffer_switch_complete(&smacs.editor);
+		break;
+	}
+
+	return true;
 }

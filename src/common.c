@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <stdbool.h>
 #include <assert.h>
 #include <stdint.h>
@@ -63,6 +64,22 @@ bool starts_with(char *a, char *b)
     if (strlen(a) < len) return false;
 
     return strncmp(a, b, len) == 0;
+}
+
+bool contains_ignore_case(char *a, size_t a_len, char *b, size_t b_len)
+{
+    size_t i;
+
+    if (a == NULL || b == NULL) return false;
+    if (a_len < b_len) return false;
+
+	for (i = 0; i < a_len; ++i) {
+		if (strncasecmp(&a[i], b, b_len) == 0) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 uint32_t utf8_chars_to_int(char *str, int len) {

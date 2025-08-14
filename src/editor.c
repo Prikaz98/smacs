@@ -803,40 +803,8 @@ void editor_move_line_up(Editor *editor)
     editor_move_begginning_of_line(editor);
 }
 
-void editor_print_buffers_names(Editor *editor, char *notification)
-{
-    size_t i;
-    StringBuilder *str;
-    char buffer_index[100];
-
-    str = &((StringBuilder) {0});
-
-    sb_append(str, '{');
-    for (i = 0; i < editor->buffer_list.len; ++i) {
-        sprintf(buffer_index, "%ld", i+1);
-        sb_append_many(str, buffer_index);
-
-        sb_append(str, ':');
-        if (editor->buffer_list.data[i].need_to_save) {
-            sb_append(str, '*');
-        }
-        sb_append_many(str, editor->buffer_list.data[i].file_path);
-
-        if (i < (editor->buffer_list.len - 1)) {
-            sb_append(str, ' ');
-            sb_append(str, '|');
-            sb_append(str, ' ');
-        }
-    }
-    sb_append(str, '}');
-
-    strcpy(notification, str->data);
-    sb_free(str);
-}
-
 void editor_switch_buffer(Editor *editor, size_t buf_index)
 {
-    --buf_index;
     if (buf_index >= editor->buffer_list.len) return;
 
     editor->pane->buffer->last_position = editor->pane->position;
@@ -849,7 +817,6 @@ void editor_switch_buffer(Editor *editor, size_t buf_index)
 void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
 {
     size_t i;
-    --buf_index;
 
     if (buf_index >= editor->buffer_list.len) return;
     if (&editor->buffer_list.data[buf_index] == editor->pane->buffer) return;
@@ -1076,4 +1043,57 @@ void editor_lower(Editor *editor)
     if (editor->state == SELECTION) {
         editor_lower_region(editor);
     }
+}
+
+void editor_buffer_switch(Editor *editor)
+{
+	size_t i;
+
+    editor_user_input_clear(editor);
+	editor->state = COMPLETION;
+	editor->completor.len = 0;
+
+	for (i = 0; i < editor->buffer_list.len; ++i) {
+		gb_append(&(editor->completor), editor->buffer_list.data[i].file_path);
+	}
+}
+
+void editor_buffer_completion_actualize(Editor *editor)
+{
+	size_t i;
+	char *buffer_name;
+	bool need_append;
+	
+	if (editor->state != COMPLETION) return;
+
+	editor->completor.len = 0;
+	for (i = 0; i < editor->buffer_list.len; ++i) {
+		need_append = false;
+		buffer_name = editor->buffer_list.data[i].file_path;
+
+		if (editor->user_input.len == 0) need_append = true;
+		if (contains_ignore_case(buffer_name, strlen(buffer_name), editor->user_input.data, editor->user_input.len)) need_append = true;
+
+		if (need_append) {
+			gb_append(&(editor->completor), buffer_name);
+		}
+	}
+}
+
+void editor_buffer_switch_complete(Editor *editor)
+{
+	size_t i;
+	char *buffer_target, *buffer_name;
+	if (editor->completor.len == 0) return;
+
+	buffer_target = editor->completor.data[0];
+
+	for (i = 0; i < editor->buffer_list.len; ++i) {
+		buffer_name = editor->buffer_list.data[i].file_path;
+		if (strcmp(buffer_target, buffer_name) == 0) {
+			editor_switch_buffer(editor, i);
+			editor->state = NONE;
+			return;
+		}
+	}
 }

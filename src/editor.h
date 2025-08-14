@@ -63,8 +63,15 @@ typedef enum {
     FORWARD_SEARCH  = 0x040,
     BACKWARD_SEARCH = 0x080,
     EXTEND_COMMAND  = 0x100,
+	COMPLETION      = 0x200, //TODO: fix
     SEARCH          = FORWARD_SEARCH | BACKWARD_SEARCH,
 } Editor_State;
+
+typedef struct {
+	char **data;
+	size_t len;
+	size_t cap;
+} Completor;
 
 typedef struct {
     Pane panes[PANES_MAX_SIZE];
@@ -77,6 +84,8 @@ typedef struct {
     Editor_State state;
     StringBuilder user_input;
     Buffer_List buffer_list;
+	
+	Completor completor;
 } Editor;
 
 #define EDITOR_CONTENT_CAP 256
@@ -137,7 +146,6 @@ void editor_goto_line_forward(Editor *editor, size_t line);
 void editor_goto_line_backward(Editor *editor, size_t line);
 
 bool editor_is_editing_text(Editor *editor);
-void editor_print_buffers_names(Editor *editor, char *notification);
 void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification);
 void editor_switch_buffer(Editor *editor, size_t buf_index);
 
@@ -150,5 +158,9 @@ void editor_close_pane(Editor *editor);
 
 void editor_upper(Editor *editor);
 void editor_lower(Editor *editor);
+
+void editor_buffer_completion_actualize(Editor *editor);
+void editor_buffer_switch(Editor *editor);
+void editor_buffer_switch_complete(Editor *editor);
 
 #endif

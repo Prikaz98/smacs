@@ -54,6 +54,7 @@ Bindings:
 - M-k - close pane
 - m-u - upper case (allowed only region now)
 - M-l - lower case (allowed only region now)
+- C-i - switch buffer
 
 Extended commands:
 - C-x :{N} Enter - go to line {N}
@@ -61,10 +62,6 @@ Extended commands:
 - C-x p{N} Enter - go to Previous {N} line
 
 - C-x ff {file_path} Enter - open new file by {file_path} as a new buffer
-
-- C-x bl    Enter - show Buffers List
-- C-x b{N}  Enter - switch to buffer {N}
-- C-x bk{N} Enter - kill buffer {N}
 
 - C-x sp Enter - split pane (now allowed only 3 horizontal slitted panes)
 
