@@ -408,6 +408,7 @@ bool completion_command_mapping(SDL_Event event)
             break;
         case SDLK_y:
             editor_user_input_insert_from_clipboard(&smacs.editor);
+			editor_buffer_completion_actualize(&smacs.editor);
             break;
         }
     }
