@@ -41,7 +41,7 @@ void editor_goto_point(Editor *editor, size_t pos)
 {
     size_t max_len;
 
-    max_len = editor->pane->buffer->content.len-1;
+    max_len = editor->pane->buffer->content.len;
     if (pos > max_len) return;
 
     editor->pane->position = pos;
@@ -1188,15 +1188,12 @@ int editor_is_directory(const char *path)
 bool editor_find_file_complete(Editor *editor)
 {
     char *file_path;
-    DIR *dp;
-    struct dirent *ep;
     size_t file_path_len, dir_len;
     long dir_i;
-    StringBuilder *sb;
+    StringBuilder *full_path;
+    bool file_is_dir;
 
-    if (editor->completor.filtered.len == 0) return false;
-
-    file_path = editor->completor.filtered.data[0];
+    file_path = editor->completor.filtered.len == 0 ? editor->user_input.data : editor->completor.filtered.data[0];
     file_path_len = strlen(file_path);
 
     if (strcmp(file_path, EDITOR_DIR_PREV) == 0) {
@@ -1217,37 +1214,24 @@ bool editor_find_file_complete(Editor *editor)
         return true;
     }
 
+    full_path = (&(StringBuilder){0});
+    sb_append_many(full_path, editor->dir);
+    sb_append(full_path, EDITOR_DIR_SLASH);
+    sb_append_many(full_path, file_path);
 
-    dp = opendir(editor->dir);
-    if (dp == NULL) {
-        fprintf(stderr, "Could not open directory by name %s\n", editor->dir);
-        return false;
+    file_is_dir = false;
+    if (editor_is_directory(full_path->data)) file_is_dir = true;
+    if (editor->completor.filtered.len == 0) file_is_dir = false;
+
+    if (file_is_dir) {
+        memcpy(editor->dir, file_path, file_path_len);
+        editor->dir[file_path_len] = '\0';
+        editor_find_file(editor, false);
+    } else {
+        editor_read_file(editor, full_path->data);
+        editor->state = NONE;
     }
 
-    while ((ep = readdir(dp)) != NULL) {
-        if (contains_ignore_case(file_path, file_path_len, ep->d_name, strlen(ep->d_name))) { //not ignore case
-
-            sb = (&(StringBuilder){0});
-
-            sb_append_many(sb, editor->dir);
-            sb_append(sb, EDITOR_DIR_SLASH);
-            sb_append_many(sb, file_path);
-
-            if (editor_is_directory(sb->data)) {
-                memcpy(editor->dir, file_path, file_path_len);
-                editor->dir[file_path_len] = '\0';
-                editor_find_file(editor, false);
-            } else {
-                editor_read_file(editor, sb->data);
-                editor->state = NONE;
-            }
-
-            sb_free(sb);
-            closedir(dp);
-            return true;
-        }
-    }
-
-    closedir(dp);
-    return false;
+    sb_free(full_path);
+    return true;
 }

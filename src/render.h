@@ -10,6 +10,7 @@
 enum LineNumberFormat {
     ABSOLUTE,
     RELATIVE,
+    HIDE,
 };
 
 typedef struct {

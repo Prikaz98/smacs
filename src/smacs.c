@@ -20,7 +20,7 @@
 #define SPACE           " "
 #define TAB             "\t"
 
-const enum LineNumberFormat DISPLAY_LINE_FROMAT = RELATIVE; //[ABSOLUTE, RELATIVE]
+const enum LineNumberFormat DISPLAY_LINE_FROMAT = HIDE; //[ABSOLUTE, RELATIVE, HIDE]
 
 static Smacs smacs = {0};
 
@@ -342,9 +342,7 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
         data = smacs.editor.user_input.data;
         data_len = strlen(data);
 
-        if (starts_with(data, "ff") && data_len > 4) {
-            editor_read_file(&smacs.editor, &data[3]);
-        } else if (starts_with(data, "bk") && data_len > 2) {
+        if (starts_with(data, "bk") && data_len > 2) {
             editor_kill_buffer(&smacs.editor, (size_t) atoi(&data[2]), smacs.notification);
             *message_timeout = MESSAGE_TIMEOUT;
         } else if (starts_with(data, "sp")) {
@@ -360,6 +358,12 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
             editor_goto_line_backward(&smacs.editor, (size_t) atoi(&data[1]));
         } else if (starts_with(data, ":") && data_len > 1) {
             editor_goto_line(&smacs.editor, (size_t) atoi(&data[1]));
+        } else if (starts_with(data, "dlrel")) {
+            smacs.line_number_format = RELATIVE;
+        } else if (starts_with(data, "dlabs")) {
+            smacs.line_number_format = ABSOLUTE;
+        } else if (starts_with(data, "dlnone")) {
+            smacs.line_number_format = HIDE;
         } else {
             //fprintf(stderr, "Unknown cmd %s\n", smacs.editor.user_input.data);
         }
