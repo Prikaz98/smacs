@@ -55,6 +55,7 @@ Bindings:
 - m-u - upper case (allowed only region now)
 - M-l - lower case (allowed only region now)
 - C-i - switch buffer
+- C-o - find file relativly current directory
 
 Extended commands:
 - C-x :{N} Enter - go to line {N}

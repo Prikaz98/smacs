@@ -11,7 +11,7 @@
 #include "themes.h"
 #include "common.h"
 
-#define FONT_SIZE       16
+#define FONT_SIZE       13
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define LEADING         2    /* space between raws */
@@ -131,7 +131,7 @@ int smacs_launch(char *ttf_path, char *file_path)
                 editor_user_input_insert(&smacs.editor, event.text.text);
             } else if (smacs.editor.state & COMPLETION) {
                 editor_user_input_insert(&smacs.editor, event.text.text);
-                editor_buffer_completion_actualize(&smacs.editor);
+                editor_completion_actualize(&smacs.editor);
             } else {
                 editor_insert(&smacs.editor, event.text.text);
             }
@@ -247,6 +247,9 @@ bool ctrl_leader_mapping(SDL_Event event, int *message_timeout)
         break;
     case SDLK_i:
         editor_buffer_switch(&smacs.editor);
+        break;
+    case SDLK_o:
+        editor_find_file(&smacs.editor, true);
         break;
     }
 
@@ -408,7 +411,7 @@ bool completion_command_mapping(SDL_Event event)
             break;
         case SDLK_y:
             editor_user_input_insert_from_clipboard(&smacs.editor);
-            editor_buffer_completion_actualize(&smacs.editor);
+            editor_completion_actualize(&smacs.editor);
             break;
         }
     }
@@ -416,10 +419,11 @@ bool completion_command_mapping(SDL_Event event)
     switch (event.key.keysym.sym) {
     case SDLK_BACKSPACE:
         editor_user_input_delete_backward(&smacs.editor);
-        editor_buffer_completion_actualize(&smacs.editor);
+        editor_completion_actualize(&smacs.editor);
         break;
     case SDLK_RETURN:
-        editor_buffer_switch_complete(&smacs.editor);
+        if (editor_buffer_switch_complete(&smacs.editor)) break;
+        if (editor_find_file_complete(&smacs.editor)) break;
         break;
     }
 

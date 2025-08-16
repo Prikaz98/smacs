@@ -73,13 +73,13 @@ bool contains_ignore_case(char *a, size_t a_len, char *b, size_t b_len)
     if (a == NULL || b == NULL) return false;
     if (a_len < b_len) return false;
 
-	for (i = 0; i < a_len; ++i) {
-		if (strncasecmp(&a[i], b, b_len) == 0) {
-			return true;
-		}
-	}
+    for (i = 0; i < a_len; ++i) {
+        if (strncasecmp(&a[i], b, b_len) == 0) {
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 uint32_t utf8_chars_to_int(char *str, int len) {
@@ -106,4 +106,14 @@ uint32_t utf8_chars_to_int(char *str, int len) {
     }
 
     return result;
+}
+
+char *strdup(const char *str)
+{
+    size_t len = strlen(str);
+    char *ds = calloc(len+1, sizeof(char));
+
+    memcpy(ds, str, len);
+    ds[len] = '\0';
+    return ds;
 }

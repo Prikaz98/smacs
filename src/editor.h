@@ -63,14 +63,24 @@ typedef enum {
     FORWARD_SEARCH  = 0x040,
     BACKWARD_SEARCH = 0x080,
     EXTEND_COMMAND  = 0x100,
-	COMPLETION      = 0x200, //TODO: fix
+    COMPLETION      = 0x200,
+    _FILE           = 0x400,
+
+    FILE_SEARCH     = COMPLETION | _FILE,
     SEARCH          = FORWARD_SEARCH | BACKWARD_SEARCH,
 } Editor_State;
 
 typedef struct {
-	char **data;
-	size_t len;
-	size_t cap;
+    char **data;
+    size_t len;
+    size_t cap;
+} CompletorFiltered;
+
+typedef struct {
+    CompletorFiltered filtered;
+    char **data;
+    size_t len;
+    size_t cap;
 } Completor;
 
 typedef struct {
@@ -84,12 +94,17 @@ typedef struct {
     Editor_State state;
     StringBuilder user_input;
     Buffer_List buffer_list;
-	
-	Completor completor;
+
+    Completor completor;
+    char dir[1024];
 } Editor;
 
 #define EDITOR_CONTENT_CAP 256
 #define EDITOR_MINI_BUFFER_CONTENT_LIMIT 1000
+
+#define EDITOR_DIR_CUR    "."
+#define EDITOR_DIR_PREV   ".."
+#define EDITOR_DIR_SLASH  '/'
 
 void editor_goto_point(Editor *editor, size_t pos);
 
@@ -159,8 +174,10 @@ void editor_close_pane(Editor *editor);
 void editor_upper(Editor *editor);
 void editor_lower(Editor *editor);
 
-void editor_buffer_completion_actualize(Editor *editor);
+void editor_completion_actualize(Editor *editor);
 void editor_buffer_switch(Editor *editor);
-void editor_buffer_switch_complete(Editor *editor);
+bool editor_buffer_switch_complete(Editor *editor);
 
+void editor_find_file(Editor *editor, bool refresh_dir);
+bool editor_find_file_complete(Editor *editor);
 #endif

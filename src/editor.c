@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <sys/param.h>
 #include <assert.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "editor.h"
 #include "utf8.h"
@@ -458,6 +462,9 @@ void editor_destroy(Editor *editor)
     editor->buffer_list.len = 0;
     free(editor->buffer_list.data);
     editor->buffer_list.data = NULL;
+
+    gb_free(&(editor->completor.filtered));
+    gb_free(&(editor->completor));
 }
 
 void editor_recenter_top_bottom(Editor *editor)
@@ -1038,6 +1045,18 @@ void editor_lower_region(Editor *editor)
     }
 }
 
+void editor_completor_clean(Editor *editor)
+{
+    for (size_t i = 0; i < editor->completor.len; ++i) {
+        if (editor->completor.data[i] != NULL) {
+            free(editor->completor.data[i]);
+            editor->completor.data[i] = NULL;
+        }
+    }
+
+    editor->completor.len = 0;
+}
+
 void editor_lower(Editor *editor)
 {
     if (editor->state == SELECTION) {
@@ -1047,53 +1066,188 @@ void editor_lower(Editor *editor)
 
 void editor_buffer_switch(Editor *editor)
 {
-	size_t i;
+    size_t i;
 
     editor_user_input_clear(editor);
-	editor->state = COMPLETION;
-	editor->completor.len = 0;
+    editor->state = COMPLETION;
+    editor_completor_clean(editor);
 
-	for (i = 0; i < editor->buffer_list.len; ++i) {
-		gb_append(&(editor->completor), editor->buffer_list.data[i].file_path);
-	}
+    for (i = 0; i < editor->buffer_list.len; ++i) {
+        gb_append(&(editor->completor), strdup(editor->buffer_list.data[i].file_path));
+    }
+
+    editor_completion_actualize(editor);
 }
 
-void editor_buffer_completion_actualize(Editor *editor)
+void editor_completion_actualize(Editor *editor)
 {
-	size_t i;
-	char *buffer_name;
-	bool need_append;
-	
-	if (editor->state != COMPLETION) return;
+    size_t i;
+    char *elem;
+    bool need_append;
 
-	editor->completor.len = 0;
-	for (i = 0; i < editor->buffer_list.len; ++i) {
-		need_append = false;
-		buffer_name = editor->buffer_list.data[i].file_path;
+    if ((editor->state & COMPLETION) == 0) return;
 
-		if (editor->user_input.len == 0) need_append = true;
-		if (contains_ignore_case(buffer_name, strlen(buffer_name), editor->user_input.data, editor->user_input.len)) need_append = true;
+    editor->completor.filtered.len = 0;
 
-		if (need_append) {
-			gb_append(&(editor->completor), buffer_name);
-		}
-	}
+    for (i = 0; i < editor->completor.len; ++i) {
+        need_append = false;
+        elem = editor->completor.data[i];
+
+        if (editor->user_input.len == 0) need_append = true;
+        if (contains_ignore_case(elem, strlen(elem), editor->user_input.data, editor->user_input.len)) need_append = true;
+
+        if (need_append) {
+            gb_append(&(editor->completor.filtered), elem);
+        }
+    }
 }
 
-void editor_buffer_switch_complete(Editor *editor)
+bool editor_buffer_switch_complete(Editor *editor)
 {
-	size_t i;
-	char *buffer_target, *buffer_name;
-	if (editor->completor.len == 0) return;
+    size_t i;
+    char *buffer_target, *buffer_name;
+    if (editor->completor.filtered.len == 0) return false;
 
-	buffer_target = editor->completor.data[0];
+    buffer_target = editor->completor.filtered.data[0];
 
-	for (i = 0; i < editor->buffer_list.len; ++i) {
-		buffer_name = editor->buffer_list.data[i].file_path;
-		if (strcmp(buffer_target, buffer_name) == 0) {
-			editor_switch_buffer(editor, i);
-			editor->state = NONE;
-			return;
-		}
-	}
+    for (i = 0; i < editor->buffer_list.len; ++i) {
+        buffer_name = editor->buffer_list.data[i].file_path;
+        if (strcmp(buffer_target, buffer_name) == 0) {
+            editor_switch_buffer(editor, i);
+            editor->state = NONE;
+            return true;
+        }
+    }
+    return false;
+}
+
+void editor_set_dir_by_current_file(Editor *editor)
+{
+    long i;
+    char *fp, *dir;
+    size_t fp_len;
+
+    dir = editor->dir;
+    fp = editor->pane->buffer->file_path;
+    fp_len = strlen(fp);
+
+    dir[0] = '.';
+    dir[1] = '\0';
+    for (i = (long)fp_len-1; i >= 0; --i) {
+        if (fp[i] == '/') {
+            memcpy(dir, fp, i);
+            dir[i] = '\0';
+            break;
+        }
+    }
+
+}
+
+void editor_find_file(Editor *editor, bool refresh_dir)
+{
+    DIR *dp;
+    struct dirent *ep;
+    bool should_add;
+
+    if (refresh_dir) editor_set_dir_by_current_file(editor);
+
+    dp = opendir(editor->dir);
+    if (dp == NULL) {
+        fprintf(stderr, "Could not open directory by name %s\n", editor->dir);
+        return;
+    }
+
+    editor_user_input_clear(editor);
+    editor->state = FILE_SEARCH;
+    editor_completor_clean(editor);
+
+    gb_append(&(editor->completor), strdup(EDITOR_DIR_CUR));
+    gb_append(&(editor->completor), strdup(EDITOR_DIR_PREV));
+
+    while ((ep = readdir(dp)) != NULL) {
+        should_add = true;
+        if (strcmp(ep->d_name, EDITOR_DIR_CUR) == 0) should_add = false;
+        if (strcmp(ep->d_name, EDITOR_DIR_PREV) == 0) should_add = false;
+
+        if (should_add) {
+            gb_append(&(editor->completor), strdup(ep->d_name));
+        }
+    }
+
+    closedir(dp);
+    editor_completion_actualize(editor);
+}
+
+int editor_is_directory(const char *path)
+{
+    struct stat path_stat;
+    stat(path, &path_stat);
+    return S_ISDIR(path_stat.st_mode);
+}
+
+bool editor_find_file_complete(Editor *editor)
+{
+    char *file_path;
+    DIR *dp;
+    struct dirent *ep;
+    size_t file_path_len, dir_len;
+    long dir_i;
+    StringBuilder *sb;
+
+    if (editor->completor.filtered.len == 0) return false;
+
+    file_path = editor->completor.filtered.data[0];
+    file_path_len = strlen(file_path);
+
+    if (strcmp(file_path, EDITOR_DIR_PREV) == 0) {
+        dir_len =  strlen(editor->dir);
+        dir_i = (long) dir_len;
+
+        while(dir_i > 0) {
+            if (editor->dir[dir_i] == EDITOR_DIR_SLASH) break;
+            --dir_i;
+        }
+        memset(&editor->dir[dir_i], 0, dir_len - dir_i);
+        if (strlen(editor->dir) == 0) {
+            editor->dir[0] = '.';
+            editor->dir[1] = '\0';
+        }
+
+        editor_find_file(editor, false);
+        return true;
+    }
+
+
+    dp = opendir(editor->dir);
+    if (dp == NULL) {
+        fprintf(stderr, "Could not open directory by name %s\n", editor->dir);
+        return false;
+    }
+
+    while ((ep = readdir(dp)) != NULL) {
+        if (contains_ignore_case(file_path, file_path_len, ep->d_name, strlen(ep->d_name))) { //not ignore case
+
+            sb = (&(StringBuilder){0});
+
+            sb_append_many(sb, editor->dir);
+            sb_append(sb, EDITOR_DIR_SLASH);
+            sb_append_many(sb, file_path);
+
+            if (editor_is_directory(sb->data)) {
+                memcpy(editor->dir, file_path, file_path_len);
+                editor->dir[file_path_len] = '\0';
+                editor_find_file(editor, false);
+            } else {
+                editor_read_file(editor, sb->data);
+                editor->state = NONE;
+            }
+
+            sb_free(sb);
+            closedir(dp);
+            return true;
+        }
+    }
+
+    closedir(dp);
+    return false;
 }

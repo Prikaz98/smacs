@@ -62,7 +62,6 @@ void render_draw_mini_buffer(Smacs *smacs)
     StringBuilder *mini_buffer_content;
     size_t i;
 
-
     TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
     SDL_GetWindowSize(smacs->window, &win_w, &win_h);
 
@@ -77,23 +76,30 @@ void render_draw_mini_buffer(Smacs *smacs)
     switch (smacs->editor.state) {
     case SEARCH:
     case EXTEND_COMMAND:
+    case FILE_SEARCH:
     case COMPLETION:
         if (smacs->editor.state & COMPLETION) {
+            if ((smacs->editor.state & _FILE) && (strcmp(smacs->editor.dir, ".") != 0)) {
+                sb_append_many(mini_buffer_content, smacs->editor.dir);
+                sb_append(mini_buffer_content, '/');
+            }
+
             if (smacs->editor.user_input.len > 0) {
                 sb_append_many(mini_buffer_content, smacs->editor.user_input.data);
             }
 
+            TTF_SizeUTF8(smacs->font, mini_buffer_content->data, &mini_buffer_cursor.x, NULL);
+
             sb_append_many(mini_buffer_content, " {");
-            for (i = 0; i < smacs->editor.completor.len; ++i) {
-                sb_append_many(mini_buffer_content, smacs->editor.completor.data[i]);
-                if (i < (smacs->editor.completor.len-1)) {
+            for (i = 0; i < smacs->editor.completor.filtered.len; ++i) {
+                sb_append_many(mini_buffer_content, smacs->editor.completor.filtered.data[i]);
+                if (i < (smacs->editor.completor.filtered.len-1)) {
                     sb_append_many(mini_buffer_content, " | ");
                 }
             }
             sb_append(mini_buffer_content, '}');
 
             render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content->data, mini_buffer_content->len, smacs->fg);
-            TTF_SizeUTF8(smacs->font, smacs->editor.user_input.len == 0 ? "" : smacs->editor.user_input.data, &mini_buffer_cursor.x, NULL);
         } else {
             if (smacs->editor.user_input.len > 0) {
                 sb_append_many(mini_buffer_content, smacs->editor.user_input.data);
