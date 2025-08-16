@@ -55,19 +55,79 @@ void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBui
     render_draw_text(smacs, cursor_rect.x, cursor_rect.y, sb->data, sb->len, smacs->bg);
 }
 
+void render_draw_mini_buffer(Smacs *smacs)
+{
+    SDL_Rect mini_buffer_cursor, mini_buffer_area;
+    int win_w, win_h, char_w, char_h, mini_buffer_padding;
+    StringBuilder *mini_buffer_content;
+    size_t i;
+
+
+    TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
+    SDL_GetWindowSize(smacs->window, &win_w, &win_h);
+
+    mini_buffer_content = &(StringBuilder) {0};
+    mini_buffer_cursor = (SDL_Rect) {0, win_h - char_h, 2, char_h};
+    mini_buffer_area = (SDL_Rect) {0, win_h - (char_h * 1), win_w, char_h};
+    mini_buffer_padding = char_w;
+
+    SDL_SetRenderDrawColor(smacs->renderer, smacs->bg.r, smacs->bg.g, smacs->bg.b, smacs->bg.a);
+    SDL_RenderFillRect(smacs->renderer, &mini_buffer_area);
+
+    switch (smacs->editor.state) {
+    case SEARCH:
+    case EXTEND_COMMAND:
+    case COMPLETION:
+        if (smacs->editor.state & COMPLETION) {
+            if (smacs->editor.user_input.len > 0) {
+                sb_append_many(mini_buffer_content, smacs->editor.user_input.data);
+            }
+
+            sb_append_many(mini_buffer_content, " {");
+            for (i = 0; i < smacs->editor.completor.len; ++i) {
+                sb_append_many(mini_buffer_content, smacs->editor.completor.data[i]);
+                if (i < (smacs->editor.completor.len-1)) {
+                    sb_append_many(mini_buffer_content, " | ");
+                }
+            }
+            sb_append(mini_buffer_content, '}');
+
+            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content->data, mini_buffer_content->len, smacs->fg);
+            TTF_SizeUTF8(smacs->font, smacs->editor.user_input.len == 0 ? "" : smacs->editor.user_input.data, &mini_buffer_cursor.x, NULL);
+        } else {
+            if (smacs->editor.user_input.len > 0) {
+                sb_append_many(mini_buffer_content, smacs->editor.user_input.data);
+            }
+            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content->data, mini_buffer_content->len, smacs->fg);
+            TTF_SizeUTF8(smacs->font, mini_buffer_content->data, &mini_buffer_cursor.x, NULL);
+        }
+
+        mini_buffer_cursor.x = mini_buffer_cursor.x + mini_buffer_padding;
+
+        SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
+        SDL_RenderFillRect(smacs->renderer, &mini_buffer_cursor);
+        break;
+    default:
+        sb_append_many(mini_buffer_content, smacs->notification);
+        render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content->data, mini_buffer_content->len, smacs->fg);
+        break;
+    }
+
+    sb_free(mini_buffer_content);
+}
+
 void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
 {
-    SDL_Rect mode_line, user_input_rect, mini_buffer_cursor;
-    int win_w, win_h, char_w, char_h, mode_line_padding, mini_buffer_padding;
+    SDL_Rect mode_line;
+    int win_w, win_h, char_w, char_h, mode_line_padding;
     StringBuilder *mini_buffer_content;
-	size_t i;
 
     char mode_line_info[1000] = {0};
     SDL_Color mlbg, mlfg;
 
     mlbg = smacs->mlbg;
     mlfg = smacs->mlfg;
-	mini_buffer_content = &(StringBuilder) {0};
+    mini_buffer_content = &(StringBuilder) {0};
     if (!is_active_pane) {
         mlbg = smacs->mlfg;
         mlfg = smacs->mlbg;
@@ -77,58 +137,16 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
     SDL_GetWindowSize(smacs->window, &win_w, &win_h);
 
     mode_line = (SDL_Rect) {pane.x, win_h - (char_h * 2), win_w, char_h};
-    user_input_rect = (SDL_Rect) {pane.x, win_h - (char_h * 1), win_w, char_h};
-    mini_buffer_cursor = (SDL_Rect) {pane.x, win_h - char_h, 2, char_h};
 
     mode_line_padding = char_w + pane.x;
-    mini_buffer_padding = char_w;
 
     SDL_SetRenderDrawColor(smacs->renderer, mlbg.r, mlbg.g, mlbg.b, mlbg.a);
     SDL_RenderFillRect(smacs->renderer, &mode_line);
-
-    SDL_SetRenderDrawColor(smacs->renderer, smacs->bg.r, smacs->bg.g, smacs->bg.b, smacs->bg.a);
-    SDL_RenderFillRect(smacs->renderer, &user_input_rect);
 
     SDL_SetRenderDrawColor(smacs->renderer, mlfg.r, mlfg.g, mlfg.b, mlfg.a);
     SDL_RenderDrawLine(smacs->renderer, pane.x, mode_line.y, mode_line.w, mode_line.y);
     SDL_RenderDrawLine(smacs->renderer, pane.x, win_h - char_h, mode_line.w, win_h - char_h);
 
-    if (is_active_pane) {
-
-        if (smacs->editor.state & (SEARCH | EXTEND_COMMAND | COMPLETION)) {
-			if (smacs->editor.state & COMPLETION) {
-				if (smacs->editor.user_input.len > 0) {
-					sb_append_many(mini_buffer_content, smacs->editor.user_input.data);
-				}
-
-				sb_append_many(mini_buffer_content, " {");
-				for (i = 0; i < smacs->editor.completor.len; ++i) {
-					sb_append_many(mini_buffer_content, smacs->editor.completor.data[i]);
-					if (i < (smacs->editor.completor.len-1)) {
-						sb_append_many(mini_buffer_content, " | ");
-					}
-				}
-				sb_append(mini_buffer_content, '}');
-
-	            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content->data, mini_buffer_content->len, smacs->fg);
-	            TTF_SizeUTF8(smacs->font, smacs->editor.user_input.len == 0 ? "" : smacs->editor.user_input.data, &mini_buffer_cursor.x, NULL);
-			} else {
-				if (smacs->editor.user_input.len > 0) {
-					sb_append_many(mini_buffer_content, smacs->editor.user_input.data);
-				}
-	            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content->data, mini_buffer_content->len, smacs->fg);
-	            TTF_SizeUTF8(smacs->font, mini_buffer_content->data, &mini_buffer_cursor.x, NULL);
-			}
-
-            mini_buffer_cursor.x = mini_buffer_cursor.x + mini_buffer_padding;
-
-            SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
-            SDL_RenderFillRect(smacs->renderer, &mini_buffer_cursor);
-		} else {
-            sb_append_many(mini_buffer_content, smacs->notification);
-            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content->data, mini_buffer_content->len, smacs->fg);
-		}
-    }
 
     sprintf(mode_line_info,
             "%s%s %s%s",
@@ -138,7 +156,7 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
             !is_active_pane ? "" : smacs->editor.state & SEARCH ? "Search[:enter next :C-g stop]" : smacs->editor.state & EXTEND_COMMAND ? "C-x" : "");
 
     render_draw_text(smacs, mode_line_padding, win_h - (char_h * 2), mode_line_info, strlen(mode_line_info), mlfg);
-	sb_free(mini_buffer_content);
+    sb_free(mini_buffer_content);
 }
 
 int count_digits(size_t num)
@@ -376,6 +394,8 @@ void render_draw_smacs(Smacs *smacs)
         SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
         SDL_RenderDrawLine(smacs->renderer, pane->w, 0, pane->w, pane->h);
     }
+
+    render_draw_mini_buffer(smacs);
 
     free(line_number);
 }
