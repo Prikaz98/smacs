@@ -31,7 +31,7 @@ void append_char(Content *content, char ch, size_t pos)
     } else if (pos < content->len) {
         memmove(&content->data[pos + 1], &content->data[pos], content->len - pos);
         content->data[pos] = ch;
-        content->len++;
+        ++content->len;
     } else {
         fprintf(stderr, "Out of range insert char char_pos: %ld content_len: %ld\n", pos, content->len);
     }
@@ -191,7 +191,7 @@ void editor_next_line(Editor *editor)
         line = editor->pane->buffer->lines[line_num];
         editor->pane->buffer->column = MAX(editor->pane->buffer->column, editor->pane->position - line.start);
 
-        line_num++;
+        ++line_num;
         if (editor->pane->buffer->lines_count > line_num) {
             line = editor->pane->buffer->lines[line_num];
             next_pos = line.start + editor->pane->buffer->column;
@@ -546,7 +546,7 @@ void editor_mwheel_scroll_down(Editor *editor)
     Line next_line;
 
     if (editor->pane->arena.start < (editor->pane->buffer->lines_count - 1)) {
-        editor->pane->arena.start++;
+        ++editor->pane->arena.start;
 
         line_num = editor_get_current_line_number(editor->pane);
 
