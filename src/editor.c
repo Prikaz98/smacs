@@ -1018,6 +1018,8 @@ void editor_upper_region(Editor *editor)
     for (i = reg_beg; i < reg_end; ++i) {
         content->data[i] = (char) toupper((int)content->data[i]);
     }
+
+	editor->state = NONE;
 }
 
 void editor_upper(Editor *editor)
@@ -1043,6 +1045,8 @@ void editor_lower_region(Editor *editor)
     for (i = reg_beg; i < reg_end; ++i) {
         content->data[i] = (char) tolower((int)content->data[i]);
     }
+
+	editor->state = NONE;
 }
 
 void editor_completor_clean(Editor *editor)
@@ -1161,7 +1165,6 @@ void editor_find_file(Editor *editor, bool refresh_dir)
     editor->state = FILE_SEARCH;
     editor_completor_clean(editor);
 
-    gb_append(&(editor->completor), strdup(EDITOR_DIR_CUR));
     gb_append(&(editor->completor), strdup(EDITOR_DIR_PREV));
 
     while ((ep = readdir(dp)) != NULL) {
@@ -1233,4 +1236,36 @@ bool editor_find_file_complete(Editor *editor)
 
     sb_free(full_path);
     return true;
+}
+
+void editor_completion_next_match(Editor *editor)
+{
+    char *tmp;
+    size_t len;
+
+    if ((editor->state & COMPLETION) == 0) return;
+    if (editor->completor.filtered.len == 0) return;
+    if (editor->completor.filtered.len == 1) return;
+
+    len = editor->completor.filtered.len;
+    tmp = editor->completor.filtered.data[0];
+
+    memmove(&editor->completor.filtered.data[0], &editor->completor.filtered.data[1], (len - 1) * sizeof(void*));
+    editor->completor.filtered.data[len - 1] = tmp;
+}
+
+void editor_completion_prev_match(Editor *editor)
+{
+    char *tmp;
+    size_t len;
+
+    if ((editor->state & COMPLETION) == 0) return;
+    if (editor->completor.filtered.len == 0) return;
+    if (editor->completor.filtered.len == 1) return;
+
+    len = editor->completor.filtered.len;
+    tmp = editor->completor.filtered.data[len - 1];
+
+    memmove(&editor->completor.filtered.data[1], &editor->completor.filtered.data[0], (len - 1) * sizeof(void*));
+    editor->completor.filtered.data[0] = tmp;
 }

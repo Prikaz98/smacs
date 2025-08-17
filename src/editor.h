@@ -175,6 +175,9 @@ void editor_upper(Editor *editor);
 void editor_lower(Editor *editor);
 
 void editor_completion_actualize(Editor *editor);
+void editor_completion_next_match(Editor *editor);
+void editor_completion_prev_match(Editor *editor);
+
 void editor_buffer_switch(Editor *editor);
 bool editor_buffer_switch_complete(Editor *editor);
 

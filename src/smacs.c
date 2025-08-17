@@ -122,6 +122,13 @@ int smacs_launch(char *ttf_path, char *file_path)
             case SDLK_TAB:
                 editor_insert(&smacs.editor, TAB);
                 break;
+            case SDLK_F11:
+                if (SDL_GetWindowFlags(smacs.window) & SDL_WINDOW_FULLSCREEN_DESKTOP) {
+                    SDL_SetWindowFullscreen(smacs.window, 0);
+                } else {
+                    SDL_SetWindowFullscreen(smacs.window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                }
+                break;
             }
             break;
         case SDL_TEXTINPUT:
@@ -416,6 +423,12 @@ bool completion_command_mapping(SDL_Event event)
         case SDLK_y:
             editor_user_input_insert_from_clipboard(&smacs.editor);
             editor_completion_actualize(&smacs.editor);
+            break;
+        case SDLK_s:
+            editor_completion_next_match(&smacs.editor);
+            break;
+        case SDLK_r:
+            editor_completion_prev_match(&smacs.editor);
             break;
         }
     }
