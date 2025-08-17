@@ -1,14 +1,24 @@
 #include <stdio.h>
+#include <string.h>
 #include "../src/smacs.h"
 
-#define TTF_PATH ""
+#define HOME ""
+#define APP_DIR ""
+#define TTF ""
+#define HOMESCREEN "resources/homescreen"
 
 int main(int argc, char **argv)
 {
-    if (argc != 2) {
-        fprintf(stderr, "Usage %s <file_path>\n", argv[0]);
-        return 1;
+    char ttf_path[1024], file_path[1024];
+
+    if (argc == 2) {
+        size_t len = strlen(argv[1]);
+        memcpy(file_path, argv[1], len);
+        file_path[len] = '\0';
+    } else {
+        sprintf(file_path, "%s/%s", APP_DIR, HOMESCREEN);
     }
 
-    return smacs_launch(TTF_PATH, argv[1]);
+    sprintf(ttf_path, "%s/%s", APP_DIR, TTF);
+    return smacs_launch(HOME, ttf_path, file_path);
 }

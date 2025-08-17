@@ -63,7 +63,7 @@ void render_draw_mini_buffer(Smacs *smacs)
     SDL_Rect mini_buffer_cursor, mini_buffer_area;
     int win_w, win_h, char_w, char_h, mini_buffer_padding, completion_w;
     StringBuilder *mini_buffer_content;
-    size_t i;
+    size_t i, home_dir_len;
     char *completion_delimiter;
 
     TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
@@ -74,6 +74,7 @@ void render_draw_mini_buffer(Smacs *smacs)
     mini_buffer_area = (SDL_Rect) {0, win_h - (char_h * 1), win_w, char_h};
     mini_buffer_padding = char_w;
     completion_delimiter = " | ";
+    home_dir_len = strlen(smacs->home_dir);
 
     SDL_SetRenderDrawColor(smacs->renderer, smacs->bg.r, smacs->bg.g, smacs->bg.b, smacs->bg.a);
     SDL_RenderFillRect(smacs->renderer, &mini_buffer_area);
@@ -93,7 +94,12 @@ void render_draw_mini_buffer(Smacs *smacs)
 
             sb_append(mini_buffer_content, '{');
             for (i = 0; i < smacs->editor.completor.filtered.len; ++i) {
-                sb_append_many(mini_buffer_content, smacs->editor.completor.filtered.data[i]);
+                if (starts_with(smacs->editor.completor.filtered.data[i], smacs->home_dir)) {
+                    sb_append(mini_buffer_content, '~');
+                    sb_append_many(mini_buffer_content, &smacs->editor.completor.filtered.data[i][home_dir_len]);
+                } else {
+                    sb_append_many(mini_buffer_content, smacs->editor.completor.filtered.data[i]);
+                }
 
                 if (i < (smacs->editor.completor.filtered.len-1)) {
                     sb_append_many(mini_buffer_content, completion_delimiter);

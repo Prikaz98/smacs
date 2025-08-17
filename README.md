@@ -11,67 +11,6 @@ I like [Emacs](https://emacsdocs.org/) and I want to learn how this kind of app 
 ## Warning
 This app can not work correctly in Mac OS by some reason.
 
-## Mappings
-
-In the following keybinding description I use standard Emacs key definition:
-
-- C - Ctrl
-- M - Alt (Meta)
-
-Bindings:
-
-- C-f - forward char
-- C-b - backward char
-- C-n - next line
-- C-p - previous line
-- C-a - move cursor to the beginning of the line
-- C-e - move cursor to the end of the line
-- C-c - save file
-- C-v - scroll up
-- C-w - cut
-- M-v - scroll down
-- M-< - beginning of the buffer
-- M-> - end of the buffer
-- M-n - move line down
-- M-p - move line up
-- M-f - jump word forward
-- M-b - jump word backward
-- M-d - delete forward word
-- M-@ - mark forward word
-- M-( - wrap region in parenthesis
-- C-, - duplicate line
-- C-s - search
-- C-k - delete from cursor position to the end of the line
-- C-d - delete forward char
-- BACKSPACE - delete backward char
-- C-SPC - set mark
-- M-w - copy to clipboard
-- C-y - paste from clipboard
-- C-l - recenter
-- C-- - font size decrease
-- C-= - font size increase
-- C-q - next pane
-- M-k - close pane
-- m-u - upper case (allowed only region now)
-- M-l - lower case (allowed only region now)
-- C-i - switch buffer
-- C-o - find file relativly from current directory
-- F11 - toggle full window
-
-Ido like mode (while switch buffer or find file):
-- C-s next match
-- C-r previous match
-
-Extended commands:
-- C-x :{N} Enter - go to line {N}
-- C-x n{N} Enter - go to Next {N} line
-- C-x p{N} Enter - go to Previous {N} line
-- C-x sp Enter   - split pane (now allowed only 3 horizontal slitted panes)
-
-- C-x dlrel Enter  - display line number (relative)
-- C-x dlabs Enter  - display line number (absolute)
-- C-x dlnone Enter - disable display line number
-
 # Thanks
 Everything works using [SDL](https://www.libsdl.org/).
 

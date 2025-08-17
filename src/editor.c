@@ -1019,7 +1019,7 @@ void editor_upper_region(Editor *editor)
         content->data[i] = (char) toupper((int)content->data[i]);
     }
 
-	editor->state = NONE;
+    editor->state = NONE;
 }
 
 void editor_upper(Editor *editor)
@@ -1046,7 +1046,7 @@ void editor_lower_region(Editor *editor)
         content->data[i] = (char) tolower((int)content->data[i]);
     }
 
-	editor->state = NONE;
+    editor->state = NONE;
 }
 
 void editor_completor_clean(Editor *editor)
@@ -1128,19 +1128,21 @@ bool editor_buffer_switch_complete(Editor *editor)
 void editor_set_dir_by_current_file(Editor *editor)
 {
     long i;
-    char *fp, *dir;
+    char *fp;
     size_t fp_len;
 
-    dir = editor->dir;
+    if (strlen(editor->dir) == 0) {
+        getcwd(editor->dir, 1024);
+        return;
+    }
+
     fp = editor->pane->buffer->file_path;
     fp_len = strlen(fp);
 
-    dir[0] = '.';
-    dir[1] = '\0';
     for (i = (long)fp_len-1; i >= 0; --i) {
         if (fp[i] == '/') {
-            memcpy(dir, fp, i);
-            dir[i] = '\0';
+            memcpy(editor->dir, fp, i);
+            editor->dir[i] = '\0';
             break;
         }
     }

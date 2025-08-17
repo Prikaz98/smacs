@@ -34,6 +34,7 @@ typedef struct {
 
     enum LineNumberFormat line_number_format;
     char *notification;
+    char *home_dir;
 } Smacs;
 
 void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg);

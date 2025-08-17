@@ -5,11 +5,10 @@ SDL2_LIBS:=-lSDL2_ttf
 CFLAGS:=-Wall -Wextra -std=c11 -pedantic -ggdb -D_DEFAULT_SOURCE #-fsanitize=address,undefined
 SOURCES:=./src/common.c ./src/utf8.c ./src/editor.c ./src/themes.c ./src/render.c ./src/smacs.c
 EXEC:=smacs
-#TTF_FILE:=fonts/IosevkaFixed-Medium.ttf
-TTF_FILE:=fonts/liberation-mono.ttf
+TTF:=fonts/liberation-mono.ttf
 
 build:
 	PWD=$(shell pwd)
 	mkdir -p .build
-	sed 's+^#define TTF_PATH.*$$+#define TTF_PATH "${PWD}/${TTF_FILE}"+g' ./resources/template > ./.build/main.c
+	cat ./resources/template | sed 's+^#define HOME .*$$+#define HOME "${HOME}"+g' | sed 's+^#define APP_DIR.*$$+#define APP_DIR "${PWD}"+g' | sed 's+^#define TTF.*$$+#define TTF "${TTF}"+g' > ./.build/main.c
 	$(CC) $(CFLAGS) $(PKG_FLAGS) -o $(EXEC) $(SOURCES) ./.build/main.c $(PKG_LIBS) $(SDL2_LIBS)

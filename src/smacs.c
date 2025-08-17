@@ -29,13 +29,14 @@ static Smacs smacs = {0};
 //TODO: Multicursor
 //TODO: undo/redo
 
+void initial_hook(void);
 bool ctrl_leader_mapping(SDL_Event event, int *message_timeout);
 bool alt_leader_mapping(SDL_Event event);
 bool search_mapping(SDL_Event event, int *message_timeout);
 bool extend_command_mapping(SDL_Event event, int *message_timeout);
 bool completion_command_mapping(SDL_Event event);
 
-int smacs_launch(char *ttf_path, char *file_path)
+int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 {
     int win_w, win_h, message_timeout, font_y, i, win_w_per_pane;
 
@@ -56,7 +57,7 @@ int smacs_launch(char *ttf_path, char *file_path)
         return 1;
     }
 
-    smacs.window = SDL_CreateWindow("smacs", 0, 0, 0, 0, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
+    smacs.window = SDL_CreateWindow("smacs", 0, 0, 500, 600, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
     if (smacs.window == NULL) {
         fprintf(stderr, "Could not open SDL window: %s\n", SDL_GetError());
         return 1;
@@ -74,6 +75,7 @@ int smacs_launch(char *ttf_path, char *file_path)
     themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre]
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
+	smacs.home_dir = home_dir;
     smacs.editor = (Editor) {0};
 
     smacs.editor.panes_len = 0;
@@ -90,6 +92,8 @@ int smacs_launch(char *ttf_path, char *file_path)
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
     smacs.leading = LEADING;
     smacs.tab_size = TAB_SIZE;
+
+	initial_hook();
 
     SDL_Event event = {0};
 
@@ -176,6 +180,16 @@ int smacs_launch(char *ttf_path, char *file_path)
 
     return 0;
 }
+
+void initial_hook(void)
+{
+	editor_split_pane(&smacs.editor);
+    editor_next_pane(&smacs.editor);
+	editor_read_file(&smacs.editor, "*scratch*");
+	editor_insert(&smacs.editor, ";; Buffer for your notes");
+    editor_next_pane(&smacs.editor);
+}
+
 
 bool ctrl_leader_mapping(SDL_Event event, int *message_timeout)
 {
@@ -369,7 +383,7 @@ bool extend_command_mapping(SDL_Event event, int *message_timeout)
             smacs.line_number_format = RELATIVE;
         } else if (starts_with(data, "dlabs")) {
             smacs.line_number_format = ABSOLUTE;
-        } else if (starts_with(data, "dlnone")) {
+        } else if (starts_with(data, "dlnon")) {
             smacs.line_number_format = HIDE;
         } else {
             //fprintf(stderr, "Unknown cmd %s\n", smacs.editor.user_input.data);

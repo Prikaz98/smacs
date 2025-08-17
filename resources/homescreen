@@ -1,0 +1,57 @@
+ ▄██▀███████████▄█████▄  ▄█▀██▄  ▄██▀██ ▄██▀███
+ ██   ▀▀ ██    ██    ██ ██   ██ ██▀  ██ ██   ▀▀
+ ▀█████▄ ██    ██    ██  ▄█████ ██      ▀█████▄
+ █▄   ██ ██    ██    ██ ██   ██ ██▄    ▄█▄   ██
+ ██████▀████  ████  ████▄████▀██▄█████▀ ██████▀
+   Smacs - short macs editor
+
+BASICS:
+Notations C means <Ctrl>
+		  M means <Meta> or <Alt>
+		  Ido means Emacs features (interactively do thing with buffers and files)
+
+----------------------------------------------------------------------
+CURSOR MOVEMENT:
+Backward character ......... C-b	Forward character ............ C-f
+Previous line .............. C-p	Next line .................... C-n
+Previous word .............. M-b	Next word .................... M-f
+Beggining of line .......... C-a	End of line .................. C-e
+Scroll up .................. C-v	Scroll down .................. M-v
+Beggining of buffer......... M-<	End of buffer ................ M->
+----------------------------------------------------------------------
+FILE COMMAND:
+Find file .................. C-o
+Save file .................. C-c
+----------------------------------------------------------------------
+EDITING COMMAND:
+Delete next character....... C-d	Delete prev. character <Backspace>
+Move line up ............... M-n	Move line down ............... M-n
+Paste ...................... C-y    Duplicate line ............... C-,
+Kill line .................. C-k
+----------------------------------------------------------------------
+REGION/SELECTION:
+Set mark ................... C-SPC  Set mark forward ............. M-@
+Exit selection ............. C-g
+Cut ........................ C-w    Copy ......................... M-w
+Replace .................... C-y    Wrap region in parenthesis ... M-(
+Delete region ...... <Backspace>	Delete region ................ C-d
+Upper case region .......... M-u	Lower case region ............ M-l
+----------------------------------------------------------------------
+SEARCH:
+Search forward ............. C-s	Search backward .............. C-r
+Next search match ...... <Enter>    Exit searching ............... C-g
+----------------------------------------------------------------------
+VIEW:
+Font size decrease ......... C--	Font size increase ........... C-=
+Toggle full window ......... F11	Recenter top bottom .......... C-l
+Split pane ...... C-x sp <Enter>	Next pane .................... C-q
+Close pane ................. M-k
+
+-----------------------------------------------------------------------
+MISCELLANEOUS:
+Switch buffer .............. C-i	Go to line ....... C-x :{N} <Enter>
+Ido next match ............. C-s	Go to next line .. C-x n{N} <Enter>
+Ido previous match ......... C-r	Go to prev. line . C-x p{N} <Enter>
+									Absolute number .. C-x dlabs<Enter>
+									Relative number .. C-x dlrel<Enter>
+									Disable number ... C-x dlnon<Enter>
