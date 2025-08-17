@@ -172,7 +172,7 @@ void editor_recognize_arena(Editor *editor)
         line_num = editor_get_current_line_number(pane);
         arena = &pane->arena;
 
-        if (line_num >= (arena->start + arena->show_lines - 4)) {
+        if (line_num >= (arena->start + arena->show_lines - 2)) {
             arena->start = MIN(pane->buffer->lines_count - 1, line_num - arena->show_lines / 2);
         } else if (line_num < arena->start) {
             arena->start = line_num;
