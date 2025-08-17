@@ -31,7 +31,8 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, S
 void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBuilder *sb)
 {
     char *data;
-    size_t cursor, char_len, i, content_len;
+    size_t cursor, char_len, content_len;
+    register size_t i;
 
     data = pane.buffer->content.data;
     content_len = pane.buffer->content.len;
@@ -62,7 +63,8 @@ void render_draw_mini_buffer(Smacs *smacs)
     SDL_Rect mini_buffer_cursor, mini_buffer_area;
     int win_w, win_h, char_w, char_h, mini_buffer_padding, completion_w;
     StringBuilder *mini_buffer_content;
-    size_t i, home_dir_len;
+    size_t home_dir_len;
+    register size_t i;
     char *completion_delimiter;
     bool need_to_draw;
 
@@ -247,9 +249,11 @@ void render_draw_smacs(Smacs *smacs)
 {
     Arena arena;
     Line *lines;
-    Line line;
-    size_t arena_end, li, ci, cursor, content_line_index, region_beg, region_end, max_line_num, current_line, line_number_len, pi;
-    int win_w, x, y, char_w, char_h, content_hight, char_len, common_indention, text_indention, i;
+    Line *line;
+    size_t arena_end, cursor, content_line_index, region_beg, region_end, max_line_num, current_line, line_number_len;
+    register size_t pi, li, ci;
+    int win_w, x, y, char_w, char_h, content_hight, char_len, common_indention, text_indention;
+    register int i;
     StringBuilder *sb;
     char *data, line_number[100];
     SDL_Rect cursor_rect, region_rect;
@@ -257,16 +261,19 @@ void render_draw_smacs(Smacs *smacs)
     Pane *pane;
 
     TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
-    show_line_number = true;
 
+    cursor_rect = (SDL_Rect) {0, 0, char_w, char_h};
+    region_rect = (SDL_Rect) {0, 0, char_w, char_h + smacs->leading};
+    sb = (&(StringBuilder) {0});
+
+    show_line_number = true;
     if (smacs->line_number_format == HIDE) show_line_number = false;
 
     for (pi = 0; pi < smacs->editor.panes_len; ++pi) {
         pane = &smacs->editor.panes[pi];
 
         is_active_pane = pane == smacs->editor.pane;
-
-        lines = pane->buffer->lines;
+        lines = pane->buffer->data;
         arena = pane->arena;
         data = pane->buffer->content.data;
         cursor = pane->position;
@@ -286,34 +293,29 @@ void render_draw_smacs(Smacs *smacs)
             text_indention += (char_w * line_number_len);
         }
 
-        cursor_rect = (SDL_Rect) {text_indention, 0, char_w, char_h};
-        region_rect = (SDL_Rect) {text_indention, 0, char_w, char_h + smacs->leading};
+        cursor_rect.x = text_indention;
+        region_rect.x = text_indention;
 
         x = 0;
         y = char_h;
 
-        arena_end = MIN(arena.start + arena.show_lines, pane->buffer->lines_count);
+        arena_end = MIN(arena.start + arena.show_lines, pane->buffer->len);
 
         if(pane->buffer->content.len > 0) {
             assert(arena.start < arena_end);
 
-            sb = &(StringBuilder) {0};
-
-            win_w = pane->w;
-
-            win_w -= (char_w * 2); //PADDING
-
+            win_w = pane->w - (char_w * 2);
             content_line_index = arena.start;
             content_hight = 0;
 
-            for (li = 0; (li + arena.start) < arena_end; ++li) {
-                line = lines[content_line_index];
+            for (li = arena.start; li < arena_end; ++li) {
+                line = &lines[content_line_index];
 
                 skip_line = false;
-                if (content_line_index == (pane->buffer->lines_count-1) && line.start == line.end) skip_line = true;
+                if (content_line_index == (pane->buffer->len-1) && line->start == line->end) skip_line = true;
                 if (content_line_index == (current_line - 1)) skip_line = false;
 
-                if (skip_line) break;
+                if (skip_line) continue;
                 ++content_line_index;
 
                 if (show_line_number) {
@@ -323,16 +325,17 @@ void render_draw_smacs(Smacs *smacs)
 
                 is_line_region = is_active_pane &&
                     smacs->editor.state & SELECTION &&
-                    ((line.start <= region_beg && region_beg <= line.end) ||
-                     (line.start <  region_end && region_end <= line.end) ||
-                     (region_beg <  line.start && region_end >  line.end));
+                    ((line->start <= region_beg && region_beg <= line->end) ||
+                     (line->start <  region_end && region_end <= line->end) ||
+                     (region_beg <  line->start && region_end >  line->end));
 
-                if (is_line_region && region_beg < line.start) {
+                if (is_line_region && region_beg < line->start) {
                     region_rect.x = text_indention;
                 }
 
-                for (ci = line.start; ci <= line.end; ++ci) {
+                for (ci = line->start; ci <= line->end; ++ci) {
                     TTF_SizeUTF8(smacs->font, sb->data, &x, &y);
+
                     if (is_line_region) {
                         if (region_beg == ci) {
                             region_rect.x = text_indention + x;
@@ -348,7 +351,7 @@ void render_draw_smacs(Smacs *smacs)
                         cursor_rect.y = content_hight;
                     }
 
-                    if (ci < line.end) {
+                    if (ci < line->end) {
                         switch (data[ci]) {
                         case '\t':
                             if (is_line_region && region_beg <= ci && region_end > ci) {
@@ -383,7 +386,7 @@ void render_draw_smacs(Smacs *smacs)
                             if (is_line_region) {
                                 region_rect.y = content_hight;
 
-                                if (region_end == line.end || region_end > ci) {
+                                if (region_end == line->end || region_end > ci) {
                                     region_rect.w = pane->w - region_rect.x;
                                 }
 
@@ -404,11 +407,11 @@ void render_draw_smacs(Smacs *smacs)
                 if (is_line_region) {
                     region_rect.y = content_hight;
 
-                    if (region_end > line.end) {
+                    if (region_end > line->end) {
                         region_rect.w = pane->w - region_rect.x;
                     }
 
-                    if (region_end == line.end) {
+                    if (region_end == line->end) {
                         region_rect.w = text_indention + x - region_rect.x;
                     }
 
@@ -423,7 +426,6 @@ void render_draw_smacs(Smacs *smacs)
 
             if (is_active_pane) render_draw_cursor(smacs, *pane, cursor_rect, sb);
 
-            sb_free(sb);
         } else {
             SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
             SDL_RenderFillRect(smacs->renderer, &cursor_rect);
@@ -433,8 +435,10 @@ void render_draw_smacs(Smacs *smacs)
 
         SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
         SDL_RenderDrawLine(smacs->renderer, pane->w, 0, pane->w, pane->h);
+        sb_clean(sb);
     }
 
+    sb_free(sb);
     render_draw_mini_buffer(smacs);
 }
 

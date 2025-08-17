@@ -1,4 +1,5 @@
 #include "utf8.h"
+#include <sys/param.h>
 
 uint8_t utf8_size_char(char ch)
 {
@@ -23,9 +24,11 @@ uint8_t utf8_size_char(char ch)
 
 uint8_t utf8_size_char_backward(char *text, size_t from)
 {
-    long i;
+    register size_t i;
+    size_t until;
 
-    for (i = from; i >= 0; --i) {
+    until = MIN(from - 4, from);
+    for (i = from; i > until; --i) {
         if ((text[i] & 0xC0) == 0x80) {
             continue;
         }

@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdint.h>
 
 typedef struct {
     char *data;
@@ -32,6 +33,7 @@ void *gb_append_(void *data, size_t *pcap, size_t size);
         (gb)->cap = 0;     \
     } while (0)
 
+uint64_t rdtsc(void);
 
 /**
  * a starts_with b
@@ -43,5 +45,4 @@ bool starts_with(char *a, char *b);
 uint32_t utf8_chars_to_int(char *str, int len);
 bool contains_ignore_case(char *a, size_t a_len, char *b, size_t b_len);
 char *strdup(const char *str);
-
 #endif

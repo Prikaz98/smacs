@@ -27,9 +27,9 @@ typedef struct {
 
     Content content;
 
-    Line *lines;
-    size_t lines_count;
-    size_t lines_cap;
+    Line *data;
+    size_t len;
+    size_t cap;
 
     char *file_path;
 
@@ -174,6 +174,7 @@ void editor_close_pane(Editor *editor);
 void editor_upper(Editor *editor);
 void editor_lower(Editor *editor);
 
+void editor_completor_clean(Editor *editor);
 void editor_completion_actualize(Editor *editor);
 void editor_completion_next_match(Editor *editor);
 void editor_completion_prev_match(Editor *editor);

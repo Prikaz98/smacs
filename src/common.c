@@ -11,14 +11,19 @@
 void *gb_append_(void *data, size_t *pcap, size_t size)
 {
     void *ptr;
+    size_t ptr_cap;
 
-    *pcap = *pcap == 0 ? 10 : *pcap * 2;
-    ptr = realloc(data, *pcap * size);
+    ptr_cap = *pcap;
+
+    ptr_cap = ptr_cap == 0 ? 10 : ptr_cap * 2;
+    ptr = realloc(data, ptr_cap * size);
     if (ptr == NULL) {
         fprintf(stderr, "No more free space\n");
         free(data);
         exit(EXIT_FAILURE);
     }
+
+    *pcap = ptr_cap;
     return ptr;
 }
 
@@ -36,7 +41,7 @@ void sb_append_many(StringBuilder *sb, char *str)
 {
     size_t len = strlen(str);
 
-    for (size_t i = 0; i < len; ++i) {
+    for (register size_t i = 0; i < len; ++i) {
         sb_append(sb, str[i]);
     }
 }
@@ -68,7 +73,7 @@ bool starts_with(char *a, char *b)
 
 bool contains_ignore_case(char *a, size_t a_len, char *b, size_t b_len)
 {
-    size_t i;
+    register size_t i;
 
     if (a == NULL || b == NULL) return false;
     if (a_len < b_len) return false;
@@ -116,4 +121,11 @@ char *strdup(const char *str)
     memcpy(ds, str, len);
     ds[len] = '\0';
     return ds;
+}
+
+uint64_t rdtsc(void)
+{
+    unsigned int lo,hi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    return ((uint64_t)hi << 32) | lo;
 }

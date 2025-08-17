@@ -38,7 +38,8 @@ bool completion_command_mapping(SDL_Event event);
 
 int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 {
-    int win_w, win_h, message_timeout, font_y, i, win_w_per_pane;
+    int win_w, win_h, message_timeout, font_y, win_w_per_pane;
+    register int i;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "Could not initialize SDL: %s\n", SDL_GetError());
@@ -75,7 +76,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
     themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre]
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
-	smacs.home_dir = home_dir;
+    smacs.home_dir = home_dir;
     smacs.editor = (Editor) {0};
 
     smacs.editor.panes_len = 0;
@@ -93,7 +94,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
     smacs.leading = LEADING;
     smacs.tab_size = TAB_SIZE;
 
-	initial_hook();
+    initial_hook();
 
     SDL_Event event = {0};
 
@@ -103,11 +104,17 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
         if (event.type == SDL_MOUSEMOTION) continue;
 
         switch (event.type) {
-        case SDL_QUIT:
-            quit = true;
-            break;
-        case SDL_MOUSEWHEEL:
-            editor_mwheel_scroll(&smacs.editor, event.wheel.y);
+        case SDL_TEXTINPUT:
+            if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
+
+            if (smacs.editor.state & (SEARCH | EXTEND_COMMAND)) {
+                editor_user_input_insert(&smacs.editor, event.text.text);
+            } else if (smacs.editor.state & COMPLETION) {
+                editor_user_input_insert(&smacs.editor, event.text.text);
+                editor_completion_actualize(&smacs.editor);
+            } else {
+                editor_insert(&smacs.editor, event.text.text);
+            }
             break;
         case SDL_KEYDOWN:
             if (search_mapping(event, &message_timeout)) break;
@@ -135,17 +142,11 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
                 break;
             }
             break;
-        case SDL_TEXTINPUT:
-            if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
-
-            if (smacs.editor.state & (SEARCH | EXTEND_COMMAND)) {
-                editor_user_input_insert(&smacs.editor, event.text.text);
-            } else if (smacs.editor.state & COMPLETION) {
-                editor_user_input_insert(&smacs.editor, event.text.text);
-                editor_completion_actualize(&smacs.editor);
-            } else {
-                editor_insert(&smacs.editor, event.text.text);
-            }
+        case SDL_QUIT:
+            quit = true;
+            break;
+        case SDL_MOUSEWHEEL:
+            editor_mwheel_scroll(&smacs.editor, event.wheel.y);
             break;
         }
 
@@ -183,10 +184,10 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 
 void initial_hook(void)
 {
-	editor_split_pane(&smacs.editor);
+    editor_split_pane(&smacs.editor);
     editor_next_pane(&smacs.editor);
-	editor_read_file(&smacs.editor, "*scratch*");
-	editor_insert(&smacs.editor, ";; Buffer for your notes");
+    editor_read_file(&smacs.editor, "*scratch*");
+    editor_insert(&smacs.editor, ";; Buffer for your notes");
     editor_next_pane(&smacs.editor);
 }
 
@@ -196,12 +197,6 @@ bool ctrl_leader_mapping(SDL_Event event, int *message_timeout)
     if ((event.key.keysym.mod & KMOD_CTRL) == 0) return false;
 
     switch (event.key.keysym.sym) {
-    case SDLK_c:
-        if (editor_save(&smacs.editor) == 0) {
-            sprintf(smacs.notification, "Saved");
-            *message_timeout = MESSAGE_TIMEOUT;
-        }
-        break;
     case SDLK_b:
         editor_char_backward(&smacs.editor);
         break;
@@ -271,6 +266,12 @@ bool ctrl_leader_mapping(SDL_Event event, int *message_timeout)
         break;
     case SDLK_o:
         editor_find_file(&smacs.editor, true);
+        break;
+    case SDLK_c:
+        if (editor_save(&smacs.editor) == 0) {
+            sprintf(smacs.notification, "Saved");
+            *message_timeout = MESSAGE_TIMEOUT;
+        }
         break;
     }
 
