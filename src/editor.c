@@ -1188,13 +1188,12 @@ int editor_is_directory(const char *path)
 bool editor_find_file_complete(Editor *editor)
 {
     char *file_path;
-    size_t file_path_len, dir_len;
+    size_t dir_len;
     long dir_i;
     StringBuilder *full_path;
     bool file_is_dir;
 
     file_path = editor->completor.filtered.len == 0 ? editor->user_input.data : editor->completor.filtered.data[0];
-    file_path_len = strlen(file_path);
 
     if (strcmp(file_path, EDITOR_DIR_PREV) == 0) {
         dir_len =  strlen(editor->dir);
@@ -1224,8 +1223,8 @@ bool editor_find_file_complete(Editor *editor)
     if (editor->completor.filtered.len == 0) file_is_dir = false;
 
     if (file_is_dir) {
-        memcpy(editor->dir, file_path, file_path_len);
-        editor->dir[file_path_len] = '\0';
+        memcpy(&editor->dir[0], full_path->data, full_path->len);
+        editor->dir[full_path->len] = '\0';
         editor_find_file(editor, false);
     } else {
         editor_read_file(editor, full_path->data);
