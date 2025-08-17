@@ -14,7 +14,7 @@
 #define FONT_SIZE       14
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
-#define LEADING         2    /* space between raws */
+#define LEADING         0    /* space between raws */
 
 #define NEWLINE         "\n"
 #define SPACE           " "

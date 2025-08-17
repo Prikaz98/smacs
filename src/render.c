@@ -282,7 +282,7 @@ void render_draw_smacs(Smacs *smacs)
         assert(region_beg <= region_end);
 
         common_indention = pane->x;
-        text_indention = common_indention + char_w;
+        text_indention = common_indention;
 
         current_line = editor_get_current_line_number(pane) + 1;
         if (show_line_number) {
