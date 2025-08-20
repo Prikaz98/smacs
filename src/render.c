@@ -5,6 +5,7 @@
 #include "render.h"
 #include "utf8.h"
 
+//TODO: it should not redraw everything if the content is not changed
 void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg)
 {
     SDL_Texture *texture = NULL;
@@ -15,7 +16,6 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, S
     if (text_len == 0) return;
 
     surface = TTF_RenderUTF8_Blended(smacs->font, text, fg);
-
     texture = SDL_CreateTextureFromSurface(smacs->renderer, surface);
 
     rect.x = x;
@@ -58,6 +58,16 @@ void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBui
     render_draw_text(smacs, cursor_rect.x, cursor_rect.y, sb->data, sb->len, smacs->bg);
 }
 
+void render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size_t home_dir_len)
+{
+    if (starts_with(path, home_dir)) {
+        sb_append(sb, '~');
+        sb_append_many(sb, &path[home_dir_len]);
+    } else {
+        sb_append_many(sb, path);
+    }
+}
+
 void render_draw_mini_buffer(Smacs *smacs)
 {
     SDL_Rect mini_buffer_cursor, mini_buffer_area;
@@ -88,7 +98,8 @@ void render_draw_mini_buffer(Smacs *smacs)
     if (smacs->editor.state & (SEARCH | EXTEND_COMMAND | COMPLETION)) {
         if (smacs->editor.state & COMPLETION) {
             if ((smacs->editor.state & _FILE) && (strcmp(smacs->editor.dir, ".") != 0)) {
-                sb_append_many(mini_buffer_content, smacs->editor.dir);
+                sb_append_many(mini_buffer_content, "Find file: ");
+                render_append_file_path(mini_buffer_content, smacs->editor.dir, smacs->home_dir, home_dir_len);
                 sb_append(mini_buffer_content, '/');
             }
 
@@ -100,12 +111,7 @@ void render_draw_mini_buffer(Smacs *smacs)
 
             sb_append(mini_buffer_content, '{');
             for (i = 0; i < smacs->editor.completor.filtered.len; ++i) {
-                if (starts_with(smacs->editor.completor.filtered.data[i], smacs->home_dir)) {
-                    sb_append(mini_buffer_content, '~');
-                    sb_append_many(mini_buffer_content, &smacs->editor.completor.filtered.data[i][home_dir_len]);
-                } else {
-                    sb_append_many(mini_buffer_content, smacs->editor.completor.filtered.data[i]);
-                }
+                render_append_file_path(mini_buffer_content, smacs->editor.completor.filtered.data[i], smacs->home_dir, home_dir_len);
 
                 if (i < (smacs->editor.completor.filtered.len-1)) {
                     sb_append_many(mini_buffer_content, completion_delimiter);
@@ -177,7 +183,8 @@ void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
     if(pane.buffer->need_to_save) {
         sb_append(mode_line_info, '*');
     }
-    sb_append_many(mode_line_info, pane.buffer->file_path);
+
+    render_append_file_path(mode_line_info, pane.buffer->file_path, smacs->home_dir, strlen(smacs->home_dir));
 
     if (is_active_pane) {
         if (smacs->editor.state & SEARCH) {
