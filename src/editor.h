@@ -184,4 +184,6 @@ bool editor_buffer_switch_complete(Editor *editor);
 
 void editor_find_file(Editor *editor, bool refresh_dir);
 bool editor_find_file_complete(Editor *editor);
+
+void editor_new_line(Editor *editor);
 #endif

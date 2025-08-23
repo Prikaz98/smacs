@@ -11,7 +11,7 @@
 #include "themes.h"
 #include "common.h"
 
-#define FONT_SIZE       14
+#define FONT_SIZE       13
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define LEADING         0    /* space between raws */
@@ -104,7 +104,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
         if (event.type == SDL_MOUSEMOTION) continue;
 
         switch (event.type) {
-        case SDL_TEXTINPUT:
+        case SDL_TEXTINPUT: {
             if (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) break;
 
             if (smacs.editor.state & (SEARCH | EXTEND_COMMAND)) {
@@ -115,8 +115,8 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
             } else {
                 editor_insert(&smacs.editor, event.text.text);
             }
-            break;
-        case SDL_KEYDOWN:
+        } break;
+        case SDL_KEYDOWN: {
             if (search_mapping(event, &message_timeout)) break;
             if (extend_command_mapping(event, &message_timeout)) break;
             if (completion_command_mapping(event)) break;
@@ -128,7 +128,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
                 editor_delete_backward(&smacs.editor);
                 break;
             case SDLK_RETURN:
-                editor_insert(&smacs.editor, NEWLINE);
+                editor_new_line(&smacs.editor);
                 break;
             case SDLK_TAB:
                 editor_insert(&smacs.editor, TAB);
@@ -141,13 +141,13 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
                 }
                 break;
             }
-            break;
-        case SDL_QUIT:
+        } break;
+        case SDL_QUIT: {
             quit = true;
-            break;
-        case SDL_MOUSEWHEEL:
+        } break;
+        case SDL_MOUSEWHEEL: {
             editor_mwheel_scroll(&smacs.editor, event.wheel.y);
-            break;
+        } break;
         }
 
         SDL_GetWindowSize(smacs.window, &win_w, &win_h);
@@ -164,7 +164,8 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 
         SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
         SDL_RenderClear(smacs.renderer);
-        render_draw_smacs(&smacs);
+        render_update_glyph(&smacs);
+        render_glyph_show(&smacs);
         SDL_RenderPresent(smacs.renderer);
 
         if (message_timeout > 0) {
@@ -187,7 +188,7 @@ void initial_hook(void)
     editor_split_pane(&smacs.editor);
     editor_next_pane(&smacs.editor);
     editor_read_file(&smacs.editor, "*scratch*");
-    editor_insert(&smacs.editor, ";; Buffer for your notes");
+    editor_insert(&smacs.editor, ";; Buffer for your notes\n");
     editor_next_pane(&smacs.editor);
 }
 

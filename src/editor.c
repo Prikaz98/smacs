@@ -1263,3 +1263,23 @@ void editor_completion_prev_match(Editor *editor)
     memmove(&editor->completor.filtered.data[1], &editor->completor.filtered.data[0], (len - 1) * sizeof(void*));
     editor->completor.filtered.data[0] = tmp;
 }
+
+void editor_new_line(Editor *editor)
+{
+    size_t pos, i;
+    char ch;
+
+    pos = editor->pane->position;
+    editor_move_begginning_of_line(editor);
+    i = editor->pane->position;
+    editor_set_mark(editor);
+    while (i < pos && ((ch = editor->pane->buffer->content.data[i]) == ' ' || ch == '\t')) {
+        ++i;
+    }
+    editor_goto_point(editor, i);
+    editor_copy_to_clipboard(editor);
+    editor->state = NONE;
+    editor_goto_point(editor, pos);
+    editor_insert(editor, "\n");
+    editor_paste(editor);
+}

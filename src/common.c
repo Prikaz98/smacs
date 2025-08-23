@@ -123,9 +123,11 @@ char *strdup(const char *str)
     return ds;
 }
 
+#ifdef OS_LINUX
 uint64_t rdtsc(void)
 {
     unsigned int lo,hi;
     __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
     return ((uint64_t)hi << 32) | lo;
 }
+#endif
