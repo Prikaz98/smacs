@@ -133,16 +133,32 @@ void render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data
     *i = ci;
 }
 
+GlyphItem *render_flush_item_sb_and_move_x(Smacs *smacs, GlyphRow *row, StringBuilder *sb, int *x, int y, enum GlyphItemEnum kind)
+{
+    int w, h;
+
+    if (sb->len > 0) {
+        TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
+        gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, *x, y, w, h, kind}));
+        sb_clean(sb);
+        *x += w;
+
+        return &row->data[row->len-1];
+    }
+
+    return NULL;
+}
+
 void render_update_glyph(Smacs *smacs)
 {
     Arena arena;
     Line *lines;
     Line *line;
-    size_t arena_end, cursor, region_beg, region_end, max_line_num, current_line, line_number_len, data_len, pi, li, ci;
-    int win_w, win_h, x, y, char_w, char_h, content_hight, content_limit, common_indention, text_indention, w, h, pane_w;
+    size_t arena_end, cursor, region_beg, region_end, max_line_num, current_line, line_number_len, data_len, pi;
+    int win_w, win_h, char_w, char_h, content_limit, common_indention, text_indention, pane_width_threashold;
     StringBuilder *sb;
     char *data, line_number[100];
-    bool is_active_pane, show_line_number, selection, is_region;
+    bool is_active_pane, show_line_number;
     Pane *pane;
     GlyphMatrix *glyph;
     GlyphRow *row;
@@ -177,7 +193,7 @@ void render_update_glyph(Smacs *smacs)
 
         common_indention = pane->x;
         text_indention = common_indention;
-        pane_w = pane->w - (char_w * 2);
+        pane_width_threashold = pane->w - (char_w * 2);
 
         current_line = editor_get_current_line_number(pane) + 1;
         if (show_line_number) {
@@ -188,98 +204,88 @@ void render_update_glyph(Smacs *smacs)
             text_indention += (char_w * line_number_len);
         }
 
-        x = 0;
-        y = char_h;
-
         arena_end = MIN(arena.start + arena.show_lines, pane->buffer->len);
 
-        if(data_len > 0) {
-            assert(arena.start < arena_end);
-            content_hight = 0;
+        {
+            size_t li, ci;
+            int content_hight, x, w, h;
+            bool selection, is_region;
+            GlyphItem *item;
 
-            selection = is_active_pane && smacs->editor.state & SELECTION && region_beg != region_end;
-            is_region = false;
+            if(data_len > 0) {
+                assert(arena.start < arena_end);
+                content_hight = 0;
 
-            for (li = arena.start; li < arena_end; ++li) {
-                gb_append(glyph, ((GlyphRow){0}));
-                row = &glyph->data[li - arena.start];
+                selection = is_active_pane && smacs->editor.state & SELECTION && region_beg != region_end;
+                is_region = false;
 
-                line = &lines[li];
-                x = 0;
+                for (li = arena.start; li < arena_end; ++li) {
+                    gb_append(glyph, ((GlyphRow){0}));
+                    row = &glyph->data[li - arena.start];
 
-                if (content_limit <= content_hight) break;
+                    line = &lines[li];
+                    x = text_indention;
 
-                if (show_line_number) {
-                    render_format_display_line_number(smacs, line_number, line_number_len, li + 1, current_line);
-                    TTF_SizeUTF8(smacs->font, line_number, &w, &h);
-                    gb_append(row, ((GlyphItem) {strdup(line_number), line_number_len, common_indention, content_hight, w, h, LINE_NUMBER}));
-                }
+                    if (content_limit <= content_hight) break;
 
-                for (ci = line->start; ci <= line->end; ++ci) {
-                    if (selection && (ci > region_beg && ci < region_end)) {
-                        is_region = true;
+                    if (show_line_number) {
+                        render_format_display_line_number(smacs, line_number, line_number_len, li + 1, current_line);
+                        TTF_SizeUTF8(smacs->font, line_number, &w, &h);
+                        gb_append(row, ((GlyphItem) {strdup(line_number), line_number_len, common_indention, content_hight, w, h, LINE_NUMBER}));
                     }
 
-                    if (selection && (ci == region_beg || ci == region_end)) {
-                        if (sb->len > 0) {
-                            TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
-                            gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, text_indention + x, content_hight, ci == region_end ? w : pane_w, h, is_region ? REGION : TEXT}));
-                            x += w;
-                            sb_clean(sb);
-                        }
-                        is_region = ci == region_beg;
-                    }
-
-                    if (is_active_pane && cursor == ci) {
-                        if (sb->len > 0) {
-                            TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
-                            gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, text_indention + x, content_hight, pane_w, h, is_region ? REGION : TEXT}));
-                            x += w;
-                            sb_clean(sb);
+                    for (ci = line->start; ci <= line->end; ++ci) {
+                        if (selection && (ci > region_beg && ci < region_end)) {
+                            is_region = true;
                         }
 
-                        if (ci == data_len) {
-                            gb_append(row, ((GlyphItem) {NULL, 0, text_indention + x, content_hight, char_w, char_h, CURSOR}));
-                        } else {
-                            render_append_char_to_rendering(smacs, sb, data, &ci);
-                            TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
-                            gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, text_indention + x, content_hight, w, h, CURSOR}));
-                            x += w;
-                            sb_clean(sb);
-                        }
-                    } else {
-                        if (sb->len > 0) {
-                            if (pane_w <= (x+char_w*((int)sb->len+text_indention))) {
-                                TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
-                                if (pane_w <= (x+w+text_indention)) {
-                                    gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, text_indention + x, content_hight, pane_w, h, is_region ? REGION : TEXT}));
-                                    content_hight += (y + smacs->leading);
-                                    x = 0;
-                                    sb_clean(sb);
-                                }
+                        if (selection && (ci == region_beg || ci == region_end)) {
+                            item = render_flush_item_sb_and_move_x(smacs, row, sb, &x, content_hight, is_region ? REGION : TEXT);
+                            is_region = ci == region_beg;
+                            if (item != NULL && ci != region_end) {
+                                row->data[row->len-1].w = pane_width_threashold;
                             }
                         }
 
-                        if (ci < data_len) {
-                            render_append_char_to_rendering(smacs, sb, data, &ci);
+                        if (is_active_pane && cursor == ci) {
+                            render_flush_item_sb_and_move_x(smacs, row, sb, &x, content_hight, is_region ? REGION : TEXT);
+
+                            if (ci == data_len) {
+                                gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, char_w, char_h, CURSOR}));
+                            } else {
+                                render_append_char_to_rendering(smacs, sb, data, &ci);
+                                render_flush_item_sb_and_move_x(smacs, row, sb, &x, content_hight, CURSOR);
+                            }
+                        } else {
+                            if (pane_width_threashold <= (x+char_w*((int)sb->len))) {
+                                TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
+                                if (pane_width_threashold <= (x+w)) {
+                                    render_flush_item_sb_and_move_x(smacs, row, sb, &x, content_hight, is_region ? REGION : TEXT);
+                                    content_hight += (char_h + smacs->leading);
+                                    x = text_indention;
+                                }
+                            }
+
+                            if (ci < data_len) {
+                                render_append_char_to_rendering(smacs, sb, data, &ci);
+                            }
                         }
                     }
+
+                    render_flush_item_sb_and_move_x(smacs, row, sb, &x, content_hight, is_region ? REGION : TEXT);
+                    content_hight += (char_h + smacs->leading);
+                    sb_clean(sb);
                 }
 
-                if (sb->len > 0) {
-                    gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, text_indention + x, content_hight, pane_w, char_h, is_region ? REGION : TEXT}));
-                }
-
-                content_hight += (y + smacs->leading);
-                sb_clean(sb);
+                gb_append(row, ((GlyphItem) {NULL, 0, pane->w, 0, pane->w, pane->h-char_h*2, LINE}));
             }
-
-            gb_append(row, ((GlyphItem) {NULL, 0, pane->w, 0, pane->w, pane->h-char_h*2, LINE}));
         }
+
 
         //MODE LINE
         {
             int padding;
+            GlyphItem *item;
 
             padding = common_indention;
             gb_append(glyph, ((GlyphRow){0}));
@@ -308,8 +314,8 @@ void render_update_glyph(Smacs *smacs)
                 }
             }
 
-            gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, padding, win_h - (char_h*2), pane->w, h, is_active_pane ? MODE_LINE_ACTIVE : MODE_LINE}));
-            sb_clean(sb);
+            item = render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - (char_h*2), is_active_pane ? MODE_LINE_ACTIVE : MODE_LINE);
+            item->w = pane->w;
         }
     }
 
@@ -318,6 +324,8 @@ void render_update_glyph(Smacs *smacs)
         size_t home_dir_len;
         int completion_w, padding;
         char *completion_delimiter;
+        GlyphRow *row;
+
         gb_append(glyph, ((GlyphRow){0}));
         row = &glyph->data[glyph->len-1];
 
@@ -356,24 +364,18 @@ void render_update_glyph(Smacs *smacs)
                 }
 
                 sb_append(sb, '}');
-                TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
-                gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, padding, win_h - char_h, w, h, MINI_BUFFER}));
+                render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - char_h, MINI_BUFFER);
             } else {
                 if (smacs->editor.user_input.len > 0) {
                     sb_append_many(sb, smacs->editor.user_input.data);
+                    render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - char_h, MINI_BUFFER);
                 }
-                TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
-                gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, padding, win_h - char_h, w, h, MINI_BUFFER}));
             }
         } else if (strlen(smacs->notification) > 0) {
             sb_append_many(sb, smacs->notification);
-            TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
-            gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, padding, win_h - char_h, w, h, MINI_BUFFER}));
+            render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - char_h, MINI_BUFFER);
         }
-
-        sb_clean(sb);
     }
-
 
     sb_free(sb);
 }

@@ -28,6 +28,7 @@ static Smacs smacs = {0};
 //TODO: M-& Emacs command
 //TODO: Multicursor
 //TODO: undo/redo
+//TODO: replace
 
 void initial_hook(void);
 bool ctrl_leader_mapping(SDL_Event event, int *message_timeout);
