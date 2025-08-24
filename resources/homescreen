@@ -8,7 +8,8 @@
 BASICS:
 Notations C means <Ctrl>
 		  M means <Meta> or <Alt>
-		  Ido means Emacs features (interactively do thing with buffers and files)
+		  Ido means Emacs features.
+		  (Interactively DO thing with buffers and files)
 
 ----------------------------------------------------------------------
 CURSOR MOVEMENT:

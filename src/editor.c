@@ -1267,7 +1267,9 @@ void editor_completion_prev_match(Editor *editor)
 void editor_new_line(Editor *editor)
 {
     size_t pos, i;
-    char ch;
+    char ch, *buffer;
+
+    buffer = SDL_GetClipboardText();
 
     pos = editor->pane->position;
     editor_move_begginning_of_line(editor);
@@ -1282,4 +1284,5 @@ void editor_new_line(Editor *editor)
     editor_goto_point(editor, pos);
     editor_insert(editor, "\n");
     editor_paste(editor);
+    SDL_SetClipboardText(buffer);
 }

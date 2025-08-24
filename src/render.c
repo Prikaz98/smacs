@@ -5,7 +5,6 @@
 #include "render.h"
 #include "utf8.h"
 
-//TODO: it should not redraw everything if the content is not changed
 void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg)
 {
     SDL_Texture *texture = NULL;
@@ -33,36 +32,6 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, S
     SDL_DestroyTexture(texture);
 }
 
-void render_draw_cursor(Smacs *smacs, Pane pane, SDL_Rect cursor_rect, StringBuilder *sb)
-{
-    char *data;
-    size_t cursor, char_len, content_len;
-    register size_t i;
-
-    data = pane.buffer->content.data;
-    content_len = pane.buffer->content.len;
-    cursor = pane.position;
-
-    SDL_SetRenderDrawColor(smacs->renderer, smacs->cfg.r, smacs->cfg.g, smacs->cfg.b, smacs->cfg.a);
-    SDL_RenderFillRect(smacs->renderer, &cursor_rect);
-
-    if (cursor >= content_len) return;
-
-    char_len = utf8_size_char(data[cursor]);
-    switch (data[cursor]) {
-    case '\t':
-        sb_append_many(sb, "»");
-        break;
-    default:
-        for (i = 0; i < char_len; ++i) {
-            sb_append(sb, data[cursor + i] == '\n' ? ' ' : data[cursor + i]);
-        }
-        break;
-    }
-
-    render_draw_text(smacs, cursor_rect.x, cursor_rect.y, sb->data, sb->len, smacs->bg);
-}
-
 void render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size_t home_dir_len)
 {
     if (starts_with(path, home_dir)) {
@@ -71,141 +40,6 @@ void render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size
     } else {
         sb_append_many(sb, path);
     }
-}
-
-void render_draw_mini_buffer(Smacs *smacs)
-{
-    SDL_Rect mini_buffer_cursor, mini_buffer_area;
-    int win_w, win_h, char_w, char_h, mini_buffer_padding, completion_w;
-    StringBuilder *mini_buffer_content;
-    size_t home_dir_len;
-    register size_t i;
-    char *completion_delimiter;
-    bool need_to_draw;
-
-    need_to_draw = true;
-    if ((smacs->editor.state & NONE) && strlen(smacs->notification) == 0) need_to_draw = false;
-    if (!need_to_draw) return;
-
-    TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
-    SDL_GetWindowSize(smacs->window, &win_w, &win_h);
-
-    mini_buffer_content = &(StringBuilder) {0};
-    mini_buffer_cursor = (SDL_Rect) {0, win_h - char_h, 2, char_h};
-    mini_buffer_area = (SDL_Rect) {0, win_h - (char_h * 1), win_w, char_h};
-    mini_buffer_padding = char_w;
-    completion_delimiter = " | ";
-    home_dir_len = strlen(smacs->home_dir);
-
-    SDL_SetRenderDrawColor(smacs->renderer, smacs->bg.r, smacs->bg.g, smacs->bg.b, smacs->bg.a);
-    SDL_RenderFillRect(smacs->renderer, &mini_buffer_area);
-
-    if (smacs->editor.state & (SEARCH | EXTEND_COMMAND | COMPLETION)) {
-        if (smacs->editor.state & COMPLETION) {
-            if ((smacs->editor.state & _FILE) && (strcmp(smacs->editor.dir, ".") != 0)) {
-                sb_append_many(mini_buffer_content, "Find file: ");
-                render_append_file_path(mini_buffer_content, smacs->editor.dir, smacs->home_dir, home_dir_len);
-                sb_append(mini_buffer_content, '/');
-            }
-
-            if (smacs->editor.user_input.len > 0) {
-                sb_append_many(mini_buffer_content, smacs->editor.user_input.data);
-            }
-
-            TTF_SizeUTF8(smacs->font, mini_buffer_content->data, &mini_buffer_cursor.x, NULL);
-
-            sb_append(mini_buffer_content, '{');
-            for (i = 0; i < smacs->editor.completor.filtered.len; ++i) {
-                render_append_file_path(mini_buffer_content, smacs->editor.completor.filtered.data[i], smacs->home_dir, home_dir_len);
-
-                if (i < (smacs->editor.completor.filtered.len-1)) {
-                    sb_append_many(mini_buffer_content, completion_delimiter);
-                }
-
-                TTF_SizeUTF8(smacs->font, mini_buffer_content->data, &completion_w, NULL);
-
-                if (completion_w >= win_w) {
-                    mini_buffer_content->len = mini_buffer_content->len - strlen(smacs->editor.completor.filtered.data[i]) - strlen(completion_delimiter);
-                    memset(&mini_buffer_content->data[mini_buffer_content->len], 0, mini_buffer_content->cap - mini_buffer_content->len);
-                    sb_append_many(mini_buffer_content, "...");
-                    break;
-                }
-            }
-
-            sb_append(mini_buffer_content, '}');
-
-            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content->data, mini_buffer_content->len, smacs->fg);
-        } else {
-            if (smacs->editor.user_input.len > 0) {
-                sb_append_many(mini_buffer_content, smacs->editor.user_input.data);
-            }
-
-            render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content->data, mini_buffer_content->len, smacs->fg);
-            TTF_SizeUTF8(smacs->font, mini_buffer_content->data, &mini_buffer_cursor.x, NULL);
-        }
-
-        mini_buffer_cursor.x = mini_buffer_cursor.x + mini_buffer_padding;
-
-        SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
-        SDL_RenderFillRect(smacs->renderer, &mini_buffer_cursor);
-    } else {
-        sb_append_many(mini_buffer_content, smacs->notification);
-        render_draw_text(smacs, mini_buffer_padding, win_h - char_h, mini_buffer_content->data, mini_buffer_content->len, smacs->fg);
-    }
-
-    sb_free(mini_buffer_content);
-}
-
-void render_draw_modeline(Smacs *smacs, Pane pane, bool is_active_pane)
-{
-    SDL_Rect mode_line;
-    int win_w, win_h, char_w, char_h, mode_line_padding;
-    StringBuilder *mode_line_info;
-    SDL_Color mlbg, mlfg;
-
-    mode_line_info = (&(StringBuilder) {0});
-    mlbg = smacs->mlbg;
-    mlfg = smacs->mlfg;
-    if (!is_active_pane) {
-        mlbg = smacs->mlfg;
-        mlfg = smacs->mlbg;
-    }
-
-    TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
-    SDL_GetWindowSize(smacs->window, &win_w, &win_h);
-
-    mode_line = (SDL_Rect) {pane.x, win_h - (char_h * 2), win_w, char_h};
-    mode_line_padding = char_w + pane.x;
-
-    SDL_SetRenderDrawColor(smacs->renderer, mlbg.r, mlbg.g, mlbg.b, mlbg.a);
-    SDL_RenderFillRect(smacs->renderer, &mode_line);
-
-    SDL_SetRenderDrawColor(smacs->renderer, mlfg.r, mlfg.g, mlfg.b, mlfg.a);
-    SDL_RenderDrawLine(smacs->renderer, pane.x, mode_line.y, mode_line.w, mode_line.y);
-    SDL_RenderDrawLine(smacs->renderer, pane.x, win_h - char_h-1, mode_line.w, win_h - char_h);
-
-
-    if(pane.buffer->need_to_save) {
-        sb_append(mode_line_info, '*');
-    }
-
-    render_append_file_path(mode_line_info, pane.buffer->file_path, smacs->home_dir, strlen(smacs->home_dir));
-
-    if (is_active_pane) {
-        if (smacs->editor.state & SEARCH) {
-            sb_append(mode_line_info, ' ');
-            if (smacs->editor.state & BACKWARD_SEARCH) {
-                sb_append_many(mode_line_info, "Re-");
-            }
-
-            sb_append_many(mode_line_info, "Search[:enter next :C-g stop]");
-        } else if (smacs->editor.state & EXTEND_COMMAND) {
-            sb_append_many(mode_line_info, " C-x");
-        }
-    }
-
-    render_draw_text(smacs, mode_line_padding, win_h - (char_h * 2), mode_line_info->data, mode_line_info->len, mlfg);
-    sb_free(mode_line_info);
 }
 
 int count_digits(size_t num)
@@ -382,6 +216,10 @@ void render_update_glyph(Smacs *smacs)
                 }
 
                 for (ci = line->start; ci <= line->end; ++ci) {
+                    if (selection && (ci > region_beg && ci < region_end)) {
+                        is_region = true;
+                    }
+
                     if (selection && (ci == region_beg || ci == region_end)) {
                         if (sb->len > 0) {
                             TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
@@ -452,6 +290,10 @@ void render_update_glyph(Smacs *smacs)
             }
 
             render_append_file_path(sb, pane->buffer->file_path, smacs->home_dir, strlen(smacs->home_dir));
+            sb_append_many(sb, " (");
+            sprintf(line_number, "%ld", current_line);
+            sb_append_many(sb, line_number);
+            sb_append(sb, ')');
 
             if (is_active_pane) {
                 if (smacs->editor.state & SEARCH) {
