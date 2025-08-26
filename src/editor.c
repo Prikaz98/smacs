@@ -2,6 +2,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <sys/param.h>
 #include <assert.h>
 #include <dirent.h>
@@ -586,7 +587,7 @@ void editor_copy_to_clipboard(Editor *editor)
     copy = calloc(len + 1, sizeof(char));
     memcpy(copy, &editor->pane->buffer->content.data[reg_beg], len);
 
-    if (SDL_SetClipboardText(copy) < 0) {
+    if (!SDL_SetClipboardText(copy)) {
         fprintf(stderr, "Could not copy to clipboard: %s\n", SDL_GetError());
     }
 

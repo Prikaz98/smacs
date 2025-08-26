@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <sys/param.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "render.h"
@@ -8,13 +9,13 @@
 void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg)
 {
     SDL_Texture *texture = NULL;
-    SDL_Rect rect = (SDL_Rect) {0};
+    SDL_FRect rect = (SDL_FRect) {0.0, 0.0, 0.0, 0.0};
     SDL_Surface *surface = NULL;
 
     if (text == NULL) return;
     if (text_len == 0) return;
 
-    surface = TTF_RenderUTF8_Blended(smacs->font, text, fg);
+    surface = TTF_RenderText_Blended(smacs->font, text, text_len, fg);
     if (surface == NULL) {
         fprintf(stderr, "Render text (x %d y %d txt: %s len: %ld) cause: %s\n", x, y, text, text_len, SDL_GetError());
         exit(EXIT_FAILURE);
@@ -27,8 +28,8 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, S
     rect.w = surface->w;
     rect.h = surface->h;
 
-    SDL_FreeSurface(surface);
-    SDL_RenderCopy(smacs->renderer, texture, NULL, &rect);
+    SDL_DestroySurface(surface);
+    SDL_RenderTexture(smacs->renderer, texture, NULL, &rect);
     SDL_DestroyTexture(texture);
 }
 
@@ -140,7 +141,7 @@ GlyphItem *render_flush_item_sb_and_move_x(Smacs *smacs, GlyphRow *row, StringBu
     x_ = *x;
 
     if (sb->len > 0) {
-        TTF_SizeUTF8(smacs->font, sb->data, &w, &h);
+        TTF_GetStringSize(smacs->font, sb->data, sb->len, &w, &h);
         gb_append(row, ((GlyphItem) {strdup(sb->data), sb->len, x_, y, w, h, kind}));
         sb_clean(sb);
         x_ += w;
@@ -170,7 +171,7 @@ void render_update_glyph(Smacs *smacs)
     glyph = &smacs->glyph;
     glyph->len = 0;
 
-    TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
+    TTF_GetStringSize(smacs->font, "|", 1, &char_w, &char_h);
     SDL_GetWindowSize(smacs->window, &win_w, &win_h);
     content_limit = win_h - (char_h * 2.5);
 
@@ -232,7 +233,7 @@ void render_update_glyph(Smacs *smacs)
 
                     if (show_line_number) {
                         render_format_display_line_number(smacs, line_number, line_number_len, li + 1, current_line);
-                        TTF_SizeUTF8(smacs->font, line_number, &w, &h);
+                        TTF_GetStringSize(smacs->font, line_number, line_number_len, &w, &h);
                         gb_append(row, ((GlyphItem) {strdup(line_number), line_number_len, common_indention, content_hight, w, h, LINE_NUMBER}));
                     }
 
@@ -330,7 +331,7 @@ void render_update_glyph(Smacs *smacs)
         completion_delimiter = " | ";
         home_dir_len = strlen(smacs->home_dir);
         padding = char_w;
-		complition_width_limit = win_w - char_w*10;
+        complition_width_limit = win_w - char_w*10;
 
         if (smacs->editor.state & (SEARCH | EXTEND_COMMAND | COMPLETION)) {
             if (smacs->editor.state & COMPLETION) {
@@ -357,7 +358,7 @@ void render_update_glyph(Smacs *smacs)
                         sb_append_many(sb, completion_delimiter);
                     }
 
-                    TTF_SizeUTF8(smacs->font, sb->data, &completion_w, NULL);
+                    TTF_GetStringSize(smacs->font, sb->data, sb->len, &completion_w, NULL);
 
                     if (completion_w >= complition_width_limit) {
                         sb->len = sb->len - strlen(smacs->editor.completor.filtered.data[i]) - strlen(completion_delimiter);
@@ -384,7 +385,7 @@ void render_update_glyph(Smacs *smacs)
     sb_free(sb);
 }
 
-void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, StringBuilder *sb, SDL_Rect *rect)
+void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, StringBuilder *sb, SDL_FRect *rect)
 {
     SDL_Color fg;
 
@@ -422,7 +423,7 @@ void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, StringBuilder *sb, SDL_
         render_draw_text(smacs, rect->x, rect->y, sb->data, sb->len, smacs->ln);
     } else if (kind & LINE) {
         SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
-        SDL_RenderDrawLine(smacs->renderer, rect->x, rect->y, rect->w, rect->h);
+        SDL_RenderLine(smacs->renderer, rect->x, rect->y, rect->w, rect->h);
     }
 }
 
@@ -430,15 +431,15 @@ void render_glyph_show(Smacs *smacs)
 {
     GlyphItem *item;
     GlyphRow *row;
-    SDL_Rect rect;
+    SDL_FRect rect;
     int char_w, char_h;
     size_t ci;
     GlyphItemEnum prev_kind;
     StringBuilder *sb;
 
-    rect = (SDL_Rect) {0, 0, 0, 0};
+    rect = (SDL_FRect) {0.0, 0.0, 0.0, 0.0};
     sb = &(StringBuilder) {0};
-    TTF_SizeUTF8(smacs->font, "|", &char_w, &char_h);
+    TTF_GetStringSize(smacs->font, "|", 1, &char_w, &char_h);
 
     for (size_t li = 0; li < smacs->glyph.len; ++li) {
         row = &smacs->glyph.data[li];
