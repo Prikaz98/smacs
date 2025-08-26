@@ -267,7 +267,7 @@ void render_update_glyph(Smacs *smacs)
                         }
                     }
 
-                    if (region_beg < line->end && line->end < region_end && row->len > 0) {
+                    if (region_beg <= line->end && line->end < region_end && row->len > 0) {
                         row->data[row->len-1].w = pane_width_threashold - row->data[row->len-1].x;
                     }
 
@@ -320,8 +320,8 @@ void render_update_glyph(Smacs *smacs)
     //MINI BUFFER
     {
         size_t home_dir_len;
-        int completion_w, padding;
-        char *completion_delimiter;
+        int completion_w, padding, complition_width_limit;
+        char *completion_delimiter, *parens;
         GlyphRow *row;
 
         gb_append(glyph, ((GlyphRow){0}));
@@ -330,6 +330,7 @@ void render_update_glyph(Smacs *smacs)
         completion_delimiter = " | ";
         home_dir_len = strlen(smacs->home_dir);
         padding = char_w;
+		complition_width_limit = win_w - char_w*10;
 
         if (smacs->editor.state & (SEARCH | EXTEND_COMMAND | COMPLETION)) {
             if (smacs->editor.state & COMPLETION) {
@@ -343,7 +344,12 @@ void render_update_glyph(Smacs *smacs)
                     sb_append_many(sb, smacs->editor.user_input.data);
                 }
 
-                sb_append(sb, '{');
+                parens = "{}";
+                if (smacs->editor.completor.filtered.len == 1) {
+                    parens = "[]";
+                }
+
+                sb_append(sb, parens[0]);
                 for (size_t i = 0; i < smacs->editor.completor.filtered.len; ++i) {
                     render_append_file_path(sb, smacs->editor.completor.filtered.data[i], smacs->home_dir, home_dir_len);
 
@@ -353,7 +359,7 @@ void render_update_glyph(Smacs *smacs)
 
                     TTF_SizeUTF8(smacs->font, sb->data, &completion_w, NULL);
 
-                    if (completion_w >= win_w) {
+                    if (completion_w >= complition_width_limit) {
                         sb->len = sb->len - strlen(smacs->editor.completor.filtered.data[i]) - strlen(completion_delimiter);
                         memset(&sb->data[sb->len], 0, sb->cap - sb->len);
                         sb_append_many(sb, "...");
@@ -361,7 +367,7 @@ void render_update_glyph(Smacs *smacs)
                     }
                 }
 
-                sb_append(sb, '}');
+                sb_append(sb, parens[1]);
                 render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - char_h, MINI_BUFFER);
             } else {
                 if (smacs->editor.user_input.len > 0) {
