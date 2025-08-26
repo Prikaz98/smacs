@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "common.h"
+#include "lexer.h"
 
 typedef struct {
     size_t start;
@@ -36,6 +37,8 @@ typedef struct {
     bool need_to_save;
 
     size_t last_position;
+
+    SimpleLexer lexer;
 } Buffer;
 
 typedef struct {

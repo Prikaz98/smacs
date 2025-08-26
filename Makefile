@@ -3,7 +3,7 @@ PKG_FLAGS:=$(shell pkg-config --cflags $(PKGS))
 PKG_LIBS:=$(shell pkg-config --libs $(PKGS))
 SDL2_LIBS:=-lSDL2_ttf
 CFLAGS:=-Wall -Wextra -std=c11 -pedantic -ggdb -D_DEFAULT_SOURCE #-fsanitize=address,undefined
-SOURCES:=./src/common.c ./src/utf8.c ./src/editor.c ./src/themes.c ./src/render.c ./src/smacs.c
+SOURCES:=./src/common.c ./src/utf8.c ./src/editor.c ./src/themes.c ./src/render.c ./src/lexer.c ./src/smacs.c
 EXEC:=smacs
 TTF:=fonts/liberation-mono.ttf
 UNAME_S := $(shell uname -s)

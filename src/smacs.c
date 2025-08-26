@@ -158,7 +158,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 
         for (i = 0; i < (int) smacs.editor.panes_len; ++i) {
             smacs.editor.panes[i].x = win_w_per_pane * i;
-            smacs.editor.panes[i].w = win_w_per_pane * i + win_w_per_pane;
+            smacs.editor.panes[i].w = win_w_per_pane;
             smacs.editor.panes[i].h = win_h;
             smacs.editor.panes[i].arena.show_lines = (win_h / (font_y + smacs.leading));
         }

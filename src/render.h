@@ -4,19 +4,23 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include "editor.h"
+#include "lexer.h"
 
 #define RENDER_NOTIFICATION_LEN 256
 
-enum GlyphItemEnum {
-    TEXT,
-    REGION,
-    CURSOR,
-    MODE_LINE,
-    MODE_LINE_ACTIVE,
-    MINI_BUFFER,
-    LINE_NUMBER,
-    LINE,
-};
+typedef enum {
+    TEXT             = 0x001,
+    REGION           = 0x002,
+    CURSOR           = 0x004,
+    MODE_LINE        = 0x008,
+    MODE_LINE_ACTIVE = 0x010,
+    MINI_BUFFER      = 0x020,
+    LINE_NUMBER      = 0x040,
+    LINE             = 0x080,
+    KEYWORD          = 0x100,
+    TYPE             = 0x200,
+} GlyphItemEnum;
+
 
 typedef struct {
     char *str;
@@ -27,8 +31,10 @@ typedef struct {
     int w;
     int h;
 
-    enum GlyphItemEnum kind;
+    GlyphItemEnum kind;
 } GlyphItem;
+
+#define fprintf_item(std, it) fprintf(std, "GlyphItem(%s,%ld,%d,%d,%d,%d,%d)\n", it->str, it->len, it->x, it->y, it->w, it->h, it->kind);
 
 typedef struct {
     GlyphItem *data;
@@ -63,6 +69,8 @@ typedef struct {
     SDL_Color mlbg;
     SDL_Color mlfg;
     SDL_Color cfg;
+    SDL_Color kvfg;
+    SDL_Color tpfg;
 
     int leading;
     int tab_size;

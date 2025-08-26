@@ -290,6 +290,7 @@ void editor_determine_lines(Editor *editor)
     if (buffer->content.len == 0) return;
 
     beg = 0;
+    //TODO: write recognizing of keyword and types
     for (i = 0; i < buffer->content.len; ++i) {
         if (buffer->content.data[i] == '\n') {
             gb_append(buffer, ((Line) {beg, i}));
@@ -358,7 +359,7 @@ int editor_read_file(Editor *editor, char *file_path)
     FILE *in;
     Content content;
     char next;
-    size_t len;
+    size_t len, file_path_len;
     Pane *pane;
 
     in = fopen(file_path, "r");
@@ -377,8 +378,16 @@ int editor_read_file(Editor *editor, char *file_path)
 
     pane->buffer = editor_create_buffer(editor, file_path);
     pane->buffer->content = content;
-    pane->buffer->file_path = (char*) calloc(strlen(file_path) + 1, sizeof(char));
+    file_path_len = strlen(file_path);
+    pane->buffer->file_path = (char*) calloc(file_path_len + 1, sizeof(char));
     editor_goto_point(editor, 0);
+
+    if (file_path_len > 2) {
+        if (strncmp(&file_path[file_path_len-2], ".c", 2) == 0 ||
+            strncmp(&file_path[file_path_len-2], ".h", 2) == 0) {
+            lexer_c_syntax(&pane->buffer->lexer);
+        }
+    }
 
     strcpy(pane->buffer->file_path, file_path);
 

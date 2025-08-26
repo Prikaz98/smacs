@@ -26,6 +26,8 @@ void themes_mindre(Smacs *smacs)
     smacs->mlbg = themes_as_color(0xECEFF1);
     smacs->mlfg = themes_as_color(0x2E3331);
     smacs->cfg = themes_as_color(0x2E3331);
+    smacs->kvfg = smacs->fg;
+    smacs->tpfg = smacs->fg;
 }
 
 void themes_naysayer(Smacs *smacs)
@@ -37,4 +39,6 @@ void themes_naysayer(Smacs *smacs)
     smacs->mlbg = themes_as_color(0xD1B897);
     smacs->mlfg = themes_as_color(0x062329);
     smacs->cfg = themes_as_color(0xFFFFFF);
+    smacs->kvfg = themes_as_color(0xFFFFFF);
+    smacs->tpfg = themes_as_color(0x8cde94);
 }
