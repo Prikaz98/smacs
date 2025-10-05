@@ -76,7 +76,7 @@ void render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer
 {
     switch (smacs->line_number_format) {
     case HIDE: {
-    } break;
+    }break;
     case ABSOLUTE: {
         render_format_line_number_padding(buffer, buffer_len, num);
     }break;
@@ -215,10 +215,12 @@ void render_update_glyph(Smacs *smacs)
             bool selection;
             GlyphItemEnum kind;
 
+            content_hight = 0;
 
-            if(data_len > 0) {
+            if(data_len == 0) {
+                gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, char_w, char_h, CURSOR}));
+            } else {
                 assert(arena.start < arena_end);
-                content_hight = 0;
 
                 selection = is_active_pane && smacs->editor.state & SELECTION && region_beg != region_end;
                 kind = TEXT;
@@ -275,11 +277,10 @@ void render_update_glyph(Smacs *smacs)
                     content_hight += (char_h + smacs->leading);
                     sb_clean(sb);
                 }
-
-                gb_append(row, ((GlyphItem) {NULL, 0, pane->x+pane->w, 0, pane->x+pane->w, pane->h-char_h*2, LINE}));
             }
-        }
 
+            gb_append(row, ((GlyphItem) {NULL, 0, pane->x+pane->w, 0, pane->x+pane->w, pane->h-char_h*2, LINE}));
+        }
 
         //MODE LINE
         {

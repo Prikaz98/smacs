@@ -853,6 +853,12 @@ void editor_delete_word_forward(Editor *editor)
     editor_delete_backward(editor);
 }
 
+void editor_delete_word_backward(Editor *editor)
+{
+    editor_set_mark(editor);
+    editor_word_backward(editor);
+    editor_delete_backward(editor);
+}
 
 int editor_find_word(char *ch, bool *word_beginning, bool *found_word_ending)
 {

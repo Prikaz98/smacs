@@ -128,6 +128,7 @@ void editor_char_forward(Editor *editor);
 void editor_word_forward(Editor *editor);
 void editor_word_backward(Editor *editor);
 void editor_delete_word_forward(Editor *editor);
+void editor_delete_word_backward(Editor *editor);
 void editor_mark_forward_word(Editor *editor);
 
 void editor_move_end_of_line(Editor *editor);

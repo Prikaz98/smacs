@@ -60,7 +60,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
         return 1;
     }
 
-    if (!SDL_CreateWindowAndRenderer("smacs", 500, 600, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED, &smacs.window, &smacs.renderer)) {
+    if (!SDL_CreateWindowAndRenderer("smacs", 1000, 1200, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED, &smacs.window, &smacs.renderer)) {
         fprintf(stderr, "Could not open SDL window: %s\n", SDL_GetError());
         return 1;
     }
@@ -327,6 +327,9 @@ bool alt_leader_mapping(SDL_Event event)
             break;
         case SDLK_L:
             editor_lower(&smacs.editor);
+            break;
+        case SDLK_BACKSPACE:
+            editor_delete_word_backward(&smacs.editor);
             break;
         }
     }
