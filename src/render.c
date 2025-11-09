@@ -250,7 +250,7 @@ void render_update_glyph(Smacs *smacs)
 
                         if (is_active_pane && ci == cursor) {
                             kind = kind | CURSOR;
-                            if (cursor == data_len) {
+                            if (cursor == line->end || cursor == data_len) {
                                 gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, char_w, char_h, kind}));
                             }
                         } else if (kind & CURSOR) {
