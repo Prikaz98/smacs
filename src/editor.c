@@ -1,13 +1,13 @@
+#include <assert.h>
+#include <ctype.h>
+#include <dirent.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/param.h>
-#include <assert.h>
-#include <dirent.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "editor.h"
@@ -1260,6 +1260,11 @@ bool editor_find_file_complete(Editor *editor)
     sb_append_many(full_path, editor->dir);
     sb_append(full_path, EDITOR_DIR_SLASH);
     sb_append_many(full_path, file_path);
+
+    if (access(full_path->data, F_OK) != 0) {
+        fprintf(stderr, "File %s not found\n", full_path->data);
+        return false;
+    }
 
     file_is_dir = false;
     if (editor_is_directory(full_path->data)) file_is_dir = true;
