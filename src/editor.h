@@ -7,6 +7,10 @@
 #include "common.h"
 #include "lexer.h"
 
+
+#define PANES_MAX_SIZE            3
+#define CHANGE_EVENT_HISTORY_SIZE 100
+
 typedef struct {
     size_t start;
     size_t end;
@@ -22,6 +26,38 @@ typedef struct {
     size_t start;
     size_t show_lines;
 } Arena;
+
+typedef enum {
+    EMPTY,
+    INSERTION,
+    DELETION,
+} Change_Event_Type;
+
+typedef struct {
+    size_t point;
+    char *data;
+} Change_Event_Deletion;
+
+typedef struct {
+    size_t point;
+    StringBuilder string;
+} Change_Event_Insertion;
+
+typedef struct {
+    Change_Event_Type type;
+
+    Change_Event_Deletion deletion;
+    Change_Event_Insertion insertion;
+} Change_Event;
+
+#define printf_change_event(e)                                                                               \
+    if (e->type == INSERTION) {                                                                              \
+        printf("INSERTION(%ld, %s, %ld)\n", e->insertion.point, e->insertion.string.data, e->insertion.len); \
+    } else if (e->type == DELETION) {                                                                        \
+        printf("DELETION(%ld, %s)\n", e->deletion.point, e->deletion.data);                                  \
+    } else {                                                                                                 \
+        printf("EMPTY\n");                                                                                   \
+    }                                                                                                        \
 
 typedef struct {
     size_t column;
@@ -39,6 +75,9 @@ typedef struct {
     size_t last_position;
 
     SimpleLexer lexer;
+
+    Change_Event events[CHANGE_EVENT_HISTORY_SIZE];
+    size_t events_len;
 } Buffer;
 
 typedef struct {
@@ -57,8 +96,6 @@ typedef struct {
     size_t position;
     Arena arena;
 } Pane;
-
-#define PANES_MAX_SIZE 3
 
 typedef enum {
     NONE            = 0x000,
@@ -108,6 +145,8 @@ typedef struct {
 #define EDITOR_DIR_CUR    "."
 #define EDITOR_DIR_PREV   ".."
 #define EDITOR_DIR_SLASH  '/'
+
+#define editor_mod(a, b) ((a%b + b)%b)
 
 void editor_goto_point(Editor *editor, size_t pos);
 
@@ -190,4 +229,5 @@ void editor_find_file(Editor *editor, bool refresh_dir);
 bool editor_find_file_complete(Editor *editor);
 
 void editor_new_line(Editor *editor);
+void editor_undo(Editor *editor);
 #endif

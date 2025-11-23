@@ -87,6 +87,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 
     SDL_GetWindowSize(smacs.window, &win_w, &win_h);
     smacs.editor.pane->arena = (Arena) {0, win_h / smacs.font_size};
+    smacs.editor.pane->buffer->events_len = 0;
     smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
     smacs.leading = LEADING;
     smacs.tab_size = TAB_SIZE;
@@ -270,6 +271,9 @@ bool ctrl_leader_mapping(SDL_Event event, int *message_timeout)
             sprintf(smacs.notification, "Saved");
             *message_timeout = MESSAGE_TIMEOUT;
         }
+        break;
+    case SDLK_SLASH:
+        editor_undo(&smacs.editor);
         break;
     }
 

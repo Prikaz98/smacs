@@ -171,7 +171,7 @@ void render_update_glyph(Smacs *smacs)
     glyph = &smacs->glyph;
     glyph->len = 0;
 
-    TTF_GetStringSize(smacs->font, "|", 1, &char_w, &char_h);
+    TTF_GetStringSize(smacs->font, ".", 1, &char_w, &char_h);
     SDL_GetWindowSize(smacs->window, &win_w, &win_h);
     content_limit = win_h - (char_h * 2.5);
 
@@ -251,8 +251,9 @@ void render_update_glyph(Smacs *smacs)
                         if (is_active_pane && ci == cursor) {
                             kind = kind | CURSOR;
                             if (cursor == line->end || cursor == data_len) {
-                                gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, char_w, char_h, kind}));
+                                gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, char_w, char_h, cursor == data_len ? kind : CURSOR}));
                             }
+
                         } else if (kind & CURSOR) {
                             kind = kind ^ CURSOR;
                         }

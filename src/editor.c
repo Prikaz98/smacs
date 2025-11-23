@@ -65,14 +65,26 @@ size_t editor_reg_end(Editor *editor)
     return MIN(editor->pane->buffer->content.len, MAX(editor->mark, editor->pane->position));
 }
 
+void editor_delete_forward_len(Editor *editor, size_t delete_len)
+{
+    Content *content;
+    content = &editor->pane->buffer->content;
+
+    if (editor->pane->position >= content->len) return;
+
+    memmove(&content->data[editor->pane->position],
+            &content->data[editor->pane->position + delete_len],
+            content->len - editor->pane->position);
+
+    content->len -= delete_len;
+}
+
 void editor_delete_backward(Editor *editor)
 {
-    Buffer *buf;
     Content *content;
     size_t reg_beg, reg_end, delete_len;
 
-    buf = editor->pane->buffer;
-    content = &buf->content;
+    content = &editor->pane->buffer->content;
 
     if (editor->state == SELECTION) {
         reg_beg = editor_reg_beg(editor);
@@ -86,7 +98,9 @@ void editor_delete_backward(Editor *editor)
         if (editor->pane->position == 0) return;
 
         delete_len = utf8_size_char_backward(content->data, editor->pane->position - 1);
-        memmove(&content->data[editor->pane->position - delete_len], &content->data[editor->pane->position], content->len - editor->pane->position + delete_len);
+        memmove(&content->data[editor->pane->position - delete_len],
+                &content->data[editor->pane->position],
+                content->len - editor->pane->position + delete_len);
         content->len -= delete_len;
         editor_goto_point(editor, editor->pane->position - delete_len);
     }
@@ -101,25 +115,36 @@ void editor_delete_backward(Editor *editor)
 void editor_delete_forward(Editor *editor)
 {
     int8_t char_len;
-    Buffer *buf;
-    Content *content;
 
     if (editor->state == SELECTION) {
         editor_delete_backward(editor);
         return;
     }
 
-    buf = editor->pane->buffer;
-    content = &buf->content;
-    if (editor->pane->position >= content->len) return;
-
-    char_len = utf8_size_char(content->data[editor->pane->position]);
-    memmove(&content->data[editor->pane->position], &content->data[editor->pane->position + char_len], content->len - editor->pane->position);
-    content->len -= char_len;
+    char_len = utf8_size_char(editor->pane->buffer->content.data[editor->pane->position]);
+    editor_delete_forward_len(editor, char_len);
 
     editor_determine_lines(editor);
     editor->state = NONE;
     editor->pane->buffer->need_to_save = true;
+}
+
+void editor_store_event_insert(Editor *editor, char *str, size_t len)
+{
+    Change_Event *curr_event;
+
+    if ((editor->pane->buffer->events_len+1) > CHANGE_EVENT_HISTORY_SIZE) {
+        editor->pane->buffer->events_len = 0;
+    }
+
+    curr_event = &editor->pane->buffer->events[editor->pane->buffer->events_len++];
+    curr_event->type = INSERTION;
+    curr_event->insertion.point = editor->pane->position;
+
+    sb_clean(&curr_event->insertion.string);
+    for (size_t i = 0; i < len; ++i) {
+        sb_append(&curr_event->insertion.string, str[i]);
+    }
 }
 
 void editor_insert(Editor *editor, char *str)
@@ -145,6 +170,7 @@ void editor_insert(Editor *editor, char *str)
         append_char(content, str[i], editor->pane->position + i);
     }
 
+    editor_store_event_insert(editor, str, str_size);
     editor->pane->position += str_size;
     editor->pane->buffer->need_to_save = true;
     editor_determine_lines(editor);
@@ -433,6 +459,10 @@ void editor_destory_buffer(Buffer *buf)
         buf->content.len = 0;
         buf->content.capacity = 0;
 
+        for (size_t i; i < CHANGE_EVENT_HISTORY_SIZE; ++i) {
+            sb_free(&buf->events[i].insertion.string);
+        }
+
         gb_free(buf);
     }
 }
@@ -629,11 +659,11 @@ void editor_duplicate_line(Editor *editor)
     line_num = editor_get_current_line_number(editor->pane);
     line = &editor->pane->buffer->data[line_num];
     line_len = line->end - line->start;
-    copy = calloc(line_len + 1, sizeof(char));
+    copy = calloc(line_len + 2, sizeof(char));
     memcpy(copy, &editor->pane->buffer->content.data[line->start], line_len);
+    copy[line_len] = '\n';
     editor_move_begginning_of_line(editor);
     editor_insert(editor, copy);
-    editor_insert(editor, "\n");
 
     editor_goto_point(editor, pos);
     editor_next_line(editor);
@@ -1301,4 +1331,34 @@ void editor_new_line(Editor *editor)
     editor_insert(editor, "\n");
     editor_paste(editor);
     SDL_SetClipboardText(buffer);
+}
+
+void editor_undo(Editor *editor)
+{
+    Change_Event *event;
+    size_t current_event_position;
+
+    current_event_position = editor_mod(editor->pane->buffer->events_len-1, CHANGE_EVENT_HISTORY_SIZE);
+    event = &editor->pane->buffer->events[current_event_position];
+
+    if (event->type == EMPTY) return;
+    editor->pane->buffer->events_len = current_event_position;
+
+    switch (event->type) {
+    case EMPTY:
+        break;
+    case INSERTION:
+        if (strncmp(&editor->pane->buffer->content.data[event->insertion.point],
+                    event->insertion.string.data,
+                    event->insertion.string.len) == 0) {
+            editor_goto_point(editor, event->insertion.point);
+            editor_delete_forward_len(editor, event->insertion.string.len);
+            editor_determine_lines(editor);
+        }
+        break;
+    case DELETION:
+        printf("LAST WAS DELETION\n");
+        break;
+    }
+    event->type = EMPTY;
 }
