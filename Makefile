@@ -5,7 +5,6 @@ SDL3_LIBS:=-lSDL3_ttf
 CFLAGS:=-Wall -Wextra -std=c11 -pedantic -ggdb -D_DEFAULT_SOURCE #-fsanitize=address,undefined
 SOURCES:=./src/common.c ./src/utf8.c ./src/editor.c ./src/themes.c ./src/render.c ./src/lexer.c ./src/smacs.c
 EXEC:=smacs
-#TTF:=fonts/liberation-mono.ttf
 TTF:=fonts/IosevkaFixed-Medium.ttf
 UNAME_S := $(shell uname -s)
 
