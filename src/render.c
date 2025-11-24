@@ -250,8 +250,10 @@ void render_update_glyph(Smacs *smacs)
 
                         if (is_active_pane && ci == cursor) {
                             kind = kind | CURSOR;
-                            if (cursor == line->end || cursor == data_len || line->start+1 == line->end) {
-                                gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, char_w, char_h, cursor == data_len ? kind : CURSOR}));
+
+                            if (cursor == data_len) {
+                                gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, char_w, char_h, kind}));
+                                kind = kind ^ CURSOR;
                             }
                         } else if (kind & CURSOR) {
                             kind = kind ^ CURSOR;
@@ -270,9 +272,14 @@ void render_update_glyph(Smacs *smacs)
                         }
                     }
 
-                    if (region_beg <= line->end && line->end < region_end && row->len > 0) {
-                        row->data[row->len-1].w = pane_width_threashold - row->data[row->len-1].x;
-                    }
+                    //TODO: this code is needed for rendering widht region selection by according by width of window
+                    //   but it does not work correcty because it access to any last element
+                    //   and this last element might be a cursor
+                    //   that brokes it showing
+
+                    //if (selection && region_beg <= line->end && line->end < region_end && row->len > 0) {
+                    //    row->data[row->len-1].w = pane_width_threashold - row->data[row->len-1].x;
+                    //}
 
                     content_hight += (char_h + smacs->leading);
                     sb_clean(sb);
@@ -391,11 +398,7 @@ void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, StringBuilder *sb, SDL_
     SDL_Color fg;
 
     if (kind & TEXT) {
-        if (kind & CURSOR) {
-            SDL_SetRenderDrawColor(smacs->renderer, smacs->cfg.r, smacs->cfg.g, smacs->cfg.b, smacs->cfg.a);
-            SDL_RenderFillRect(smacs->renderer, rect);
-            fg = smacs->bg;
-        } else if (kind & REGION) {
+        if (kind & REGION) {
             SDL_SetRenderDrawColor(smacs->renderer, smacs->rg.r, smacs->rg.g, smacs->rg.b, smacs->rg.a);
             SDL_RenderFillRect(smacs->renderer, rect);
             fg = smacs->fg;
@@ -405,6 +408,12 @@ void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, StringBuilder *sb, SDL_
             fg = smacs->tpfg;
         } else {
             fg = smacs->fg;
+        }
+
+        if (kind & CURSOR) {
+            SDL_SetRenderDrawColor(smacs->renderer, smacs->cfg.r, smacs->cfg.g, smacs->cfg.b, smacs->cfg.a);
+            SDL_RenderFillRect(smacs->renderer, rect);
+            fg = smacs->bg;
         }
 
         render_draw_text(smacs, rect->x, rect->y, sb->data, sb->len, fg);
