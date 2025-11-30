@@ -65,6 +65,24 @@ size_t editor_reg_end(Editor *editor)
     return MIN(editor->pane->buffer->content.len, MAX(editor->mark, editor->pane->position));
 }
 
+void editor_store_event(Editor *editor, char *str, size_t len, Change_Event_Type event_type)
+{
+    Change_Event *curr_event;
+
+    if ((editor->pane->buffer->events_len+1) > CHANGE_EVENT_HISTORY_SIZE) {
+        editor->pane->buffer->events_len = 0;
+    }
+
+    curr_event = &editor->pane->buffer->events[editor->pane->buffer->events_len++];
+    curr_event->type = event_type;
+    curr_event->point = editor->pane->position;
+
+    sb_clean(&curr_event->string);
+    for (size_t i = 0; i < len; ++i) {
+        sb_append(&curr_event->string, str[i]);
+    }
+}
+
 void editor_delete_forward_len(Editor *editor, size_t delete_len)
 {
     Content *content;
@@ -129,24 +147,6 @@ void editor_delete_forward(Editor *editor)
     editor->pane->buffer->need_to_save = true;
 }
 
-void editor_store_event_insert(Editor *editor, char *str, size_t len)
-{
-    Change_Event *curr_event;
-
-    if ((editor->pane->buffer->events_len+1) > CHANGE_EVENT_HISTORY_SIZE) {
-        editor->pane->buffer->events_len = 0;
-    }
-
-    curr_event = &editor->pane->buffer->events[editor->pane->buffer->events_len++];
-    curr_event->type = INSERTION;
-    curr_event->insertion.point = editor->pane->position;
-
-    sb_clean(&curr_event->insertion.string);
-    for (size_t i = 0; i < len; ++i) {
-        sb_append(&curr_event->insertion.string, str[i]);
-    }
-}
-
 void editor_insert(Editor *editor, char *str)
 {
     Buffer *buf = editor->pane->buffer;
@@ -170,7 +170,7 @@ void editor_insert(Editor *editor, char *str)
         append_char(content, str[i], editor->pane->position + i);
     }
 
-    editor_store_event_insert(editor, str, str_size);
+    editor_store_event(editor, str, str_size, INSERTION);
     editor->pane->position += str_size;
     editor->pane->buffer->need_to_save = true;
     editor_determine_lines(editor);
@@ -460,7 +460,7 @@ void editor_destory_buffer(Buffer *buf)
         buf->content.capacity = 0;
 
         for (size_t i; i < CHANGE_EVENT_HISTORY_SIZE; ++i) {
-            sb_free(&buf->events[i].insertion.string);
+            sb_free(&buf->events[i].string);
         }
 
         gb_free(buf);
@@ -744,6 +744,7 @@ bool editor_user_search_next(Editor *editor, char *notification)
     }
 
     while (i != threshold) {
+        //Need to rewrite it to more faster search algorithm
         if (strncasecmp(&editor->pane->buffer->content.data[i], to_find, to_find_len) == 0) {
             editor_goto_point(editor, i);
             editor_recognize_arena(editor);
@@ -1353,16 +1354,16 @@ void editor_undo(Editor *editor)
     case EMPTY:
         break;
     case INSERTION:
-        if (strncmp(&editor->pane->buffer->content.data[event->insertion.point],
-                    event->insertion.string.data,
-                    event->insertion.string.len) == 0) {
-            editor_goto_point(editor, event->insertion.point);
-            editor_delete_forward_len(editor, event->insertion.string.len);
+        if (strncmp(&editor->pane->buffer->content.data[event->point],
+                    event->string.data,
+                    event->string.len) == 0) {
+            editor_goto_point(editor, event->point);
+            editor_delete_forward_len(editor, event->string.len);
             editor_determine_lines(editor);
         }
         break;
     case DELETION:
-        printf("LAST WAS DELETION\n");
+        fprintf(stderr, "Not implemented yet");
         break;
     }
     event->type = EMPTY;

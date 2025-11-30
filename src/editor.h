@@ -34,20 +34,9 @@ typedef enum {
 } Change_Event_Type;
 
 typedef struct {
-    size_t point;
-    char *data;
-} Change_Event_Deletion;
-
-typedef struct {
+    Change_Event_Type type;
     size_t point;
     StringBuilder string;
-} Change_Event_Insertion;
-
-typedef struct {
-    Change_Event_Type type;
-
-    Change_Event_Deletion deletion;
-    Change_Event_Insertion insertion;
 } Change_Event;
 
 #define printf_change_event(e)                                                                               \

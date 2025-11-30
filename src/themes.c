@@ -22,7 +22,7 @@ void themes_mindre(Smacs *smacs)
     smacs->bg = themes_as_color(0xF5F5F5);
     smacs->fg = themes_as_color(0x2E3331);
     smacs->rg = themes_as_color(0xCFD8DC);
-    smacs->ln = smacs->fg;
+    smacs->ln = smacs->rg;
     smacs->mlbg = themes_as_color(0xECEFF1);
     smacs->mlfg = themes_as_color(0x2E3331);
     smacs->cfg = themes_as_color(0x2E3331);

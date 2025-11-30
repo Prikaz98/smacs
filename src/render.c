@@ -195,7 +195,8 @@ void render_update_glyph(Smacs *smacs)
         assert(region_beg <= region_end);
 
         common_indention = pane->x;
-        text_indention = common_indention;
+        //extra pixel is needed to not cover the seporator line
+        text_indention = common_indention + 1;
         pane_width_threashold = pane->x + pane->w - (char_w * 2);
 
         current_line = editor_get_current_line_number(pane) + 1;
@@ -277,9 +278,9 @@ void render_update_glyph(Smacs *smacs)
                     //   and this last element might be a cursor
                     //   that brokes it showing
 
-                    //if (selection && region_beg <= line->end && line->end < region_end && row->len > 0) {
-                    //    row->data[row->len-1].w = pane_width_threashold - row->data[row->len-1].x;
-                    //}
+                    // if (selection && region_beg <= line->end && line->end < region_end && row->len > 0) {
+                    //     row->data[row->len-1].w = pane_width_threashold - row->data[row->len-1].x;
+                    // }
 
                     content_hight += (char_h + smacs->leading);
                     sb_clean(sb);
