@@ -106,8 +106,9 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 
         switch (event.type) {
         case SDL_EVENT_TEXT_INPUT: {
+#ifdef OS_LINUX
             if ((event.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT))) continue;
-
+#endif
             if (mini_buffer_event_handle(&event)) break;
             if (completion_event_handle(&event)) break;
 

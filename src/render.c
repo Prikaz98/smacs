@@ -161,7 +161,7 @@ void render_update_glyph(Smacs *smacs)
     int win_w, win_h, char_w, char_h, content_limit, common_indention, text_indention, pane_width_threashold;
     StringBuilder *sb;
     char *data, line_number[100];
-    bool is_active_pane, show_line_number;
+    bool is_active_pane, show_line_number, mini_buffer_is_active;
     Pane *pane;
     GlyphMatrix *glyph;
     GlyphRow *row;
@@ -179,6 +179,11 @@ void render_update_glyph(Smacs *smacs)
 
     show_line_number = true;
     if (smacs->line_number_format == HIDE) show_line_number = false;
+
+    mini_buffer_is_active = false;
+    if (smacs->editor.state & SEARCH) mini_buffer_is_active = true;
+    if (smacs->editor.state & EXTEND_COMMAND) mini_buffer_is_active = true;
+    if (smacs->editor.state & COMPLETION) mini_buffer_is_active = true;
 
     for (pi = 0; pi < smacs->editor.panes_len; ++pi) {
         pane = &smacs->editor.panes[pi];
@@ -294,6 +299,7 @@ void render_update_glyph(Smacs *smacs)
         {
             int padding;
             GlyphItem *item;
+            int mode_line_h;
 
             padding = common_indention;
             gb_append(glyph, ((GlyphRow){0}));
@@ -322,12 +328,16 @@ void render_update_glyph(Smacs *smacs)
                 }
             }
 
-            item = render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - (char_h*2), is_active_pane ? MODE_LINE_ACTIVE : MODE_LINE);
+            mode_line_h = win_h - (mini_buffer_is_active ? char_h*2 : char_h);
+
+            item = render_flush_item_sb_and_move_x(smacs, row, sb, &padding, mode_line_h, is_active_pane ? MODE_LINE_ACTIVE : MODE_LINE);
             item->w = pane->w;
         }
     }
 
     //MINI BUFFER
+
+    if (mini_buffer_is_active)
     {
         size_t home_dir_len;
         int completion_w, padding, complition_width_limit;
