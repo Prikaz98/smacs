@@ -222,8 +222,11 @@ void render_update_glyph(Smacs *smacs)
             GlyphItemEnum kind;
 
             content_hight = 0;
+            x = 0;
 
             if(data_len == 0) {
+                gb_append(glyph, ((GlyphRow){0}));
+                row = &glyph->data[glyph->len-1];
                 gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, char_w, char_h, CURSOR}));
             } else {
                 assert(arena.start < arena_end);
