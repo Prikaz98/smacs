@@ -459,7 +459,7 @@ void editor_destory_buffer(Buffer *buf)
         buf->content.len = 0;
         buf->content.capacity = 0;
 
-        for (size_t i; i < CHANGE_EVENT_HISTORY_SIZE; ++i) {
+        for (size_t i = 0; i < CHANGE_EVENT_HISTORY_SIZE; ++i) {
             sb_free(&buf->events[i].string);
         }
 
