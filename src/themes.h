@@ -5,5 +5,6 @@
 
 void themes_mindre(Smacs *smacs);
 void themes_naysayer(Smacs *smacs);
+void themes_acme(Smacs *smacs);
 
 #endif

@@ -12,7 +12,7 @@
 #include "themes.h"
 #include "common.h"
 
-#define FONT_SIZE       15
+#define FONT_SIZE       12
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define LEADING         0    /* space between raws */
@@ -73,7 +73,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
     bool quit = false;
     message_timeout = 0;
 
-    themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre]
+    themes_acme(&smacs); // alternatives: [themes_naysayer, themes_mindre, themes_acme]
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.home_dir = home_dir;
