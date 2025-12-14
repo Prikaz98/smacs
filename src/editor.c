@@ -14,7 +14,8 @@
 #include "utf8.h"
 #include "common.h"
 
-void append_char(Content *content, char ch, size_t pos)
+void
+append_char(Content *content, char ch, size_t pos)
 {
     Content cont;
 
@@ -44,7 +45,8 @@ void append_char(Content *content, char ch, size_t pos)
     *content = cont;
 }
 
-void editor_goto_point(Editor *editor, size_t pos)
+void
+editor_goto_point(Editor *editor, size_t pos)
 {
     size_t max_len;
 
@@ -55,19 +57,22 @@ void editor_goto_point(Editor *editor, size_t pos)
     editor_recognize_arena(editor);
 }
 
-size_t editor_reg_beg(Editor *editor)
+size_t
+editor_reg_beg(Editor *editor)
 {
     return MIN(editor->mark, editor->pane->position);
 }
 
-size_t editor_reg_end(Editor *editor)
+size_t
+editor_reg_end(Editor *editor)
 {
     return MIN(editor->pane->buffer->content.len, MAX(editor->mark, editor->pane->position));
 }
 
-void editor_store_event(Editor *editor, char *str, size_t len, Change_Event_Type event_type)
+void
+editor_store_event(Editor *editor, char *str, size_t len, ChangeEventType event_type)
 {
-    Change_Event *curr_event;
+    ChangeEvent *curr_event;
 
     if ((editor->pane->buffer->events_len+1) > CHANGE_EVENT_HISTORY_SIZE) {
         editor->pane->buffer->events_len = 0;
@@ -83,7 +88,8 @@ void editor_store_event(Editor *editor, char *str, size_t len, Change_Event_Type
     }
 }
 
-void editor_delete_forward_len(Editor *editor, size_t delete_len)
+void
+editor_delete_forward_len(Editor *editor, size_t delete_len)
 {
     Content *content;
     content = &editor->pane->buffer->content;
@@ -97,7 +103,8 @@ void editor_delete_forward_len(Editor *editor, size_t delete_len)
     content->len -= delete_len;
 }
 
-void editor_delete_backward(Editor *editor)
+void
+editor_delete_backward(Editor *editor)
 {
     Content *content;
     size_t reg_beg, reg_end, delete_len;
@@ -130,7 +137,8 @@ void editor_delete_backward(Editor *editor)
     editor->pane->buffer->need_to_save = true;
 }
 
-void editor_delete_forward(Editor *editor)
+void
+editor_delete_forward(Editor *editor)
 {
     int8_t char_len;
 
@@ -147,7 +155,8 @@ void editor_delete_forward(Editor *editor)
     editor->pane->buffer->need_to_save = true;
 }
 
-void editor_insert(Editor *editor, char *str)
+void
+editor_insert(Editor *editor, char *str)
 {
     Buffer *buf = editor->pane->buffer;
     register size_t i;
@@ -177,7 +186,8 @@ void editor_insert(Editor *editor, char *str)
     editor->state = NONE;
 }
 
-size_t editor_get_current_line_number(Pane *pane)
+size_t
+editor_get_current_line_number(Pane *pane)
 {
     register size_t i;
     Line *line;
@@ -194,19 +204,33 @@ size_t editor_get_current_line_number(Pane *pane)
     return 0;
 }
 
-void editor_recognize_arena(Editor *editor)
+bool
+editor_is_mini_buffer_active(Editor *editor)
+{
+    bool mini_buffer_is_active = false;
+    if (editor->state & SEARCH) mini_buffer_is_active = true;
+    if (editor->state & EXTEND_COMMAND) mini_buffer_is_active = true;
+    if (editor->state & COMPLETION) mini_buffer_is_active = true;
+
+    return mini_buffer_is_active;
+}
+
+void
+editor_recognize_arena(Editor *editor)
 {
     size_t line_num;
-    register size_t pane_i;
+    register size_t pane_i, line_padded;
     Arena *arena;
     Pane *pane;
+
+    line_padded = editor_is_mini_buffer_active(editor) ? 2 : 1;
 
     for (pane_i = 0; pane_i < editor->panes_len; ++pane_i) {
         pane = &editor->panes[pane_i];
         line_num = editor_get_current_line_number(pane);
         arena = &pane->arena;
 
-        if (line_num >= (arena->start + arena->show_lines - 2)) {
+        if (line_num >= (arena->start + arena->show_lines - line_padded)) {
             arena->start = MIN(pane->buffer->len - 1, line_num - arena->show_lines / 2);
         } else if (line_num < arena->start) {
             arena->start = line_num;
@@ -214,7 +238,8 @@ void editor_recognize_arena(Editor *editor)
     }
 }
 
-void editor_next_line(Editor *editor)
+void
+editor_next_line(Editor *editor)
 {
     size_t next_pos, line_num;
     Line *line;
@@ -237,7 +262,8 @@ void editor_next_line(Editor *editor)
     }
 }
 
-void editor_previous_line(Editor *editor)
+void
+editor_previous_line(Editor *editor)
 {
     size_t next_pos, line_num;
     Line *line;
@@ -257,7 +283,8 @@ void editor_previous_line(Editor *editor)
     }
 }
 
-void editor_char_forward(Editor *editor)
+void
+editor_char_forward(Editor *editor)
 {
     uint8_t char_len;
 
@@ -265,7 +292,8 @@ void editor_char_forward(Editor *editor)
     editor_goto_point(editor, MIN(editor->pane->position + char_len, editor->pane->buffer->content.len));
 }
 
-void editor_char_backward(Editor *editor)
+void
+editor_char_backward(Editor *editor)
 {
     uint8_t char_len;
 
@@ -276,7 +304,8 @@ void editor_char_backward(Editor *editor)
     editor_goto_point(editor, (size_t) MAX(((int)editor->pane->position) - char_len, 0));
 }
 
-void editor_move_end_of_line(Editor *editor)
+void
+editor_move_end_of_line(Editor *editor)
 {
     register size_t i;
     Line *line;
@@ -290,7 +319,8 @@ void editor_move_end_of_line(Editor *editor)
     }
 }
 
-void editor_move_begginning_of_line(Editor *editor)
+void
+editor_move_begginning_of_line(Editor *editor)
 {
     register size_t i;
     Line *line;
@@ -305,7 +335,8 @@ void editor_move_begginning_of_line(Editor *editor)
     }
 }
 
-void editor_determine_lines(Editor *editor)
+void
+editor_determine_lines(Editor *editor)
 {
     register size_t i;
     size_t beg;
@@ -328,7 +359,8 @@ void editor_determine_lines(Editor *editor)
     gb_append(buffer, ((Line) {beg, i}));
 }
 
-int editor_save(Editor* editor)
+int
+editor_save(Editor* editor)
 {
     FILE *out;
     Content content;
@@ -381,7 +413,8 @@ Buffer* editor_create_buffer(Editor *editor, char *file_path)
     return &editor->buffer_list.data[editor->buffer_list.len - 1];
 }
 
-int editor_read_file(Editor *editor, char *file_path)
+int
+editor_read_file(Editor *editor, char *file_path)
 {
     FILE *in;
     Content content;
@@ -424,7 +457,8 @@ int editor_read_file(Editor *editor, char *file_path)
     return 0;
 }
 
-void editor_kill_line(Editor *editor)
+void
+editor_kill_line(Editor *editor)
 {
     register size_t i;
     size_t del_count;
@@ -448,7 +482,8 @@ void editor_kill_line(Editor *editor)
     editor->state = NONE;
 }
 
-void editor_destory_buffer(Buffer *buf)
+void
+editor_destory_buffer(Buffer *buf)
 {
     if (buf->content.len > 0) {
         free(buf->file_path);
@@ -467,7 +502,8 @@ void editor_destory_buffer(Buffer *buf)
     }
 }
 
-void editor_destroy(Editor *editor)
+void
+editor_destroy(Editor *editor)
 {
     register size_t i;
 
@@ -489,7 +525,8 @@ void editor_destroy(Editor *editor)
     gb_free(&(editor->completor));
 }
 
-void editor_recenter_top_bottom(Editor *editor)
+void
+editor_recenter_top_bottom(Editor *editor)
 {
     int line_num, center, half_screen;
     Arena *arena;
@@ -511,7 +548,8 @@ void editor_recenter_top_bottom(Editor *editor)
     }
 }
 
-void editor_scroll_up(Editor *editor)
+void
+editor_scroll_up(Editor *editor)
 {
     register size_t i;
     for (i = 0; i < (editor->pane->arena.show_lines / 2); ++i) {
@@ -519,7 +557,8 @@ void editor_scroll_up(Editor *editor)
     }
 }
 
-void editor_scroll_down(Editor *editor)
+void
+editor_scroll_down(Editor *editor)
 {
     register size_t i;
     for (i = 0; i < (editor->pane->arena.show_lines / 2); ++i) {
@@ -527,19 +566,22 @@ void editor_scroll_down(Editor *editor)
     }
 }
 
-void editor_beginning_of_buffer(Editor *editor)
+void
+editor_beginning_of_buffer(Editor *editor)
 {
     editor_goto_point(editor, 0);
     editor_recognize_arena(editor);
 }
 
-void editor_end_of_buffer(Editor *editor)
+void
+editor_end_of_buffer(Editor *editor)
 {
     editor_goto_point(editor, editor->pane->buffer->content.len - 1);
     editor_recognize_arena(editor);
 }
 
-void editor_mwheel_scroll_up(Editor *editor)
+void
+editor_mwheel_scroll_up(Editor *editor)
 {
     size_t line_num;
     size_t line_to_move;
@@ -561,7 +603,8 @@ void editor_mwheel_scroll_up(Editor *editor)
     }
 }
 
-void editor_mwheel_scroll_down(Editor *editor)
+void
+editor_mwheel_scroll_down(Editor *editor)
 {
     size_t line_num;
     size_t line_to_move;
@@ -582,7 +625,8 @@ void editor_mwheel_scroll_down(Editor *editor)
     }
 }
 
-void editor_mwheel_scroll(Editor *editor, Sint32 y)
+void
+editor_mwheel_scroll(Editor *editor, Sint32 y)
 {
     register Sint32 i;
 
@@ -597,13 +641,15 @@ void editor_mwheel_scroll(Editor *editor, Sint32 y)
     }
 }
 
-void editor_set_mark(Editor *editor)
+void
+editor_set_mark(Editor *editor)
 {
     editor->mark = editor->pane->position;
     editor->state = SELECTION;
 }
 
-void editor_copy_to_clipboard(Editor *editor)
+void
+editor_copy_to_clipboard(Editor *editor)
 {
     char *copy;
     size_t len, reg_beg, reg_end;
@@ -624,7 +670,8 @@ void editor_copy_to_clipboard(Editor *editor)
     free(copy);
 }
 
-void editor_cut(Editor *editor)
+void
+editor_cut(Editor *editor)
 {
     if (editor->state != SELECTION) return;
 
@@ -632,7 +679,8 @@ void editor_cut(Editor *editor)
     editor_delete_backward(editor);
 }
 
-void editor_paste(Editor *editor)
+void
+editor_paste(Editor *editor)
 {
     char* clipboard;
 
@@ -649,7 +697,8 @@ void editor_paste(Editor *editor)
     free(clipboard);
 }
 
-void editor_duplicate_line(Editor *editor)
+void
+editor_duplicate_line(Editor *editor)
 {
     size_t line_num, line_len, pos;
     Line *line;
@@ -672,36 +721,42 @@ void editor_duplicate_line(Editor *editor)
     free(copy);
 }
 
-void editor_user_input_clear(Editor *editor)
+void
+editor_user_input_clear(Editor *editor)
 {
     sb_clean((&editor->user_input));
     editor->state = NONE;
 }
 
-void editor_user_search_forward(Editor *editor)
+void
+editor_user_search_forward(Editor *editor)
 {
     editor->state = FORWARD_SEARCH;
     sb_clean((&editor->user_input));
 }
 
-void editor_user_search_backward(Editor *editor)
+void
+editor_user_search_backward(Editor *editor)
 {
     editor->state = BACKWARD_SEARCH;
     sb_clean((&editor->user_input));
 }
 
-void editor_user_extend_command(Editor *editor)
+void
+editor_user_extend_command(Editor *editor)
 {
     editor->state = EXTEND_COMMAND;
     sb_clean((&editor->user_input));
 }
 
-void editor_user_input_insert(Editor *editor, char *text)
+void
+editor_user_input_insert(Editor *editor, char *text)
 {
     sb_append_many(&editor->user_input, text);
 }
 
-void editor_user_input_delete_backward(Editor *editor)
+void
+editor_user_input_delete_backward(Editor *editor)
 {
     StringBuilder *sb;
     uint8_t char_len;
@@ -714,7 +769,8 @@ void editor_user_input_delete_backward(Editor *editor)
     memset(&sb->data[sb->len], 0, char_len);
 }
 
-bool editor_user_search_next(Editor *editor, char *notification)
+bool
+editor_user_search_next(Editor *editor, char *notification)
 {
     size_t to_find_len;
     char *to_find;
@@ -759,7 +815,8 @@ bool editor_user_search_next(Editor *editor, char *notification)
     return false;
 }
 
-void editor_goto_line(Editor *editor, size_t line)
+void
+editor_goto_line(Editor *editor, size_t line)
 {
     size_t goto_line;
     goto_line = MIN(editor->pane->buffer->len - 1, line - 1);
@@ -768,22 +825,26 @@ void editor_goto_line(Editor *editor, size_t line)
     editor_recognize_arena(editor);
 }
 
-void editor_goto_line_forward(Editor *editor, size_t line)
+void
+editor_goto_line_forward(Editor *editor, size_t line)
 {
     for (register size_t i = 0; i < line; ++i) editor_next_line(editor);
 }
 
-void editor_goto_line_backward(Editor *editor, size_t line)
+void
+editor_goto_line_backward(Editor *editor, size_t line)
 {
     for (register size_t i = 0; i < line; ++i) editor_previous_line(editor);
 }
 
-bool editor_is_editing_text(Editor *editor)
+bool
+editor_is_editing_text(Editor *editor)
 {
     return editor->state == NONE;
 }
 
-void editor_move_line_down(Editor *editor)
+void
+editor_move_line_down(Editor *editor)
 {
     size_t curr_line;
 
@@ -808,7 +869,8 @@ void editor_move_line_down(Editor *editor)
     editor_move_begginning_of_line(editor);
 }
 
-void editor_move_line_up(Editor *editor)
+void
+editor_move_line_up(Editor *editor)
 {
     size_t curr_line;
 
@@ -833,7 +895,8 @@ void editor_move_line_up(Editor *editor)
     editor_move_begginning_of_line(editor);
 }
 
-void editor_switch_buffer(Editor *editor, size_t buf_index)
+void
+editor_switch_buffer(Editor *editor, size_t buf_index)
 {
     if (buf_index >= editor->buffer_list.len) return;
 
@@ -844,7 +907,8 @@ void editor_switch_buffer(Editor *editor, size_t buf_index)
     editor_recognize_arena(editor);
 }
 
-void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
+void
+editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
 {
     register size_t i;
 
@@ -860,7 +924,8 @@ void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
     }
 }
 
-void editor_mark_forward_word(Editor *editor)
+void
+editor_mark_forward_word(Editor *editor)
 {
     size_t pos;
 
@@ -877,21 +942,24 @@ void editor_mark_forward_word(Editor *editor)
     editor->state = SELECTION;
 }
 
-void editor_delete_word_forward(Editor *editor)
+void
+editor_delete_word_forward(Editor *editor)
 {
     editor_set_mark(editor);
     editor_word_forward(editor);
     editor_delete_backward(editor);
 }
 
-void editor_delete_word_backward(Editor *editor)
+void
+editor_delete_word_backward(Editor *editor)
 {
     editor_set_mark(editor);
     editor_word_backward(editor);
     editor_delete_backward(editor);
 }
 
-int editor_find_word(char *ch, bool *word_beginning, bool *found_word_ending)
+int
+editor_find_word(char *ch, bool *word_beginning, bool *found_word_ending)
 {
     uint8_t char_len;
     uint32_t utf8_char_int;
@@ -922,7 +990,8 @@ int editor_find_word(char *ch, bool *word_beginning, bool *found_word_ending)
     return char_len;
 }
 
-void editor_word_forward(Editor *editor)
+void
+editor_word_forward(Editor *editor)
 {
     size_t i, move_len;
     bool word_beginning, found_word_ending;
@@ -947,7 +1016,8 @@ void editor_word_forward(Editor *editor)
     editor_recognize_arena(editor);
 }
 
-void editor_word_backward(Editor *editor)
+void
+editor_word_backward(Editor *editor)
 {
     size_t i, starting_point;
     uint8_t utf8_char_len;
@@ -975,7 +1045,8 @@ void editor_word_backward(Editor *editor)
     editor_recognize_arena(editor);
 }
 
-void editor_user_input_insert_from_clipboard(Editor *editor)
+void
+editor_user_input_insert_from_clipboard(Editor *editor)
 {
     char *clipboard;
 
@@ -989,7 +1060,8 @@ void editor_user_input_insert_from_clipboard(Editor *editor)
     sb_append_many((&editor->user_input), clipboard);
 }
 
-void editor_split_pane(Editor *editor)
+void
+editor_split_pane(Editor *editor)
 {
     Pane pane;
 
@@ -1003,7 +1075,8 @@ void editor_split_pane(Editor *editor)
     editor_recognize_arena(editor);
 }
 
-void editor_wrap_region_in_parens(Editor *editor)
+void
+editor_wrap_region_in_parens(Editor *editor)
 {
     size_t reg_beg, reg_end;
 
@@ -1020,7 +1093,8 @@ void editor_wrap_region_in_parens(Editor *editor)
     editor_insert(editor, "(");
 }
 
-void editor_next_pane(Editor *editor)
+void
+editor_next_pane(Editor *editor)
 {
     register size_t i;
 
@@ -1033,7 +1107,8 @@ void editor_next_pane(Editor *editor)
     }
 }
 
-void editor_close_pane(Editor *editor)
+void
+editor_close_pane(Editor *editor)
 {
     if (editor->panes_len > 1) {
         --editor->panes_len;
@@ -1041,7 +1116,8 @@ void editor_close_pane(Editor *editor)
     }
 }
 
-void editor_upper_region(Editor *editor)
+void
+editor_upper_region(Editor *editor)
 {
     Content *content;
     size_t reg_beg, reg_end;
@@ -1060,7 +1136,8 @@ void editor_upper_region(Editor *editor)
     editor->state = NONE;
 }
 
-void editor_upper(Editor *editor)
+void
+editor_upper(Editor *editor)
 {
     if (editor->state == SELECTION) {
         editor_upper_region(editor);
@@ -1068,7 +1145,8 @@ void editor_upper(Editor *editor)
 }
 
 
-void editor_lower_region(Editor *editor)
+void
+editor_lower_region(Editor *editor)
 {
     Content *content;
     register size_t i;
@@ -1088,7 +1166,8 @@ void editor_lower_region(Editor *editor)
     editor->state = NONE;
 }
 
-void editor_completor_clean(Editor *editor)
+void
+editor_completor_clean(Editor *editor)
 {
     for (register size_t i = 0; i < editor->completor.len; ++i) {
         if (editor->completor.data[i] != NULL) {
@@ -1100,14 +1179,16 @@ void editor_completor_clean(Editor *editor)
     editor->completor.len = 0;
 }
 
-void editor_lower(Editor *editor)
+void
+editor_lower(Editor *editor)
 {
     if (editor->state == SELECTION) {
         editor_lower_region(editor);
     }
 }
 
-void editor_buffer_switch(Editor *editor)
+void
+editor_buffer_switch(Editor *editor)
 {
     register size_t i;
 
@@ -1122,7 +1203,8 @@ void editor_buffer_switch(Editor *editor)
     editor_completion_actualize(editor);
 }
 
-void editor_completion_actualize(Editor *editor)
+void
+editor_completion_actualize(Editor *editor)
 {
     register size_t i;
     char *elem;
@@ -1145,7 +1227,8 @@ void editor_completion_actualize(Editor *editor)
     }
 }
 
-bool editor_buffer_switch_complete(Editor *editor)
+bool
+editor_buffer_switch_complete(Editor *editor)
 {
     register size_t i;
     char *buffer_target, *buffer_name;
@@ -1164,7 +1247,8 @@ bool editor_buffer_switch_complete(Editor *editor)
     return false;
 }
 
-void editor_set_dir_by_current_file(Editor *editor)
+void
+editor_set_dir_by_current_file(Editor *editor)
 {
     register long i;
     char *fp;
@@ -1188,7 +1272,8 @@ void editor_set_dir_by_current_file(Editor *editor)
 
 }
 
-void editor_find_file(Editor *editor, bool refresh_dir)
+void
+editor_find_file(Editor *editor, bool refresh_dir)
 {
     DIR *dp;
     struct dirent *ep;
@@ -1222,14 +1307,16 @@ void editor_find_file(Editor *editor, bool refresh_dir)
     editor_completion_actualize(editor);
 }
 
-int editor_is_directory(const char *path)
+int
+editor_is_directory(const char *path)
 {
     struct stat path_stat;
     stat(path, &path_stat);
     return S_ISDIR(path_stat.st_mode);
 }
 
-bool editor_find_file_complete(Editor *editor)
+bool
+editor_find_file_complete(Editor *editor)
 {
     char *file_path;
     size_t dir_len;
@@ -1284,7 +1371,8 @@ bool editor_find_file_complete(Editor *editor)
     return true;
 }
 
-void editor_completion_next_match(Editor *editor)
+void
+editor_completion_next_match(Editor *editor)
 {
     char *tmp;
     size_t len;
@@ -1300,7 +1388,8 @@ void editor_completion_next_match(Editor *editor)
     editor->completor.filtered.data[len - 1] = tmp;
 }
 
-void editor_completion_prev_match(Editor *editor)
+void
+editor_completion_prev_match(Editor *editor)
 {
     char *tmp;
     size_t len;
@@ -1316,7 +1405,8 @@ void editor_completion_prev_match(Editor *editor)
     editor->completor.filtered.data[0] = tmp;
 }
 
-void editor_new_line(Editor *editor)
+void
+editor_new_line(Editor *editor)
 {
     size_t pos, i;
     char ch, *buffer;
@@ -1339,9 +1429,10 @@ void editor_new_line(Editor *editor)
     SDL_SetClipboardText(buffer);
 }
 
-void editor_undo(Editor *editor)
+void
+editor_undo(Editor *editor)
 {
-    Change_Event *event;
+    ChangeEvent *event;
     size_t current_event_position;
 
     current_event_position = editor_mod(editor->pane->buffer->events_len-1, CHANGE_EVENT_HISTORY_SIZE);

@@ -6,7 +6,8 @@
 #include "render.h"
 #include "utf8.h"
 
-void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg)
+void
+render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg)
 {
     SDL_Texture *texture = NULL;
     SDL_FRect rect = (SDL_FRect) {0.0, 0.0, 0.0, 0.0};
@@ -33,7 +34,8 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, S
     SDL_DestroyTexture(texture);
 }
 
-void render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size_t home_dir_len)
+void
+render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size_t home_dir_len)
 {
     if (starts_with(path, home_dir)) {
         sb_append(sb, '~');
@@ -43,7 +45,8 @@ void render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size
     }
 }
 
-int count_digits(size_t num)
+int
+count_digits(size_t num)
 {
     long tmp;
     int count;
@@ -63,7 +66,8 @@ int count_digits(size_t num)
     return count;
 }
 
-void render_format_line_number_padding(char *buffer, size_t buffer_len, size_t num)
+void
+render_format_line_number_padding(char *buffer, size_t buffer_len, size_t num)
 {
     int to_fill;
 
@@ -72,7 +76,8 @@ void render_format_line_number_padding(char *buffer, size_t buffer_len, size_t n
     sprintf(&buffer[to_fill], "%ld", num);
 }
 
-void render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer_len, size_t num, size_t cursor_line_num)
+void
+render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer_len, size_t num, size_t cursor_line_num)
 {
     switch (smacs->line_number_format) {
     case HIDE: {
@@ -92,7 +97,8 @@ void render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer
     }
 }
 
-void render_destroy_glyph(GlyphMatrix *glyph)
+void
+render_glyph_clean(GlyphMatrix *glyph)
 {
     GlyphRow *row;
 
@@ -107,10 +113,18 @@ void render_destroy_glyph(GlyphMatrix *glyph)
         row = NULL;
     }
 
+    gb_clean(glyph);
+}
+
+void
+render_destroy_glyph(GlyphMatrix *glyph)
+{
+    render_glyph_clean(glyph);
     gb_free(glyph);
 }
 
-void render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data, size_t *i)
+void
+render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data, size_t *i)
 {
     size_t ci;
     int char_len;
@@ -152,13 +166,16 @@ GlyphItem *render_flush_item_sb_and_move_x(Smacs *smacs, GlyphRow *row, StringBu
     return NULL;
 }
 
-void render_update_glyph(Smacs *smacs)
+static StringBuilder RenderStringBuilder = {0};
+
+void
+render_update_glyph(Smacs *smacs)
 {
     Arena arena;
     Line *lines;
     Line *line;
     size_t arena_end, cursor, region_beg, region_end, max_line_num, current_line, line_number_len, data_len, pi;
-    int win_w, win_h, char_w, char_h, content_limit, common_indention, text_indention, pane_width_threashold;
+    int win_w, win_h, content_limit, common_indention, text_indention, pane_width_threashold;
     StringBuilder *sb;
     char *data, line_number[100];
     bool is_active_pane, show_line_number, mini_buffer_is_active;
@@ -166,24 +183,19 @@ void render_update_glyph(Smacs *smacs)
     GlyphMatrix *glyph;
     GlyphRow *row;
 
-    render_destroy_glyph(&smacs->glyph);
-    smacs->glyph = ((GlyphMatrix) {0});
     glyph = &smacs->glyph;
-    glyph->len = 0;
+    render_glyph_clean(glyph);
 
-    TTF_GetStringSize(smacs->font, ".", 1, &char_w, &char_h);
     SDL_GetWindowSize(smacs->window, &win_w, &win_h);
-    content_limit = win_h - (char_h * 2.5);
+    content_limit = win_h - (smacs->char_h * 2.5);
 
-    sb = (&(StringBuilder) {0});
+    sb = &RenderStringBuilder;
+    sb_clean(sb);
 
     show_line_number = true;
     if (smacs->line_number_format == HIDE) show_line_number = false;
 
-    mini_buffer_is_active = false;
-    if (smacs->editor.state & SEARCH) mini_buffer_is_active = true;
-    if (smacs->editor.state & EXTEND_COMMAND) mini_buffer_is_active = true;
-    if (smacs->editor.state & COMPLETION) mini_buffer_is_active = true;
+    mini_buffer_is_active = editor_is_mini_buffer_active(&smacs->editor);
 
     for (pi = 0; pi < smacs->editor.panes_len; ++pi) {
         pane = &smacs->editor.panes[pi];
@@ -202,7 +214,7 @@ void render_update_glyph(Smacs *smacs)
         common_indention = pane->x;
         //extra pixel is needed to not cover the seporator line
         text_indention = common_indention + 1;
-        pane_width_threashold = pane->x + pane->w - (char_w * 2);
+        pane_width_threashold = pane->x + pane->w - (smacs->char_w * 2);
 
         current_line = editor_get_current_line_number(pane) + 1;
         if (show_line_number) {
@@ -210,7 +222,7 @@ void render_update_glyph(Smacs *smacs)
             line_number_len = count_digits(max_line_num);
             render_format_line_number_padding(&(line_number[0]), line_number_len, max_line_num);
             line_number[line_number_len] = '\0';
-            text_indention += (char_w * line_number_len);
+            text_indention += (smacs->char_w * line_number_len);
         }
 
         arena_end = MIN(arena.start + arena.show_lines, pane->buffer->len);
@@ -227,7 +239,7 @@ void render_update_glyph(Smacs *smacs)
             if(data_len == 0) {
                 gb_append(glyph, ((GlyphRow){0}));
                 row = &glyph->data[glyph->len-1];
-                gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, char_w, char_h, CURSOR}));
+                gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, smacs->char_w, smacs->char_h, CURSOR}));
             } else {
                 assert(arena.start < arena_end);
 
@@ -261,7 +273,7 @@ void render_update_glyph(Smacs *smacs)
                             kind = kind | CURSOR;
 
                             if (cursor == data_len) {
-                                gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, char_w, char_h, kind}));
+                                gb_append(row, ((GlyphItem) {NULL, 0, x, content_hight, smacs->char_w, smacs->char_h, kind}));
                                 kind = kind ^ CURSOR;
                             }
                         } else if (kind & CURSOR) {
@@ -271,31 +283,22 @@ void render_update_glyph(Smacs *smacs)
                         if (x >= pane_width_threashold) {
                             gb_append(glyph, ((GlyphRow){0}));
                             row = &glyph->data[glyph->len-1];
-                            content_hight += (char_h + smacs->leading);
+                            content_hight += (smacs->char_h + smacs->leading);
                             x = text_indention;
                         }
 
                         if (ci < data_len) {
                             render_append_char_to_rendering(smacs, sb, data, &ci);
                             render_flush_item_sb_and_move_x(smacs, row, sb, &x, content_hight, kind);
+                            //fprintf_item(stderr, &row->data[row->len-1]);
                         }
                     }
 
-                    //TODO: this code is needed for rendering widht region selection by according by width of window
-                    //   but it does not work correcty because it access to any last element
-                    //   and this last element might be a cursor
-                    //   that brokes it showing
-
-                    // if (selection && region_beg <= line->end && line->end < region_end && row->len > 0) {
-                    //     row->data[row->len-1].w = pane_width_threashold - row->data[row->len-1].x;
-                    // }
-
-                    content_hight += (char_h + smacs->leading);
-                    sb_clean(sb);
+                    content_hight += (smacs->char_h + smacs->leading);
                 }
             }
 
-            gb_append(row, ((GlyphItem) {NULL, 0, pane->x+pane->w, 0, pane->x+pane->w, pane->h-char_h*2, LINE}));
+            gb_append(row, ((GlyphItem) {NULL, 0, pane->x+pane->w, 0, pane->x+pane->w, pane->h-smacs->char_h * (mini_buffer_is_active ? 2 : 1), LINE}));
         }
 
         //MODE LINE
@@ -331,7 +334,7 @@ void render_update_glyph(Smacs *smacs)
                 }
             }
 
-            mode_line_h = win_h - (mini_buffer_is_active ? char_h*2 : char_h);
+            mode_line_h = win_h - (mini_buffer_is_active ? smacs->char_h*2 : smacs->char_h);
 
             item = render_flush_item_sb_and_move_x(smacs, row, sb, &padding, mode_line_h, is_active_pane ? MODE_LINE_ACTIVE : MODE_LINE);
             item->w = pane->w;
@@ -352,8 +355,8 @@ void render_update_glyph(Smacs *smacs)
 
         completion_delimiter = " | ";
         home_dir_len = strlen(smacs->home_dir);
-        padding = char_w;
-        complition_width_limit = win_w - char_w*10;
+        padding = smacs->char_w;
+        complition_width_limit = win_w - smacs->char_w*10;
 
         if (smacs->editor.state & (SEARCH | EXTEND_COMMAND | COMPLETION)) {
             if (smacs->editor.state & COMPLETION) {
@@ -391,23 +394,22 @@ void render_update_glyph(Smacs *smacs)
                 }
 
                 sb_append(sb, parens[1]);
-                render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - char_h, MINI_BUFFER);
+                render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - smacs->char_h, MINI_BUFFER);
             } else {
                 if (smacs->editor.user_input.len > 0) {
                     sb_append_many(sb, smacs->editor.user_input.data);
-                    render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - char_h, MINI_BUFFER);
+                    render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - smacs->char_h, MINI_BUFFER);
                 }
             }
         } else if (strlen(smacs->notification) > 0) {
             sb_append_many(sb, smacs->notification);
-            render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - char_h, MINI_BUFFER);
+            render_flush_item_sb_and_move_x(smacs, row, sb, &padding, win_h - smacs->char_h, MINI_BUFFER);
         }
     }
-
-    sb_free(sb);
 }
 
-void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, StringBuilder *sb, SDL_FRect *rect)
+void
+render_draw_batch(Smacs *smacs, GlyphItemEnum kind, StringBuilder *sb, SDL_FRect *rect)
 {
     SDL_Color fg;
 
@@ -451,19 +453,19 @@ void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, StringBuilder *sb, SDL_
     }
 }
 
-void render_glyph_show(Smacs *smacs)
+void
+render_glyph_show(Smacs *smacs)
 {
     GlyphItem *item;
     GlyphRow *row;
     SDL_FRect rect;
-    int char_w, char_h;
     size_t ci;
     GlyphItemEnum prev_kind;
     StringBuilder *sb;
 
     rect = (SDL_FRect) {0.0, 0.0, 0.0, 0.0};
-    sb = &(StringBuilder) {0};
-    TTF_GetStringSize(smacs->font, "|", 1, &char_w, &char_h);
+    sb = &RenderStringBuilder;
+    sb_clean(sb);
 
     for (size_t li = 0; li < smacs->glyph.len; ++li) {
         row = &smacs->glyph.data[li];
@@ -493,9 +495,12 @@ void render_glyph_show(Smacs *smacs)
         render_draw_batch(smacs, prev_kind, sb, &rect);
         sb_clean(sb);
     }
+
+    sb_clean(sb);
 }
 
-void render_destroy_smacs(Smacs *smacs)
+void
+render_destroy_smacs(Smacs *smacs)
 {
     editor_destroy(&smacs->editor);
     render_destroy_glyph(&smacs->glyph);
@@ -503,4 +508,5 @@ void render_destroy_smacs(Smacs *smacs)
     SDL_DestroyWindow(smacs->window);
     free(smacs->notification);
     TTF_CloseFont(smacs->font);
+    sb_free(&RenderStringBuilder);
 }

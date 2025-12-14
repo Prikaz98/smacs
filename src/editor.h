@@ -31,13 +31,13 @@ typedef enum {
     EMPTY,
     INSERTION,
     DELETION,
-} Change_Event_Type;
+} ChangeEventType;
 
 typedef struct {
-    Change_Event_Type type;
+    ChangeEventType type;
     size_t point;
     StringBuilder string;
-} Change_Event;
+} ChangeEvent;
 
 #define printf_change_event(e)                                                                               \
     if (e->type == INSERTION) {                                                                              \
@@ -65,7 +65,7 @@ typedef struct {
 
     SimpleLexer lexer;
 
-    Change_Event events[CHANGE_EVENT_HISTORY_SIZE];
+    ChangeEvent events[CHANGE_EVENT_HISTORY_SIZE];
     size_t events_len;
 } Buffer;
 
@@ -73,7 +73,7 @@ typedef struct {
     Buffer *data;
     size_t len;
     size_t cap;
-} Buffer_List;
+} BufferList;
 
 typedef struct {
     Buffer *buffer;
@@ -97,7 +97,7 @@ typedef enum {
 
     FILE_SEARCH     = COMPLETION | _FILE,
     SEARCH          = FORWARD_SEARCH | BACKWARD_SEARCH,
-} Editor_State;
+} EditorState;
 
 typedef struct {
     char **data;
@@ -120,9 +120,9 @@ typedef struct {
 
     size_t mark;
 
-    Editor_State state;
+    EditorState state;
     StringBuilder user_input;
-    Buffer_List buffer_list;
+    BufferList buffer_list;
 
     Completor completor;
     char dir[1024];
@@ -219,4 +219,5 @@ bool editor_find_file_complete(Editor *editor);
 
 void editor_new_line(Editor *editor);
 void editor_undo(Editor *editor);
+bool editor_is_mini_buffer_active(Editor *editor);
 #endif

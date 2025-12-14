@@ -41,9 +41,11 @@ bool completion_command_mapping(SDL_Event *event);
 bool mini_buffer_event_handle(SDL_Event *event);
 bool completion_event_handle(SDL_Event *event);
 
-int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
+int
+smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 {
-    int win_w, win_h, message_timeout, font_y, win_w_per_pane;
+    int win_w, win_h, message_timeout, win_w_per_pane;
+    uint64_t start, end;
     register int i;
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -73,7 +75,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
     bool quit = false;
     message_timeout = 0;
 
-    themes_acme(&smacs); // alternatives: [themes_naysayer, themes_mindre, themes_acme]
+    themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre, themes_acme]
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.home_dir = home_dir;
@@ -84,7 +86,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
     smacs.editor.pane = &smacs.editor.panes[smacs.editor.panes_len];
     ++smacs.editor.panes_len;
 
-    smacs.editor.buffer_list = (Buffer_List) {0};
+    smacs.editor.buffer_list = (BufferList) {0};
     smacs.editor.completor = (Completor) {0};
     editor_read_file(&smacs.editor, file_path);
 
@@ -122,22 +124,22 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
             if (alt_leader_mapping(&event)) break;
 
             switch (event.key.key) {
-            case SDLK_BACKSPACE:
+            case SDLK_BACKSPACE:{
                 editor_delete_backward(&smacs.editor);
-                break;
-            case SDLK_RETURN:
+            }break;
+            case SDLK_RETURN:{
                 editor_new_line(&smacs.editor);
-                break;
-            case SDLK_TAB:
+            }break;
+            case SDLK_TAB:{
                 editor_insert(&smacs.editor, TAB);
-                break;
-            case SDLK_F11:
+            }break;
+            case SDLK_F11:{
                 if (SDL_GetWindowFlags(smacs.window) & SDL_WINDOW_FULLSCREEN) {
                     SDL_SetWindowFullscreen(smacs.window, 0);
                 } else {
                     SDL_SetWindowFullscreen(smacs.window, SDL_WINDOW_FULLSCREEN);
                 }
-                break;
+            }break;
             }
         } break;
         case SDL_EVENT_QUIT: {
@@ -149,7 +151,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
         }
 
         SDL_GetWindowSize(smacs.window, &win_w, &win_h);
-        TTF_GetStringSize(smacs.font, "|", 1, NULL, &font_y);
+        TTF_GetStringSize(smacs.font, "|", 1, &smacs.char_w, &smacs.char_h);
 
         win_w_per_pane = win_w / smacs.editor.panes_len;
 
@@ -157,13 +159,21 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
             smacs.editor.panes[i].x = win_w_per_pane * i;
             smacs.editor.panes[i].w = win_w_per_pane;
             smacs.editor.panes[i].h = win_h;
-            smacs.editor.panes[i].arena.show_lines = (win_h / (font_y + smacs.leading));
+            smacs.editor.panes[i].arena.show_lines = (win_h / (smacs.char_h + smacs.leading));
         }
 
         SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
         SDL_RenderClear(smacs.renderer);
+        //start = rdtsc();
         render_update_glyph(&smacs);
+        //end = rdtsc();
+        //fprintf(stderr, "render_update_glyph spent %ld\n", end-start);
+
+        //start = rdtsc();
         render_glyph_show(&smacs);
+        //end = rdtsc();
+        //fprintf(stderr, "render_glyph_show spent   %ld\n", end-start);
+
         SDL_RenderPresent(smacs.renderer);
 
         if (message_timeout > 0) {
@@ -181,7 +191,8 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
     return 0;
 }
 
-void initial_hook(void)
+void
+initial_hook(void)
 {
     editor_split_pane(&smacs.editor);
     editor_next_pane(&smacs.editor);
@@ -191,7 +202,8 @@ void initial_hook(void)
 }
 
 
-bool ctrl_leader_mapping(SDL_Event *event, int *message_timeout)
+bool
+ctrl_leader_mapping(SDL_Event *event, int *message_timeout)
 {
     if ((event->key.mod & SDL_KMOD_CTRL) == 0) return false;
 
@@ -280,7 +292,8 @@ bool ctrl_leader_mapping(SDL_Event *event, int *message_timeout)
     return true;
 }
 
-bool alt_leader_mapping(SDL_Event *event)
+bool
+alt_leader_mapping(SDL_Event *event)
 {
     if ((event->key.mod & SDL_KMOD_ALT) == 0) return false;
 
@@ -341,7 +354,8 @@ bool alt_leader_mapping(SDL_Event *event)
     return true;
 }
 
-bool extend_command_mapping(SDL_Event *event, int *message_timeout)
+bool
+extend_command_mapping(SDL_Event *event, int *message_timeout)
 {
     size_t data_len;
     char *data;
@@ -402,7 +416,8 @@ bool extend_command_mapping(SDL_Event *event, int *message_timeout)
     return true;
 }
 
-bool search_mapping(SDL_Event *event, int *message_timeout)
+bool
+search_mapping(SDL_Event *event, int *message_timeout)
 {
     if ((smacs.editor.state & SEARCH) == 0) return false;
 
@@ -434,7 +449,8 @@ bool search_mapping(SDL_Event *event, int *message_timeout)
     return true;
 }
 
-bool completion_command_mapping(SDL_Event *event)
+bool
+completion_command_mapping(SDL_Event *event)
 {
     if ((smacs.editor.state & COMPLETION) == 0) return false;
 
@@ -470,14 +486,16 @@ bool completion_command_mapping(SDL_Event *event)
     return true;
 }
 
-bool mini_buffer_event_handle(SDL_Event *event) {
+bool
+mini_buffer_event_handle(SDL_Event *event) {
     if (!(smacs.editor.state & (SEARCH | EXTEND_COMMAND))) return false;
 
     editor_user_input_insert(&smacs.editor, (char*)event->text.text);
     return true;
 }
 
-bool completion_event_handle(SDL_Event *event) {
+bool
+completion_event_handle(SDL_Event *event) {
     if (!(smacs.editor.state & COMPLETION)) return false;
 
     editor_user_input_insert(&smacs.editor, (char*)event->text.text);

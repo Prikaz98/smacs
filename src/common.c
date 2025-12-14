@@ -27,7 +27,8 @@ void *gb_append_(void *data, size_t *pcap, size_t size)
     return ptr;
 }
 
-void sb_append(StringBuilder *sb, char ch)
+void
+sb_append(StringBuilder *sb, char ch)
 {
     if (sb->len >= sb->cap) {
         sb->cap = sb->cap == 0 ? SB_CAP_INIT : sb->cap * 2;
@@ -37,7 +38,8 @@ void sb_append(StringBuilder *sb, char ch)
     sb->data[sb->len++] = ch;
 }
 
-void sb_append_many(StringBuilder *sb, char *str)
+void
+sb_append_many(StringBuilder *sb, char *str)
 {
     size_t len = strlen(str);
 
@@ -46,13 +48,15 @@ void sb_append_many(StringBuilder *sb, char *str)
     }
 }
 
-void sb_clean(StringBuilder *sb)
+void
+sb_clean(StringBuilder *sb)
 {
     sb->len = 0;
     if (sb->cap) memset(&sb->data[sb->len], 0, sb->cap);
 }
 
-void sb_free(StringBuilder *sb)
+void
+sb_free(StringBuilder *sb)
 {
     free(sb->data);
     sb->data = NULL;
@@ -60,7 +64,8 @@ void sb_free(StringBuilder *sb)
     sb->cap = 0;
 }
 
-bool starts_with(char *a, char *b)
+bool
+starts_with(char *a, char *b)
 {
     size_t len;
 
@@ -71,7 +76,8 @@ bool starts_with(char *a, char *b)
     return strncmp(a, b, len) == 0;
 }
 
-bool contains_ignore_case(char *a, size_t a_len, char *b, size_t b_len)
+bool
+contains_ignore_case(char *a, size_t a_len, char *b, size_t b_len)
 {
     register size_t i;
 

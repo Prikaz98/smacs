@@ -26,11 +26,17 @@ void *gb_append_(void *data, size_t *pcap, size_t size);
         (gb)->data + (gb)->len++                                              \
       : (gb)->data + (gb)->len++) = elem
 
-#define gb_free(gb)      \
-    do {                 \
+#define gb_free(gb)        \
+    do {                   \
         free((gb)->data);  \
         (gb)->len = 0;     \
         (gb)->cap = 0;     \
+    } while (0)
+
+#define gb_clean(gb)                                                 \
+    do {                                                             \
+        (gb)->len = 0;                                               \
+        if ((gb)->cap) memset(&(gb)->data[(gb)->len], 0, (gb)->cap); \
     } while (0)
 
 /**

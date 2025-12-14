@@ -34,7 +34,7 @@ typedef struct {
     GlyphItemEnum kind;
 } GlyphItem;
 
-#define fprintf_item(std, it) fprintf(std, "GlyphItem(%s,%ld,%d,%d,%d,%d,%d)\n", it->str, it->len, it->x, it->y, it->w, it->h, it->kind);
+#define fprintf_item(std, it) fprintf(std, "GlyphItem(%s,%ld,%d,%d,%d,%d,%d)\n", (it)->str, (it)->len, (it)->x, (it)->y, (it)->w, (it)->h, (it)->kind);
 
 typedef struct {
     GlyphItem *data;
@@ -80,6 +80,8 @@ typedef struct {
     char *home_dir;
 
     GlyphMatrix glyph;
+
+    int char_h; int char_w;
 } Smacs;
 
 void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg);
