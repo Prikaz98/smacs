@@ -290,7 +290,6 @@ render_update_glyph(Smacs *smacs)
                         if (ci < data_len) {
                             render_append_char_to_rendering(smacs, sb, data, &ci);
                             render_flush_item_sb_and_move_x(smacs, row, sb, &x, content_hight, kind);
-                            //fprintf_item(stderr, &row->data[row->len-1]);
                         }
                     }
 

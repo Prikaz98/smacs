@@ -45,7 +45,6 @@ int
 smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 {
     int win_w, win_h, message_timeout, win_w_per_pane;
-    uint64_t start, end;
     register int i;
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -75,7 +74,7 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
     bool quit = false;
     message_timeout = 0;
 
-    themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre, themes_acme]
+    themes_acme(&smacs); // alternatives: [themes_naysayer, themes_mindre, themes_acme]
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.home_dir = home_dir;
@@ -164,15 +163,8 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 
         SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
         SDL_RenderClear(smacs.renderer);
-        //start = rdtsc();
         render_update_glyph(&smacs);
-        //end = rdtsc();
-        //fprintf(stderr, "render_update_glyph spent %ld\n", end-start);
-
-        //start = rdtsc();
         render_glyph_show(&smacs);
-        //end = rdtsc();
-        //fprintf(stderr, "render_glyph_show spent   %ld\n", end-start);
 
         SDL_RenderPresent(smacs.renderer);
 
@@ -200,7 +192,6 @@ initial_hook(void)
     editor_insert(&smacs.editor, ";; Buffer for your notes\n");
     editor_next_pane(&smacs.editor);
 }
-
 
 bool
 ctrl_leader_mapping(SDL_Event *event, int *message_timeout)
