@@ -147,6 +147,14 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
         case SDL_EVENT_MOUSE_WHEEL: {
             editor_mwheel_scroll(&smacs.editor, event.wheel.y);
         } break;
+        case SDL_EVENT_MOUSE_BUTTON_DOWN: {
+            //TODO(ivan): is not working well with utf8 chars and right pane
+            long point = render_find_position_by_xy(&smacs, (int)event.button.x, (int)event.button.y);
+            if (point > 0) {
+                editor_goto_point(&smacs.editor, point);
+                editor_char_backward(&smacs.editor);
+            }
+        }break;
         }
 
         SDL_GetWindowSize(smacs.window, &win_w, &win_h);
@@ -163,6 +171,7 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 
         SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
         SDL_RenderClear(smacs.renderer);
+
         render_update_glyph(&smacs);
         render_glyph_show(&smacs);
 

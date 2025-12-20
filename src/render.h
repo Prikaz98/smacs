@@ -26,24 +26,20 @@ typedef struct {
     char *str;
     size_t len;
 
-    int x;
-    int y;
-    int w;
-    int h;
+    float x;
+    float y;
+    float w;
+    float h;
 
     GlyphItemEnum kind;
+
+    long position;
 } GlyphItem;
 
-#define fprintf_item(std, it) fprintf(std, "GlyphItem(%s,%ld,%d,%d,%d,%d,%d)\n", (it)->str, (it)->len, (it)->x, (it)->y, (it)->w, (it)->h, (it)->kind);
+#define fprintf_item(std, it) fprintf(std, "GlyphItem(%s,%ld,%f,%f,%f,%f,%d)\n", (it)->str, (it)->len, (it)->x, (it)->y, (it)->w, (it)->h, (it)->kind);
 
 typedef struct {
     GlyphItem *data;
-    size_t len;
-    size_t cap;
-} GlyphRow;
-
-typedef struct {
-    GlyphRow *data;
     size_t len;
     size_t cap;
 } GlyphMatrix;
@@ -89,5 +85,6 @@ void render_draw_smacs(Smacs *smacs);
 void render_destroy_smacs(Smacs *smacs);
 void render_update_glyph(Smacs *smacs);
 void render_glyph_show(Smacs *smacs);
+long render_find_position_by_xy(Smacs *smacs, int x, int y);
 
 #endif

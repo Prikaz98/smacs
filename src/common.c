@@ -49,6 +49,14 @@ sb_append_many(StringBuilder *sb, char *str)
 }
 
 void
+sb_append_manyl(StringBuilder *sb, char *str, size_t len)
+{
+    for (register size_t i = 0; i < len; ++i) {
+        sb_append(sb, str[i]);
+    }
+}
+
+void
 sb_clean(StringBuilder *sb)
 {
     sb->len = 0;

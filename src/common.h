@@ -15,6 +15,7 @@ typedef struct {
 
 void sb_append(StringBuilder *sb, char ch);
 void sb_append_many(StringBuilder *sb, char *str);
+void sb_append_manyl(StringBuilder *sb, char *str, size_t len);
 void sb_clean(StringBuilder *sb);
 void sb_free(StringBuilder *sb);
 
