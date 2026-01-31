@@ -1063,12 +1063,9 @@ editor_user_input_insert_from_clipboard(Editor *editor)
 void
 editor_split_pane(Editor *editor)
 {
-    Pane pane;
+    assert(editor->panes_len < PANES_MAX_SIZE && "Exceeded panes size");
 
-    assert(editor->panes_len < PANES_MAX_SIZE);
-
-    pane = (Pane) {0};
-
+    Pane pane = (Pane) {0};
     pane.buffer = editor->pane->buffer;
 
     editor->panes[editor->panes_len++] = pane;

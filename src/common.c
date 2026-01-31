@@ -103,23 +103,23 @@ contains_ignore_case(char *a, size_t a_len, char *b, size_t b_len)
 
 uint32_t utf8_chars_to_int(char *str, int len) {
     uint32_t result;
-    assert(0 < len && len < 5);
+    assert(0 < len && len < 5 && "Invalid utf8 len");
 
     switch (len) {
     case 1:
-        assert(strlen(str) >= 1);
+        assert(strlen(str) >= 1 && "Invalid len; Expected 1");
         result = str[0];
         break;
     case 2:
-        assert(strlen(str) >= 2);
+        assert(strlen(str) >= 2 && "Invalid len; Expected 2");
         result = ((uint8_t) (str[0]) << 8) + ((uint8_t) str[1]);
         break;
     case 3:
-        assert(strlen(str) >= 3);
+        assert(strlen(str) >= 3 && "Invalid len; Expected 3");
         result = ((uint8_t) (str[0]) << 16) + ((uint8_t) (str[1]) << 8) + ((uint8_t) str[2]);
         break;
     case 4:
-        assert(strlen(str) >= 4);
+        assert(strlen(str) >= 4 && "Invalid len; Expected 4");
         result = ((uint8_t) (str[1]) << 24) + ((uint8_t) (str[1]) << 16) + ((uint8_t) (str[2]) << 8) + ((uint8_t) str[3]);
         break;
     }
