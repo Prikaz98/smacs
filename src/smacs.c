@@ -73,8 +73,9 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 
     bool quit = false;
     message_timeout = 0;
-
-    themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre, themes_acme]
+    
+	// alternatives: [themes_naysayer, themes_mindre, themes_acme, themes_jblow_nastalgia]
+    themes_jblow_nastalgia(&smacs);
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.home_dir = home_dir;

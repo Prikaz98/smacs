@@ -60,3 +60,17 @@ themes_acme(Smacs *smacs)
     smacs->kvfg = smacs->fg;
     smacs->tpfg = smacs->fg;
 }
+
+void
+themes_jblow_nastalgia(Smacs *smacs)
+{
+    smacs->bg = themes_as_color(0x292929);
+    smacs->fg = themes_as_color(0xD3B58D);
+    smacs->rg = themes_as_color(0x0000FF);
+    smacs->ln = themes_sdl_color_brighter(smacs->fg, 2);
+    smacs->mlbg = smacs->fg;
+    smacs->mlfg = smacs->bg;
+    smacs->cfg = smacs->fg;
+    smacs->kvfg = smacs->fg;
+    smacs->tpfg = smacs->fg;
+}
