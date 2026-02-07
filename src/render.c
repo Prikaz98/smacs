@@ -98,20 +98,17 @@ render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer_len,
 }
 
 void
-render_glyph_clean(GlyphMatrix *glyph)
+render_glyph_clean(GlyphList *glyph)
 {
-    for (size_t i = 0; i < glyph->len; ++i) {
-        free(glyph->data[i].str);
-        glyph->data[i].str = NULL;
-    }
-
+    gb_clean(&glyph->string_data);
     gb_clean(glyph);
 }
 
 void
-render_destroy_glyph(GlyphMatrix *glyph)
+render_destroy_glyph(GlyphList *glyph)
 {
     render_glyph_clean(glyph);
+    gb_free(&glyph->string_data);
     gb_free(glyph);
 }
 
@@ -141,22 +138,31 @@ render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data, siz
 }
 
 GlyphItem
-*render_flush_item_sb_and_move_x(Smacs *smacs, GlyphMatrix *glyph, StringBuilder *sb, int *x, int y, GlyphItemEnum kind, long position)
+*render_flush_item_sb_and_move_x(Smacs *smacs, GlyphList *glyph, StringBuilder *sb, int *x, int y, GlyphItemEnum kind, long position)
 {
-    int w, h, x_;
+    if (sb->len == 0) return NULL;
 
+    int w, h, x_;
     x_ = *x;
 
-    if (sb->len > 0) {
-        TTF_GetStringSize(smacs->font, sb->data, sb->len, &w, &h);
-        gb_append(glyph, ((GlyphItem) {strdup(sb->data), sb->len, x_, y, w, h, kind, position}));
-        sb_clean(sb);
-        x_ += w;
-        *x = x_;
-        return &glyph->data[glyph->len-1];
-    }
+    TTF_GetStringSize(smacs->font, sb->data, sb->len, &w, &h);
+    size_t string_pointer = glyph->string_data.len;
 
-    return NULL;
+    sb_append_manyl(&glyph->string_data, sb->data, sb->len);
+    gb_append(glyph, ((GlyphItem) {
+                &glyph->string_data.data[string_pointer],
+                sb->len,
+                x_,
+                y,
+                w,
+                h,
+                kind,
+                position}));
+
+    sb_clean(sb);
+    x_ += w;
+    *x = x_;
+    return &glyph->data[glyph->len-1];
 }
 
 static StringBuilder RenderStringBuilder = {0};
@@ -173,7 +179,7 @@ render_update_glyph(Smacs *smacs)
     char *data, line_number[100];
     bool is_active_pane, show_line_number, mini_buffer_is_active;
     Pane *pane;
-    GlyphMatrix *glyph;
+    GlyphList *glyph;
 
     glyph = &smacs->glyph;
     render_glyph_clean(glyph);
@@ -214,13 +220,14 @@ render_update_glyph(Smacs *smacs)
             line_number_len = count_digits(max_line_num);
             render_format_line_number_padding(&(line_number[0]), line_number_len, max_line_num);
             line_number[line_number_len] = '\0';
+
             text_indention += (smacs->char_w * line_number_len);
         }
 
         arena_end = MIN(arena.start + arena.show_lines, pane->buffer->len);
 
         {
-            size_t li, ci;
+            size_t li, ci, string_pointer;
             int content_hight, x, w, h;
             bool selection;
             GlyphItemEnum kind;
@@ -244,7 +251,20 @@ render_update_glyph(Smacs *smacs)
                     if (show_line_number) {
                         render_format_display_line_number(smacs, line_number, line_number_len, li + 1, current_line);
                         TTF_GetStringSize(smacs->font, line_number, line_number_len, &w, &h);
-                        gb_append(glyph, ((GlyphItem) {strdup(line_number), line_number_len, common_indention, content_hight, w, h, LINE_NUMBER, -1}));
+                        string_pointer = glyph->string_data.len;
+                        sb_append_manyl(&glyph->string_data, line_number, line_number_len);
+
+                        gb_append(glyph,
+                                  ((GlyphItem) {
+                                      &glyph->string_data.data[string_pointer],
+                                      line_number_len,
+                                      common_indention,
+                                      content_hight,
+                                      w,
+                                      h,
+                                      LINE_NUMBER,
+                                      -1}));
+
                     }
 
                     for (ci = line->start; ci <= line->end; ++ci) {
@@ -389,7 +409,7 @@ render_update_glyph(Smacs *smacs)
 }
 
 void
-render_draw_batch(Smacs *smacs, GlyphItemEnum kind, StringBuilder *sb, SDL_FRect *rect)
+render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t string_len, SDL_FRect *rect)
 {
     SDL_Color fg;
 
@@ -412,21 +432,21 @@ render_draw_batch(Smacs *smacs, GlyphItemEnum kind, StringBuilder *sb, SDL_FRect
             fg = smacs->bg;
         }
 
-        render_draw_text(smacs, rect->x, rect->y, sb->data, sb->len, fg);
+        render_draw_text(smacs, rect->x, rect->y, string, string_len, fg);
     } else if (kind & MODE_LINE) {
         SDL_SetRenderDrawColor(smacs->renderer, smacs->bg.r, smacs->bg.g, smacs->bg.b, smacs->bg.a);
         SDL_RenderFillRect(smacs->renderer, rect);
 
-        render_draw_text(smacs, rect->x, rect->y, sb->data, sb->len, smacs->fg);
+        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->fg);
     } else if (kind & MODE_LINE_ACTIVE) {
         SDL_SetRenderDrawColor(smacs->renderer, smacs->mlbg.r, smacs->mlbg.g, smacs->mlbg.b, smacs->mlbg.a);
         SDL_RenderFillRect(smacs->renderer, rect);
 
-        render_draw_text(smacs, rect->x, rect->y, sb->data, sb->len, smacs->mlfg);
+        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->mlfg);
     } else if (kind & MINI_BUFFER) {
-        render_draw_text(smacs, rect->x, rect->y, sb->data, sb->len, smacs->fg);
+        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->fg);
     } else if (kind & LINE_NUMBER) {
-        render_draw_text(smacs, rect->x, rect->y, sb->data, sb->len, smacs->ln);
+        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->ln);
     } else if (kind & LINE) {
         SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
         SDL_RenderLine(smacs->renderer, rect->x, rect->y, rect->w, rect->h);
@@ -438,38 +458,47 @@ render_glyph_show(Smacs *smacs)
 {
     GlyphItem *item, *prev_item;
     SDL_FRect rect;
-    StringBuilder *sb;
+    char *string_beginning;
+    size_t string_len_to_show;
 
     rect = (SDL_FRect) {0.0, 0.0, 0.0, 0.0};
-    sb = &((StringBuilder){0});
 
     for (size_t i = 0; i < smacs->glyph.len; ++i) {
         item = &smacs->glyph.data[i];
+        //fprintf_item(stderr, item);
+        if (i == 0) {
+            string_beginning = item->str;
+            string_len_to_show = item->len;
+        }
+
         if (i > 0) {
             prev_item = &smacs->glyph.data[i-1];
 
             if (prev_item->y == item->y && prev_item->kind == item->kind) {
-                if (item->len > 0) sb_append_manyl(sb, item->str, item->len);
+                if (item->len > 0) string_len_to_show += item->len;
+
                 rect.w += item->w;
                 continue;
             }
 
-            render_draw_batch(smacs, prev_item->kind, sb, &rect);
-            if (sb->len > 0) sb_clean(sb);
+            render_draw_batch(smacs, prev_item->kind, string_beginning, string_len_to_show, &rect);
         }
 
         rect.x = item->x;
         rect.y = item->y;
         rect.h = item->h;
         rect.w = item->w;
-        sb_append_manyl(sb, item->str, item->len);
+
+        string_beginning = item->str;
+        string_len_to_show = item->len;
+        //string_len_to_show += item->len;
+        //final step
         if (i == (smacs->glyph.len-1)) {
-            if (sb->len > 0) render_draw_batch(smacs, item->kind, sb, &rect);
+            if (string_len_to_show > 0) {
+                render_draw_batch(smacs, item->kind, string_beginning, string_len_to_show, &rect);
+            }
         }
     }
-
-
-    sb_free(sb);
 }
 
 void
@@ -484,7 +513,7 @@ render_destroy_smacs(Smacs *smacs)
     sb_free(&RenderStringBuilder);
 }
 
-long 
+long
 render_find_position_by_xy(Smacs *smacs, int x, int y)
 {
     GlyphItem item;

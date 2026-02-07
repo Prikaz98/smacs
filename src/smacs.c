@@ -74,7 +74,7 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
     bool quit = false;
     message_timeout = 0;
 
-    themes_acme(&smacs); // alternatives: [themes_naysayer, themes_mindre, themes_acme]
+    themes_naysayer(&smacs); // alternatives: [themes_naysayer, themes_mindre, themes_acme]
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
     smacs.home_dir = home_dir;
@@ -195,11 +195,13 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 void
 initial_hook(void)
 {
+    /*
     editor_split_pane(&smacs.editor);
     editor_next_pane(&smacs.editor);
     editor_read_file(&smacs.editor, "*scratch*");
     editor_insert(&smacs.editor, ";; Buffer for your notes\n");
     editor_next_pane(&smacs.editor);
+    */
 }
 
 bool

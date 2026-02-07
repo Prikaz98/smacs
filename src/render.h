@@ -21,7 +21,6 @@ typedef enum {
     TYPE             = 0x200,
 } GlyphItemEnum;
 
-
 typedef struct {
     char *str;
     size_t len;
@@ -39,10 +38,12 @@ typedef struct {
 #define fprintf_item(std, it) fprintf(std, "GlyphItem(%s,%ld,%f,%f,%f,%f,%d)\n", (it)->str, (it)->len, (it)->x, (it)->y, (it)->w, (it)->h, (it)->kind);
 
 typedef struct {
+    StringBuilder string_data;
+
     GlyphItem *data;
     size_t len;
     size_t cap;
-} GlyphMatrix;
+} GlyphList;
 
 enum LineNumberFormat {
     ABSOLUTE,
@@ -75,7 +76,7 @@ typedef struct {
     char *notification;
     char *home_dir;
 
-    GlyphMatrix glyph;
+    GlyphList glyph;
 
     int char_h; int char_w;
 } Smacs;

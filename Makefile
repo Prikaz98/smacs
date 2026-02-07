@@ -5,7 +5,7 @@ CFLAGS:=-Wall -Wextra -std=c11
 DEV_CFLAGS:=-pedantic -ggdb -D_DEFAULT_SOURCE -fsanitize=address,undefined
 SOURCES:=$(shell find ./src/ -type f -name "*.c")
 EXEC:=smacs
-TTF:=fonts/Hack-Regular.ttf
+TTF:=fonts/VictorMono-Regular.ttf
 UNAME_S := $(shell uname -s)
 
 ifeq ($(UNAME_S),Linux)
