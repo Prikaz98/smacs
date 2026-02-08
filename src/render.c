@@ -150,7 +150,7 @@ GlyphItem
 
     sb_append_manyl(&glyph->string_data, sb->data, sb->len);
     gb_append(glyph, ((GlyphItem) {
-                &glyph->string_data.data[string_pointer],
+                string_pointer,
                 sb->len,
                 x_,
                 y,
@@ -236,7 +236,7 @@ render_update_glyph(Smacs *smacs)
             x = 0;
 
             if(data_len == 0) {
-                gb_append(glyph, ((GlyphItem) {NULL, 0, x, content_hight, smacs->char_w, smacs->char_h, CURSOR, 0}));
+                gb_append(glyph, ((GlyphItem) {0, 0, x, content_hight, smacs->char_w, smacs->char_h, CURSOR, 0}));
             } else {
                 assert(arena.start < arena_end);
 
@@ -256,7 +256,7 @@ render_update_glyph(Smacs *smacs)
 
                         gb_append(glyph,
                                   ((GlyphItem) {
-                                      &glyph->string_data.data[string_pointer],
+                                      string_pointer,
                                       line_number_len,
                                       common_indention,
                                       content_hight,
@@ -280,7 +280,7 @@ render_update_glyph(Smacs *smacs)
                             kind = kind | CURSOR;
 
                             if (cursor == data_len) {
-                                gb_append(glyph, ((GlyphItem) {NULL, 0, x, content_hight, smacs->char_w, smacs->char_h, kind, ci}));
+                                gb_append(glyph, ((GlyphItem) {0, 0, x, content_hight, smacs->char_w, smacs->char_h, kind, ci}));
                                 kind = kind ^ CURSOR;
                             }
                         } else if (kind & CURSOR) {
@@ -302,7 +302,7 @@ render_update_glyph(Smacs *smacs)
                 }
             }
 
-            gb_append(glyph, ((GlyphItem) {NULL, 0, pane->x+pane->w, 0, pane->x+pane->w, pane->h-smacs->char_h * (mini_buffer_is_active ? 2 : 1), LINE, -1}));
+            gb_append(glyph, ((GlyphItem) {0, 0, pane->x+pane->w, 0, pane->x+pane->w, pane->h-smacs->char_h * (mini_buffer_is_active ? 2 : 1), LINE, -1}));
         }
 
         //MODE LINE
@@ -462,12 +462,13 @@ render_glyph_show(Smacs *smacs)
     size_t string_len_to_show;
 
     rect = (SDL_FRect) {0.0, 0.0, 0.0, 0.0};
+    string_beginning = NULL;
+    string_len_to_show = 0;
 
     for (size_t i = 0; i < smacs->glyph.len; ++i) {
         item = &smacs->glyph.data[i];
-        //fprintf_item(stderr, item);
         if (i == 0) {
-            string_beginning = item->str;
+            string_beginning = &smacs->glyph.string_data.data[item->beg];
             string_len_to_show = item->len;
         }
 
@@ -489,10 +490,8 @@ render_glyph_show(Smacs *smacs)
         rect.h = item->h;
         rect.w = item->w;
 
-        string_beginning = item->str;
+        string_beginning = &smacs->glyph.string_data.data[item->beg];
         string_len_to_show = item->len;
-        //string_len_to_show += item->len;
-        //final step
         if (i == (smacs->glyph.len-1)) {
             if (string_len_to_show > 0) {
                 render_draw_batch(smacs, item->kind, string_beginning, string_len_to_show, &rect);

@@ -73,8 +73,8 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 
     bool quit = false;
     message_timeout = 0;
-    
-	// alternatives: [themes_naysayer, themes_mindre, themes_acme, themes_jblow_nastalgia]
+
+    // alternatives: [themes_naysayer, themes_mindre, themes_acme, themes_jblow_nastalgia]
     themes_jblow_nastalgia(&smacs);
 
     smacs.line_number_format = DISPLAY_LINE_FROMAT;
@@ -86,8 +86,6 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
     smacs.editor.pane = &smacs.editor.panes[smacs.editor.panes_len];
     ++smacs.editor.panes_len;
 
-    smacs.editor.buffer_list = (BufferList) {0};
-    smacs.editor.completor = (Completor) {0};
     editor_read_file(&smacs.editor, file_path);
 
     SDL_GetWindowSize(smacs.window, &win_w, &win_h);

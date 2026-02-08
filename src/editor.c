@@ -416,6 +416,9 @@ Buffer* editor_create_buffer(Editor *editor, char *file_path)
 int
 editor_read_file(Editor *editor, char *file_path)
 {
+    if (file_path == NULL) return 0;
+    if (strlen(file_path) == 0) return 0;
+
     FILE *in;
     Content content;
     char next;

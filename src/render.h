@@ -22,7 +22,7 @@ typedef enum {
 } GlyphItemEnum;
 
 typedef struct {
-    char *str;
+    size_t beg;
     size_t len;
 
     float x;
