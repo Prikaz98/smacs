@@ -281,7 +281,7 @@ ctrl_leader_mapping(SDL_Event *event, int *message_timeout)
         break;
     case SDLK_C:
         if (editor_save(&smacs.editor) == 0) {
-            sprintf(smacs.notification, "Saved");
+            snprintf(smacs.notification, RENDER_NOTIFICATION_LEN, "Saved");
             *message_timeout = MESSAGE_TIMEOUT;
         }
         break;
@@ -385,13 +385,13 @@ extend_command_mapping(SDL_Event *event, int *message_timeout)
         data_len = strlen(data);
 
         if (starts_with(data, "bk") && data_len > 2) {
-            editor_kill_buffer(&smacs.editor, (size_t) atoi(&data[2]), smacs.notification);
+            editor_kill_buffer(&smacs.editor, (size_t) atoi(&data[2]), smacs.notification, RENDER_NOTIFICATION_LEN);
             *message_timeout = MESSAGE_TIMEOUT;
         } else if (starts_with(data, "sp")) {
             if (smacs.editor.panes_len < PANES_MAX_SIZE) {
                 editor_split_pane(&smacs.editor);
             } else {
-                sprintf(smacs.notification, "Can not create more than %d panes", PANES_MAX_SIZE);
+                snprintf(smacs.notification, RENDER_NOTIFICATION_LEN, "Can not create more than %d panes", PANES_MAX_SIZE);
                 *message_timeout = MESSAGE_TIMEOUT;
             }
         } else if (starts_with(data, "n") && data_len > 1) {
@@ -441,7 +441,7 @@ search_mapping(SDL_Event *event, int *message_timeout)
         editor_user_input_delete_backward(&smacs.editor);
         break;
     case SDLK_RETURN:
-        if (!editor_user_search_next(&smacs.editor, smacs.notification)) {
+        if (!editor_user_search_next(&smacs.editor, smacs.notification, RENDER_NOTIFICATION_LEN)) {
             *message_timeout = MESSAGE_TIMEOUT;
         }
         break;

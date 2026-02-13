@@ -6,6 +6,8 @@
 #include "render.h"
 #include "utf8.h"
 
+#define LINE_BUFFER_LEN 100
+
 void
 render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg)
 {
@@ -69,11 +71,7 @@ count_digits(size_t num)
 void
 render_format_line_number_padding(char *buffer, size_t buffer_len, size_t num)
 {
-    int to_fill;
-
-    memset(buffer, ' ', buffer_len);
-    to_fill = ((int) buffer_len) - count_digits(num);
-    sprintf(&buffer[to_fill], "%ld", num);
+    snprintf(buffer, LINE_BUFFER_LEN, "%*ld", (int)buffer_len, num);
 }
 
 void
@@ -176,7 +174,7 @@ render_update_glyph(Smacs *smacs)
     size_t arena_end, cursor, region_beg, region_end, max_line_num, current_line, line_number_len, data_len, pi;
     int win_w, win_h, content_limit, common_indention, text_indention, pane_width_threashold;
     StringBuilder *sb;
-    char *data, line_number[100];
+    char *data, line_number[LINE_BUFFER_LEN];
     bool is_active_pane, show_line_number, mini_buffer_is_active;
     Pane *pane;
     GlyphList *glyph;
@@ -218,8 +216,7 @@ render_update_glyph(Smacs *smacs)
         if (show_line_number) {
             max_line_num = arena.start + arena.show_lines;
             line_number_len = count_digits(max_line_num);
-            render_format_line_number_padding(&(line_number[0]), line_number_len, max_line_num);
-            line_number[line_number_len] = '\0';
+            render_format_line_number_padding(line_number, line_number_len, max_line_num);
 
             text_indention += (smacs->char_w * line_number_len);
         }
@@ -319,7 +316,7 @@ render_update_glyph(Smacs *smacs)
 
             render_append_file_path(sb, pane->buffer->file_path, smacs->home_dir, strlen(smacs->home_dir));
             sb_append_many(sb, " (");
-            sprintf(line_number, "%ld", current_line);
+            snprintf(line_number, LINE_BUFFER_LEN, "%ld", current_line);
             sb_append_many(sb, line_number);
             sb_append(sb, ')');
 

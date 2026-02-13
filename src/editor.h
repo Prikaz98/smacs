@@ -186,14 +186,14 @@ void editor_user_input_insert(Editor *editor, char *text);
 void editor_user_input_delete_backward(Editor *editor);
 void editor_user_input_insert_from_clipboard(Editor *editor);
 
-bool editor_user_search_next(Editor *editor, char *notification);
+bool editor_user_search_next(Editor *editor, char *notification, size_t notification_len);
 
 void editor_goto_line(Editor *editor, size_t line);
 void editor_goto_line_forward(Editor *editor, size_t line);
 void editor_goto_line_backward(Editor *editor, size_t line);
 
 bool editor_is_editing_text(Editor *editor);
-void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification);
+void editor_kill_buffer(Editor *editor, size_t buf_index, char *notification, size_t notification_len);
 void editor_switch_buffer(Editor *editor, size_t buf_index);
 
 void editor_split_pane(Editor *editor);

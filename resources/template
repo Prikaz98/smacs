@@ -6,19 +6,20 @@
 #define APP_DIR ""
 #define TTF ""
 #define HOMESCREEN "resources/homescreen"
+#define PATH_LEN 1024
 
 int main(int argc, char **argv)
 {
-    char ttf_path[1024], file_path[1024];
+    char ttf_path[PATH_LEN], file_path[PATH_LEN];
 
     if (argc == 2) {
         size_t len = strlen(argv[1]);
         memcpy(file_path, argv[1], len);
         file_path[len] = '\0';
     } else {
-        sprintf(file_path, "%s/%s", APP_DIR, HOMESCREEN);
+        snprintf(file_path, PATH_LEN, "%s/%s", APP_DIR, HOMESCREEN);
     }
 
-    sprintf(ttf_path, "%s/%s", APP_DIR, TTF);
+    snprintf(ttf_path, PATH_LEN, "%s/%s", APP_DIR, TTF);
     return smacs_launch(HOME, ttf_path, file_path);
 }

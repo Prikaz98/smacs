@@ -413,6 +413,7 @@ Buffer* editor_create_buffer(Editor *editor, char *file_path)
     return &editor->buffer_list.data[editor->buffer_list.len - 1];
 }
 
+//TODO(ivan): we need to open only text file ignore executable and everything that might broker the editor :D
 int
 editor_read_file(Editor *editor, char *file_path)
 {
@@ -773,7 +774,7 @@ editor_user_input_delete_backward(Editor *editor)
 }
 
 bool
-editor_user_search_next(Editor *editor, char *notification)
+editor_user_search_next(Editor *editor, char *notification, size_t notification_len)
 {
     size_t to_find_len;
     char *to_find;
@@ -812,7 +813,7 @@ editor_user_search_next(Editor *editor, char *notification)
         i += forward ? 1 : -1;
     }
 
-    sprintf(notification, "Not found: %s", to_find);
+    snprintf(notification, notification_len, "Not found: %s", to_find);
     editor_user_input_clear(editor);
 
     return false;
@@ -911,14 +912,14 @@ editor_switch_buffer(Editor *editor, size_t buf_index)
 }
 
 void
-editor_kill_buffer(Editor *editor, size_t buf_index, char *notification)
+editor_kill_buffer(Editor *editor, size_t buf_index, char *notification, size_t notification_len)
 {
     register size_t i;
 
     if (buf_index >= editor->buffer_list.len) return;
     if (&editor->buffer_list.data[buf_index] == editor->pane->buffer) return;
 
-    sprintf(notification, "Buffer killed %s", editor->buffer_list.data[buf_index].file_path);
+    snprintf(notification, notification_len, "Buffer killed %s", editor->buffer_list.data[buf_index].file_path);
     editor_destory_buffer(&editor->buffer_list.data[buf_index]);
 
     --editor->buffer_list.len;
