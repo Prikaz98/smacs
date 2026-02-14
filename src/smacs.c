@@ -12,7 +12,7 @@
 #include "themes.h"
 #include "common.h"
 
-#define FONT_SIZE       12
+#define FONT_SIZE       16
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define LEADING         0    /* space between raws */
@@ -194,13 +194,11 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 void
 initial_hook(void)
 {
-    /*
     editor_split_pane(&smacs.editor);
     editor_next_pane(&smacs.editor);
     editor_read_file(&smacs.editor, "*scratch*");
     editor_insert(&smacs.editor, ";; Buffer for your notes\n");
     editor_next_pane(&smacs.editor);
-    */
 }
 
 bool
