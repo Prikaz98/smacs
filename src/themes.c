@@ -31,6 +31,8 @@ themes_mindre(Smacs *smacs)
     smacs->cfg = themes_as_color(0x2E3331);
     smacs->kvfg = smacs->fg;
     smacs->tpfg = smacs->fg;
+    smacs->sfg = smacs->fg;
+    smacs->cmfg = smacs->fg;
 }
 
 void
@@ -45,6 +47,8 @@ themes_naysayer(Smacs *smacs)
     smacs->cfg = themes_as_color(0xFFFFFF);
     smacs->kvfg = themes_as_color(0xFFFFFF);
     smacs->tpfg = themes_as_color(0x8cde94);
+    smacs->sfg = smacs->fg;
+    smacs->cmfg = smacs->fg;
 }
 
 void
@@ -59,6 +63,8 @@ themes_acme(Smacs *smacs)
     smacs->cfg = smacs->fg;
     smacs->kvfg = smacs->fg;
     smacs->tpfg = smacs->fg;
+    smacs->sfg = smacs->fg;
+    smacs->cmfg = smacs->fg;
 }
 
 void
@@ -73,4 +79,6 @@ themes_jblow_nastalgia(Smacs *smacs)
     smacs->cfg = smacs->fg;
     smacs->kvfg = smacs->fg;
     smacs->tpfg = smacs->fg;
+    smacs->sfg = themes_as_color(0xBEBEBE);
+    smacs->cmfg = themes_as_color(0xFFFF00);
 }

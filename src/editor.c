@@ -770,7 +770,6 @@ editor_user_input_delete_backward(Editor *editor)
     sb = &editor->user_input;
     char_len = utf8_size_char_backward(sb->data, sb->len - 1);
     sb->len -= char_len;
-    memset(&sb->data[sb->len], 0, char_len);
 }
 
 bool

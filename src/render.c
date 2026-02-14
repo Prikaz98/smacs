@@ -223,6 +223,7 @@ render_update_glyph(Smacs *smacs)
 
         arena_end = MIN(arena.start + arena.show_lines, pane->buffer->len);
 
+        //MAIN BUFFERS RENDERING
         {
             size_t li, ci, string_pointer;
             int content_hight, x, w, h;
@@ -264,6 +265,12 @@ render_update_glyph(Smacs *smacs)
 
                     }
 
+                    bool string_ended = false;
+
+                    if (kind & SINGLE_LINE_COMMENT) {
+                        kind = kind ^ SINGLE_LINE_COMMENT;
+                    }
+
                     for (ci = line->start; ci <= line->end; ++ci) {
                         if (selection && (ci >= region_beg)) {
                             kind = kind | REGION;
@@ -289,9 +296,26 @@ render_update_glyph(Smacs *smacs)
                             x = text_indention;
                         }
 
+                        if (data[ci] == '"') {
+                            if (!(kind & STRING)) {
+                                kind = kind | STRING;
+                            } else {
+                                string_ended = true;
+                            }
+                        }
+
+                        if (strncmp(&data[ci], "//", 2) == 0) {
+                            kind = kind | SINGLE_LINE_COMMENT;
+                        }
+
                         if (ci < data_len) {
                             render_append_char_to_rendering(smacs, sb, data, &ci);
                             render_flush_item_sb_and_move_x(smacs, glyph, sb, &x, content_hight, kind, ci);
+                        }
+
+                        if (string_ended) {
+                            string_ended = false;
+                            kind = kind ^ STRING;
                         }
                     }
 
@@ -415,10 +439,14 @@ render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t string_
             SDL_SetRenderDrawColor(smacs->renderer, smacs->rg.r, smacs->rg.g, smacs->rg.b, smacs->rg.a);
             SDL_RenderFillRect(smacs->renderer, rect);
             fg = smacs->fg;
+        } else if (kind & SINGLE_LINE_COMMENT) {
+            fg = smacs->cmfg;
         } else if (kind & KEYWORD) {
             fg = smacs->kvfg;
         } else if (kind & TYPE) {
             fg = smacs->tpfg;
+        } else if (kind & STRING) {
+            fg = smacs->sfg;
         } else {
             fg = smacs->fg;
         }

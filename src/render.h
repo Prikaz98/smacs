@@ -19,6 +19,9 @@ typedef enum {
     LINE             = 0x080,
     KEYWORD          = 0x100,
     TYPE             = 0x200,
+    STRING           = 0x400,
+
+    SINGLE_LINE_COMMENT          = 0x1000,
 } GlyphItemEnum;
 
 typedef struct {
@@ -59,15 +62,17 @@ typedef struct {
 
     Editor editor;
 
-    SDL_Color bg;
-    SDL_Color fg;
-    SDL_Color rg;
-    SDL_Color ln;
-    SDL_Color mlbg;
-    SDL_Color mlfg;
-    SDL_Color cfg;
-    SDL_Color kvfg;
-    SDL_Color tpfg;
+    SDL_Color bg;   //background color
+    SDL_Color fg;   //foreground color
+    SDL_Color rg;   //region
+    SDL_Color ln;   //line number
+    SDL_Color mlbg; //modeline bg
+    SDL_Color mlfg; //modeline fg
+    SDL_Color cfg;  //todo(ivan): forget what is it lol???
+    SDL_Color kvfg; //keyword fg
+    SDL_Color tpfg; //type fg
+    SDL_Color sfg;  //string fg
+    SDL_Color cmfg;  //comment fg
 
     int leading;
     int tab_size;

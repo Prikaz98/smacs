@@ -7,7 +7,7 @@ uint8_t utf8_size_char(char ch)
     if ((ch & 0xE0) == 0xC0) return 2;
     if ((ch & 0xF0) == 0xE0) return 3;
     if ((ch & 0xF8) == 0xF0) return 4;
-    
+
     return 1;
 }
 

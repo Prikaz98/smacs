@@ -25,11 +25,14 @@ const enum LineNumberFormat DISPLAY_LINE_FROMAT = HIDE; //[ABSOLUTE, RELATIVE, H
 
 static Smacs smacs = {0};
 
-//TODO: Clean up whitespaces before saving
-//TODO: M-& Emacs command
-//TODO: Multicursor
-//TODO: undo (revert deletion and changes)
-//TODO: replace
+//TODO(ivan): strcmp to strncmp
+//TODO(ivan): Clean up whitespaces before saving
+//TODO(ivan): M-& Emacs command
+//TODO(ivan): Multicursor
+//TODO(ivan): undo (revert deletion and changes)
+//TODO(ivan): replace
+
+//fixme(ivan): utf8 in mini buffer input does not work well
 
 void initial_hook(void);
 bool ctrl_leader_mapping(SDL_Event *event, int *message_timeout);
