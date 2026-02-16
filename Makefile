@@ -22,3 +22,8 @@ dev: default
 
 prod: default
 	$(CC) $(CFLAGS) $(PKG_FLAGS) -o $(EXEC) $(SOURCES) ./.build/main.c $(PKG_LIBS)
+
+test:
+	$(CC) $(CFLAGS) -o tokenize_test ./src/common.c ./src/tokenize.c ./test/tokenize_test.c
+	./tokenize_test
+	rm tokenize_test

@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdint.h>
+#include <string.h>
 
 typedef struct {
     char *data;

@@ -5,6 +5,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include "editor.h"
 #include "lexer.h"
+#include "tokenize.h"
 
 #define RENDER_NOTIFICATION_LEN 256
 
@@ -21,7 +22,7 @@ typedef enum {
     TYPE             = 0x200,
     STRING           = 0x400,
 
-    SINGLE_LINE_COMMENT          = 0x1000,
+    COMMENT          = 0x1000,
 } GlyphItemEnum;
 
 typedef struct {
@@ -82,6 +83,7 @@ typedef struct {
     char *home_dir;
 
     GlyphList glyph;
+    Tokens tokenize;
 
     int char_h; int char_w;
 } Smacs;

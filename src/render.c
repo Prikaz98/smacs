@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "common.h"
+#include "tokenize.h"
 #include "render.h"
 #include "utf8.h"
 
@@ -225,7 +226,7 @@ render_update_glyph(Smacs *smacs)
 
         //MAIN BUFFERS RENDERING
         {
-            size_t li, ci, string_pointer;
+            size_t li, ci, string_pointer, arena_start_point;
             int content_hight, x, w, h;
             bool selection;
             GlyphItemEnum kind;
@@ -240,7 +241,9 @@ render_update_glyph(Smacs *smacs)
 
                 selection = is_active_pane && smacs->editor.state & SELECTION && region_beg != region_end;
                 kind = TEXT;
+                arena_start_point = lines[arena.start].start;
 
+                tokenize(&smacs->tokenize, &data[arena_start_point], lines[arena_end-1].end + 1);
                 for (li = arena.start; li < arena_end; ++li) {
                     line = &lines[li];
                     x = text_indention;
@@ -265,12 +268,6 @@ render_update_glyph(Smacs *smacs)
 
                     }
 
-                    bool string_ended = false;
-
-                    if (kind & SINGLE_LINE_COMMENT) {
-                        kind = kind ^ SINGLE_LINE_COMMENT;
-                    }
-
                     for (ci = line->start; ci <= line->end; ++ci) {
                         if (selection && (ci >= region_beg)) {
                             kind = kind | REGION;
@@ -291,21 +288,20 @@ render_update_glyph(Smacs *smacs)
                             kind = kind ^ CURSOR;
                         }
 
+                        switch (smacs->tokenize.data[ci-arena_start_point]) {
+                        case TOKEN_STRING:
+                            kind = kind | STRING;
+                            break;
+                        case TOKEN_COMMENT:
+                            kind = kind | COMMENT;
+                            break;
+                        default:
+                            break;
+                        }
+
                         if (x >= pane_width_threashold) {
                             content_hight += (smacs->char_h + smacs->leading);
                             x = text_indention;
-                        }
-
-                        if (data[ci] == '"') {
-                            if (!(kind & STRING)) {
-                                kind = kind | STRING;
-                            } else {
-                                string_ended = true;
-                            }
-                        }
-
-                        if (strncmp(&data[ci], "//", 2) == 0) {
-                            kind = kind | SINGLE_LINE_COMMENT;
                         }
 
                         if (ci < data_len) {
@@ -313,9 +309,15 @@ render_update_glyph(Smacs *smacs)
                             render_flush_item_sb_and_move_x(smacs, glyph, sb, &x, content_hight, kind, ci);
                         }
 
-                        if (string_ended) {
-                            string_ended = false;
+                        switch (smacs->tokenize.data[ci-arena_start_point]) {
+                        case TOKEN_STRING:
                             kind = kind ^ STRING;
+                            break;
+                        case TOKEN_COMMENT:
+                            kind = kind ^ COMMENT;
+                            break;
+                        default:
+                            break;
                         }
                     }
 
@@ -427,6 +429,7 @@ render_update_glyph(Smacs *smacs)
             render_flush_item_sb_and_move_x(smacs, glyph, sb, &padding, win_h - smacs->char_h, MINI_BUFFER, -1);
         }
     }
+
 }
 
 void
@@ -439,7 +442,7 @@ render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t string_
             SDL_SetRenderDrawColor(smacs->renderer, smacs->rg.r, smacs->rg.g, smacs->rg.b, smacs->rg.a);
             SDL_RenderFillRect(smacs->renderer, rect);
             fg = smacs->fg;
-        } else if (kind & SINGLE_LINE_COMMENT) {
+        } else if (kind & COMMENT) {
             fg = smacs->cmfg;
         } else if (kind & KEYWORD) {
             fg = smacs->kvfg;
