@@ -164,6 +164,80 @@ GlyphItem
     return &glyph->data[glyph->len-1];
 }
 
+typedef struct {
+    char *data;
+    size_t data_len;
+    int x;
+
+    bool selection, is_active_pane;
+
+    size_t region_beg, region_end;
+    size_t cursor;
+    size_t arena_start_point;
+
+    int content_hight, text_indention, pane_width_threashold;
+} PaneDrawingInfo;
+
+void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, StringBuilder *sb, GlyphList *glyph)
+{
+    size_t data_index;
+    GlyphItemEnum kind = TEXT;
+
+    for (data_index = line->start; data_index <= line->end; ++data_index) {
+        if (info->selection && (data_index >= info->region_beg)) {
+            kind = kind | REGION;
+        }
+
+        if (kind & REGION && (data_index >= info->region_end)) {
+            kind = kind ^ REGION;
+        }
+
+        if (info->is_active_pane && data_index == info->cursor) {
+            kind = kind | CURSOR;
+
+            if (info->cursor == info->data_len) {
+                gb_append(glyph, ((GlyphItem) {0, 0, info->x, info->content_hight, smacs->char_w, smacs->char_h, kind, data_index}));
+                kind = kind ^ CURSOR;
+            }
+        } else if (kind & CURSOR) {
+            kind = kind ^ CURSOR;
+        }
+
+        switch (smacs->tokenize.data[data_index - info->arena_start_point]) {
+        case TOKEN_STRING:
+            kind = kind | STRING;
+            break;
+        case TOKEN_COMMENT:
+            kind = kind | COMMENT;
+            break;
+        default:
+            break;
+        }
+
+        if (info->x >= info->pane_width_threashold) {
+            info->content_hight += (smacs->char_h + smacs->leading);
+            info->x = info->text_indention;
+        }
+
+        if (data_index < info->data_len) {
+            render_append_char_to_rendering(smacs, sb, info->data, &data_index);
+            render_flush_item_sb_and_move_x(smacs, glyph, sb, &info->x, info->content_hight, kind, data_index);
+        }
+
+        switch (smacs->tokenize.data[data_index - info->arena_start_point]) {
+        case TOKEN_STRING:
+            kind = kind ^ STRING;
+            break;
+        case TOKEN_COMMENT:
+            kind = kind ^ COMMENT;
+            break;
+        default:
+            break;
+        }
+
+    }
+}
+
 static StringBuilder RenderStringBuilder = {0};
 
 void
@@ -172,7 +246,7 @@ render_update_glyph(Smacs *smacs)
     Arena arena;
     Line *lines;
     Line *line;
-    size_t arena_end, cursor, region_beg, region_end, max_line_num, current_line, line_number_len, data_len, pi;
+    size_t arena_end, cursor, region_beg, region_end, max_line_num, current_line, line_number_len, data_len, pane_index;
     int win_w, win_h, content_limit, common_indention, text_indention, pane_width_threashold;
     StringBuilder *sb;
     char *data, line_number[LINE_BUFFER_LEN];
@@ -194,8 +268,8 @@ render_update_glyph(Smacs *smacs)
 
     mini_buffer_is_active = editor_is_mini_buffer_active(&smacs->editor);
 
-    for (pi = 0; pi < smacs->editor.panes_len; ++pi) {
-        pane = &smacs->editor.panes[pi];
+    for (pane_index = 0; pane_index < smacs->editor.panes_len; ++pane_index) {
+        pane = &smacs->editor.panes[pane_index];
 
         lines = pane->buffer->data;
         arena = pane->arena;
@@ -226,31 +300,38 @@ render_update_glyph(Smacs *smacs)
 
         //MAIN BUFFERS RENDERING
         {
-            size_t li, ci, string_pointer, arena_start_point;
-            int content_hight, x, w, h;
-            bool selection;
-            GlyphItemEnum kind;
-
-            content_hight = 0;
-            x = 0;
+            PaneDrawingInfo *info = &((PaneDrawingInfo) {0});
+            info->x = 0;
+            info->content_hight = 0;
 
             if(data_len == 0) {
-                gb_append(glyph, ((GlyphItem) {0, 0, x, content_hight, smacs->char_w, smacs->char_h, CURSOR, 0}));
+                gb_append(glyph, ((GlyphItem) {0, 0, info->x, info->content_hight, smacs->char_w, smacs->char_h, CURSOR, 0}));
             } else {
+
                 assert(arena.start < arena_end);
+                size_t line_index, string_pointer;
+                int w, h;
 
-                selection = is_active_pane && smacs->editor.state & SELECTION && region_beg != region_end;
-                kind = TEXT;
-                arena_start_point = lines[arena.start].start;
+                info->selection = is_active_pane && smacs->editor.state & SELECTION && region_beg != region_end;
+                info->arena_start_point = lines[arena.start].start;
+                info->data = data;
+                info->data_len = data_len;
+                info->is_active_pane = is_active_pane;
+                info->region_beg = region_beg;
+                info->region_end = region_end;
+                info->cursor = cursor;
+                info->text_indention = text_indention;
+                info->pane_width_threashold = pane_width_threashold;
 
-                tokenize(&smacs->tokenize, &data[arena_start_point], lines[arena_end-1].end + 1);
-                for (li = arena.start; li < arena_end; ++li) {
-                    line = &lines[li];
-                    x = text_indention;
-                    if (content_limit <= content_hight) break;
+                tokenize(&smacs->tokenize, &data[info->arena_start_point], lines[arena_end-1].end + 1);
+
+                for (line_index = arena.start; line_index < arena_end; ++line_index) {
+                    line = &lines[line_index];
+                    info->x = text_indention;
+                    if (content_limit <= info->content_hight) break;
 
                     if (show_line_number) {
-                        render_format_display_line_number(smacs, line_number, line_number_len, li + 1, current_line);
+                        render_format_display_line_number(smacs, line_number, line_number_len, line_index + 1, current_line);
                         TTF_GetStringSize(smacs->font, line_number, line_number_len, &w, &h);
                         string_pointer = glyph->string_data.len;
                         sb_append_manyl(&glyph->string_data, line_number, line_number_len);
@@ -260,7 +341,7 @@ render_update_glyph(Smacs *smacs)
                                       string_pointer,
                                       line_number_len,
                                       common_indention,
-                                      content_hight,
+                                      info->content_hight,
                                       w,
                                       h,
                                       LINE_NUMBER,
@@ -268,60 +349,8 @@ render_update_glyph(Smacs *smacs)
 
                     }
 
-                    for (ci = line->start; ci <= line->end; ++ci) {
-                        if (selection && (ci >= region_beg)) {
-                            kind = kind | REGION;
-                        }
-
-                        if (kind & REGION && (ci >= region_end)) {
-                            kind = kind ^ REGION;
-                        }
-
-                        if (is_active_pane && ci == cursor) {
-                            kind = kind | CURSOR;
-
-                            if (cursor == data_len) {
-                                gb_append(glyph, ((GlyphItem) {0, 0, x, content_hight, smacs->char_w, smacs->char_h, kind, ci}));
-                                kind = kind ^ CURSOR;
-                            }
-                        } else if (kind & CURSOR) {
-                            kind = kind ^ CURSOR;
-                        }
-
-                        switch (smacs->tokenize.data[ci-arena_start_point]) {
-                        case TOKEN_STRING:
-                            kind = kind | STRING;
-                            break;
-                        case TOKEN_COMMENT:
-                            kind = kind | COMMENT;
-                            break;
-                        default:
-                            break;
-                        }
-
-                        if (x >= pane_width_threashold) {
-                            content_hight += (smacs->char_h + smacs->leading);
-                            x = text_indention;
-                        }
-
-                        if (ci < data_len) {
-                            render_append_char_to_rendering(smacs, sb, data, &ci);
-                            render_flush_item_sb_and_move_x(smacs, glyph, sb, &x, content_hight, kind, ci);
-                        }
-
-                        switch (smacs->tokenize.data[ci-arena_start_point]) {
-                        case TOKEN_STRING:
-                            kind = kind ^ STRING;
-                            break;
-                        case TOKEN_COMMENT:
-                            kind = kind ^ COMMENT;
-                            break;
-                        default:
-                            break;
-                        }
-                    }
-
-                    content_hight += (smacs->char_h + smacs->leading);
+                    render_line_processing(smacs, info, line, sb, glyph);
+                    info->content_hight += (smacs->char_h + smacs->leading);
                 }
             }
 
@@ -429,7 +458,6 @@ render_update_glyph(Smacs *smacs)
             render_flush_item_sb_and_move_x(smacs, glyph, sb, &padding, win_h - smacs->char_h, MINI_BUFFER, -1);
         }
     }
-
 }
 
 void
