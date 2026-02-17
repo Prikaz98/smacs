@@ -31,8 +31,8 @@ themes_mindre(Smacs *smacs)
     smacs->cursor_foreground_color = themes_as_color(0x2E3331);
     smacs->number_foreground_color = smacs->foreground_color;
     smacs->type_foreground_color = smacs->foreground_color;
-    smacs->string_foreground_color = smacs->foreground_color;
-    smacs->comment_foreground_color = smacs->foreground_color;
+    smacs->string_foreground_color = themes_as_color(0x54433A);
+    smacs->comment_foreground_color = themes_as_color(0xB0BEC5);
 }
 
 void
@@ -46,9 +46,9 @@ themes_naysayer(Smacs *smacs)
     smacs->mode_line_foreground_color = themes_as_color(0x062329);
     smacs->cursor_foreground_color = themes_as_color(0xFFFFFF);
     smacs->number_foreground_color = themes_as_color(0xFFFFFF);
-    smacs->type_foreground_color = themes_as_color(0x8cde94);
-    smacs->string_foreground_color = smacs->foreground_color;
-    smacs->comment_foreground_color = smacs->foreground_color;
+    smacs->type_foreground_color = themes_as_color(0x8CDE94);
+    smacs->string_foreground_color = themes_as_color(0x2EC09C);
+    smacs->comment_foreground_color = themes_as_color(0x44B340);
 }
 
 void
