@@ -25,7 +25,6 @@ const enum LineNumberFormat DISPLAY_LINE_FROMAT = HIDE; //[ABSOLUTE, RELATIVE, H
 
 static Smacs smacs = {0};
 
-//TODO(ivan): strcmp to strncmp
 //TODO(ivan): Clean up whitespaces before saving
 //TODO(ivan): M-& Emacs command
 //TODO(ivan): Multicursor

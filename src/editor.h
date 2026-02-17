@@ -129,7 +129,11 @@ typedef struct {
 #define EDITOR_MINI_BUFFER_CONTENT_LIMIT 1000
 
 #define EDITOR_DIR_CUR    "."
-#define EDITOR_DIR_PREV   ".."
+#define EDITOR_DIR_CUR_LEN 1
+
+#define EDITOR_DIR_PREV     ".."
+#define EDITOR_DIR_PREV_LEN 2
+
 #define EDITOR_DIR_SLASH  '/'
 
 #define editor_mod(a, b) ((a%b + b)%b)

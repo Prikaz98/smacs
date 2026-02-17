@@ -426,7 +426,7 @@ render_update_glyph(Smacs *smacs)
 
         if (smacs->editor.state & (SEARCH | EXTEND_COMMAND | COMPLETION)) {
             if (smacs->editor.state & COMPLETION) {
-                if ((smacs->editor.state & _FILE) && (strcmp(smacs->editor.dir, ".") != 0)) {
+                if ((smacs->editor.state & _FILE) && (strncmp(smacs->editor.dir, ".", 1) != 0)) {
                     sb_append_many(sb, "Find file: ");
                     render_append_file_path(sb, smacs->editor.dir, smacs->home_dir, home_dir_len);
                     sb_append(sb, '/');

@@ -1224,16 +1224,19 @@ editor_completion_actualize(Editor *editor)
 
 bool
 editor_buffer_switch_complete(Editor *editor)
-{
+{    
+    if (editor->completor.filtered.len == 0) return false;
+    
     register size_t i;
     char *buffer_target, *buffer_name;
-    if (editor->completor.filtered.len == 0) return false;
-
+    size_t buffer_name_len;
+    
     buffer_target = editor->completor.filtered.data[0];
 
     for (i = 0; i < editor->buffer_list.len; ++i) {
         buffer_name = editor->buffer_list.data[i].file_path;
-        if (strcmp(buffer_target, buffer_name) == 0) {
+        buffer_name_len = editor->buffer_list.data[i].file_path_len;
+        if (strncmp(buffer_target, buffer_name, buffer_name_len) == 0) {
             editor_switch_buffer(editor, i);
             editor->state = NONE;
             return true;
@@ -1290,8 +1293,8 @@ editor_find_file(Editor *editor, bool refresh_dir)
 
     while ((ep = readdir(dp)) != NULL) {
         should_add = true;
-        if (strcmp(ep->d_name, EDITOR_DIR_CUR) == 0) should_add = false;
-        if (strcmp(ep->d_name, EDITOR_DIR_PREV) == 0) should_add = false;
+        if (strncmp(ep->d_name, EDITOR_DIR_CUR, EDITOR_DIR_CUR_LEN) == 0) should_add = false;
+        if (strncmp(ep->d_name, EDITOR_DIR_PREV, EDITOR_DIR_PREV_LEN) == 0) should_add = false;
 
         if (should_add) {
             gb_append(&(editor->completor), strdup(ep->d_name));
@@ -1321,7 +1324,7 @@ editor_find_file_complete(Editor *editor)
 
     file_path = editor->completor.filtered.len == 0 ? editor->user_input.data : editor->completor.filtered.data[0];
 
-    if (strcmp(file_path, EDITOR_DIR_PREV) == 0) {
+    if (strncmp(file_path, EDITOR_DIR_PREV, EDITOR_DIR_PREV_LEN) == 0) {
         dir_len =  strlen(editor->dir);
         dir_i = (long) dir_len;
 
