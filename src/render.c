@@ -335,10 +335,9 @@ render_update_glyph(Smacs *smacs)
                     if (strncmp(&pane->buffer->file_path[pane->buffer->file_path_len-2], ".c", 2) == 0 ||
                         strncmp(&pane->buffer->file_path[pane->buffer->file_path_len-2], ".h", 2) == 0) {
                         info->c_like_file = true;
+                        tokenize(&smacs->tokenize, &data[info->arena_start_point], lines[arena_end-1].end + 1);
                     }
                 }
-
-                tokenize(&smacs->tokenize, &data[info->arena_start_point], lines[arena_end-1].end + 1);
 
                 for (line_index = arena.start; line_index < arena_end; ++line_index) {
                     line = &lines[line_index];
