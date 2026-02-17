@@ -169,7 +169,7 @@ typedef struct {
     size_t data_len;
     int x;
 
-    bool selection, is_active_pane;
+    bool selection, is_active_pane, c_like_file;
 
     size_t region_beg, region_end;
     size_t cursor;
@@ -203,18 +203,21 @@ void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, Str
             kind = kind ^ CURSOR;
         }
 
-        switch (smacs->tokenize.data[data_index - info->arena_start_point]) {
-        case TOKEN_STRING:
-            kind = kind | STRING;
-            break;
-        case TOKEN_COMMENT:
-            kind = kind | COMMENT;
-            break;
-        case TOKEN_NUMBER:
-            kind = kind | NUMBER;
-        default:
-            break;
+        if (info->c_like_file) {
+            switch (smacs->tokenize.data[data_index - info->arena_start_point]) {
+            case TOKEN_STRING:
+                kind = kind | STRING;
+                break;
+            case TOKEN_COMMENT:
+                kind = kind | COMMENT;
+                break;
+            case TOKEN_NUMBER:
+                kind = kind | NUMBER;
+            default:
+                break;
+            }
         }
+
 
         if (info->x >= info->pane_width_threashold) {
             info->content_hight += (smacs->char_h + smacs->leading);
@@ -226,20 +229,21 @@ void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, Str
             render_flush_item_sb_and_move_x(smacs, glyph, sb, &info->x, info->content_hight, kind, data_index);
         }
 
-        switch (smacs->tokenize.data[data_index - info->arena_start_point]) {
-        case TOKEN_STRING:
-            kind = kind ^ STRING;
-            break;
-        case TOKEN_COMMENT:
-            kind = kind ^ COMMENT;
-            break;
-        case TOKEN_NUMBER:
-            kind = kind ^ NUMBER;
-            break;
-        default:
-            break;
+        if (info->c_like_file) {
+            switch (smacs->tokenize.data[data_index - info->arena_start_point]) {
+            case TOKEN_STRING:
+                kind = kind ^ STRING;
+                break;
+            case TOKEN_COMMENT:
+                kind = kind ^ COMMENT;
+                break;
+            case TOKEN_NUMBER:
+                kind = kind ^ NUMBER;
+                break;
+            default:
+                break;
+            }
         }
-
     }
 }
 
@@ -327,6 +331,12 @@ render_update_glyph(Smacs *smacs)
                 info->cursor = cursor;
                 info->text_indention = text_indention;
                 info->pane_width_threashold = pane_width_threashold;
+                if (pane->buffer->file_path_len > 2) {
+                    if (strncmp(&pane->buffer->file_path[pane->buffer->file_path_len-2], ".c", 2) == 0 ||
+                        strncmp(&pane->buffer->file_path[pane->buffer->file_path_len-2], ".h", 2) == 0) {
+                        info->c_like_file = true;
+                    }
+                }
 
                 tokenize(&smacs->tokenize, &data[info->arena_start_point], lines[arena_end-1].end + 1);
 

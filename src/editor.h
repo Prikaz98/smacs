@@ -5,8 +5,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "common.h"
-#include "lexer.h"
-
 
 #define PANES_MAX_SIZE            3
 #define CHANGE_EVENT_HISTORY_SIZE 100
@@ -58,12 +56,11 @@ typedef struct {
     size_t cap;
 
     char *file_path;
+    size_t file_path_len;
 
     bool need_to_save;
 
     size_t last_position;
-
-    SimpleLexer lexer;
 
     ChangeEvent events[CHANGE_EVENT_HISTORY_SIZE];
     size_t events_len;

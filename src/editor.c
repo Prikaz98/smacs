@@ -373,7 +373,7 @@ editor_save(Editor* editor)
         return 1;
     }
 
-    if (strlen(buf->file_path) <= 0) {
+    if (buf->file_path_len <= 0) {
         fprintf(stderr, "file_path is invalid\n");
         return 1;
     }
@@ -402,9 +402,10 @@ editor_save(Editor* editor)
 Buffer* editor_create_buffer(Editor *editor, char *file_path)
 {
     register size_t i;
+    size_t new_file_path_len = strlen(file_path);
 
     for (i = 0; i < editor->buffer_list.len; ++i) {
-        if (strcmp(editor->buffer_list.data[i].file_path, file_path) == 0) {
+        if (strncmp(editor->buffer_list.data[i].file_path, file_path, new_file_path_len) == 0) {
             return &editor->buffer_list.data[i];
         }
     }
@@ -446,14 +447,8 @@ editor_read_file(Editor *editor, char *file_path)
     pane->buffer->file_path = (char*) calloc(file_path_len + 1, sizeof(char));
     editor_goto_point(editor, 0);
 
-    if (file_path_len > 2) {
-        if (strncmp(&file_path[file_path_len-2], ".c", 2) == 0 ||
-            strncmp(&file_path[file_path_len-2], ".h", 2) == 0) {
-            lexer_c_syntax(&pane->buffer->lexer);
-        }
-    }
-
     strcpy(pane->buffer->file_path, file_path);
+    pane->buffer->file_path_len = file_path_len;
 
     editor_determine_lines(editor);
     editor_recognize_arena(editor);

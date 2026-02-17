@@ -1,4 +1,5 @@
 #include "render.h"
+#include "lexer.h"
 
 const char *c_keywords[] = {
     "auto", "break", "case", "const", "continue", "default", "do",

@@ -4,7 +4,6 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include "editor.h"
-#include "lexer.h"
 #include "tokenize.h"
 
 #define RENDER_NOTIFICATION_LEN 256
