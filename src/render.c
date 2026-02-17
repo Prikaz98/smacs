@@ -10,7 +10,7 @@
 #define LINE_BUFFER_LEN 100
 
 void
-render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg)
+render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color)
 {
     SDL_Texture *texture = NULL;
     SDL_FRect rect = (SDL_FRect) {0.0, 0.0, 0.0, 0.0};
@@ -19,7 +19,7 @@ render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Co
     if (text == NULL) return;
     if (text_len == 0) return;
 
-    surface = TTF_RenderText_Blended(smacs->font, text, text_len, fg);
+    surface = TTF_RenderText_Blended(smacs->font, text, text_len, foreground_color);
     if (surface == NULL) {
         fprintf(stderr, "Render text (x %d y %d txt: %s len: %ld) cause: %s\n", x, y, text, text_len, SDL_GetError());
         exit(EXIT_FAILURE);
@@ -210,6 +210,8 @@ void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, Str
         case TOKEN_COMMENT:
             kind = kind | COMMENT;
             break;
+        case TOKEN_NUMBER:
+            kind = kind | NUMBER;
         default:
             break;
         }
@@ -230,6 +232,9 @@ void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, Str
             break;
         case TOKEN_COMMENT:
             kind = kind ^ COMMENT;
+            break;
+        case TOKEN_NUMBER:
+            kind = kind ^ NUMBER;
             break;
         default:
             break;
@@ -463,48 +468,46 @@ render_update_glyph(Smacs *smacs)
 void
 render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t string_len, SDL_FRect *rect)
 {
-    SDL_Color fg;
+    SDL_Color foreground_color;
 
     if (kind & TEXT) {
         if (kind & REGION) {
-            SDL_SetRenderDrawColor(smacs->renderer, smacs->rg.r, smacs->rg.g, smacs->rg.b, smacs->rg.a);
+            SDL_SetRenderDrawColor(smacs->renderer, smacs->region_color.r, smacs->region_color.g, smacs->region_color.b, smacs->region_color.a);
             SDL_RenderFillRect(smacs->renderer, rect);
-            fg = smacs->fg;
+            foreground_color = smacs->foreground_color;
         } else if (kind & COMMENT) {
-            fg = smacs->cmfg;
-        } else if (kind & KEYWORD) {
-            fg = smacs->kvfg;
-        } else if (kind & TYPE) {
-            fg = smacs->tpfg;
+            foreground_color = smacs->comment_foreground_color;
+        } else if (kind & NUMBER) {
+            foreground_color = smacs->number_foreground_color;
         } else if (kind & STRING) {
-            fg = smacs->sfg;
+            foreground_color = smacs->string_foreground_color;
         } else {
-            fg = smacs->fg;
+            foreground_color = smacs->foreground_color;
         }
 
         if (kind & CURSOR) {
-            SDL_SetRenderDrawColor(smacs->renderer, smacs->cfg.r, smacs->cfg.g, smacs->cfg.b, smacs->cfg.a);
+            SDL_SetRenderDrawColor(smacs->renderer, smacs->cursor_foreground_color.r, smacs->cursor_foreground_color.g, smacs->cursor_foreground_color.b, smacs->cursor_foreground_color.a);
             SDL_RenderFillRect(smacs->renderer, rect);
-            fg = smacs->bg;
+            foreground_color = smacs->background_color;
         }
 
-        render_draw_text(smacs, rect->x, rect->y, string, string_len, fg);
+        render_draw_text(smacs, rect->x, rect->y, string, string_len, foreground_color);
     } else if (kind & MODE_LINE) {
-        SDL_SetRenderDrawColor(smacs->renderer, smacs->bg.r, smacs->bg.g, smacs->bg.b, smacs->bg.a);
+        SDL_SetRenderDrawColor(smacs->renderer, smacs->background_color.r, smacs->background_color.g, smacs->background_color.b, smacs->background_color.a);
         SDL_RenderFillRect(smacs->renderer, rect);
 
-        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->fg);
+        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->foreground_color);
     } else if (kind & MODE_LINE_ACTIVE) {
-        SDL_SetRenderDrawColor(smacs->renderer, smacs->mlbg.r, smacs->mlbg.g, smacs->mlbg.b, smacs->mlbg.a);
+        SDL_SetRenderDrawColor(smacs->renderer, smacs->mode_line_background_color.r, smacs->mode_line_background_color.g, smacs->mode_line_background_color.b, smacs->mode_line_background_color.a);
         SDL_RenderFillRect(smacs->renderer, rect);
 
-        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->mlfg);
+        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->mode_line_foreground_color);
     } else if (kind & MINI_BUFFER) {
-        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->fg);
+        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->foreground_color);
     } else if (kind & LINE_NUMBER) {
-        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->ln);
+        render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->line_number_color);
     } else if (kind & LINE) {
-        SDL_SetRenderDrawColor(smacs->renderer, smacs->fg.r, smacs->fg.g, smacs->fg.b, smacs->fg.a);
+        SDL_SetRenderDrawColor(smacs->renderer, smacs->foreground_color.r, smacs->foreground_color.g, smacs->foreground_color.b, smacs->foreground_color.a);
         SDL_RenderLine(smacs->renderer, rect->x, rect->y, rect->w, rect->h);
     }
 }

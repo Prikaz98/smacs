@@ -171,7 +171,7 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
             smacs.editor.panes[i].arena.show_lines = (win_h / (smacs.char_h + smacs.leading));
         }
 
-        SDL_SetRenderDrawColor(smacs.renderer, smacs.bg.r, smacs.bg.g, smacs.bg.b, smacs.bg.a);
+        SDL_SetRenderDrawColor(smacs.renderer, smacs.background_color.r, smacs.background_color.g, smacs.background_color.b, smacs.background_color.a);
         SDL_RenderClear(smacs.renderer);
 
         render_update_glyph(&smacs);

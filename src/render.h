@@ -18,11 +18,9 @@ typedef enum {
     MINI_BUFFER      = 0x020,
     LINE_NUMBER      = 0x040,
     LINE             = 0x080,
-    KEYWORD          = 0x100,
-    TYPE             = 0x200,
-    STRING           = 0x400,
-
-    COMMENT          = 0x1000,
+    NUMBER           = 0x100,
+    STRING           = 0x200,
+    COMMENT          = 0x400,
 } GlyphItemEnum;
 
 typedef struct {
@@ -63,17 +61,17 @@ typedef struct {
 
     Editor editor;
 
-    SDL_Color bg;   //background color
-    SDL_Color fg;   //foreground color
-    SDL_Color rg;   //region
-    SDL_Color ln;   //line number
-    SDL_Color mlbg; //modeline bg
-    SDL_Color mlfg; //modeline fg
-    SDL_Color cfg;  //todo(ivan): forget what is it lol???
-    SDL_Color kvfg; //keyword fg
-    SDL_Color tpfg; //type fg
-    SDL_Color sfg;  //string fg
-    SDL_Color cmfg;  //comment fg
+    SDL_Color background_color;
+    SDL_Color foreground_color;
+    SDL_Color region_color;
+    SDL_Color line_number_color;
+    SDL_Color mode_line_background_color;
+    SDL_Color mode_line_foreground_color;
+    SDL_Color cursor_foreground_color;
+    SDL_Color number_foreground_color;
+    SDL_Color type_foreground_color;
+    SDL_Color string_foreground_color;
+    SDL_Color comment_foreground_color;
 
     int leading;
     int tab_size;
@@ -88,7 +86,7 @@ typedef struct {
     int char_h; int char_w;
 } Smacs;
 
-void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color fg);
+void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color);
 void render_draw_smacs(Smacs *smacs);
 void render_destroy_smacs(Smacs *smacs);
 void render_update_glyph(Smacs *smacs);
