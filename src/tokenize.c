@@ -81,7 +81,18 @@ int tokenize(Tokens *tokens, char *data, size_t data_len)
             		break;
             	}
             }
-        } else if (!is_number(data[tokens->len])) {
+        } else if (is_number(data[tokens->len])) {
+            gb_append(tokens, TOKEN_NUMBER);
+
+            while (tokens->len < data_len) {
+            	if (is_number(data[tokens->len]) ||
+            	    data[tokens->len] == '.') {
+	                gb_append(tokens, TOKEN_NUMBER);
+            	} else {
+            		break;
+            	}
+            }
+        } else {
             bool stop_loop = false;
             while (tokens->len < data_len) {
                 switch (data[tokens->len]) {
@@ -100,10 +111,7 @@ int tokenize(Tokens *tokens, char *data, size_t data_len)
                     break;
                 }
             }
-        } else {
-            gb_append(tokens, TOKEN_NUMBER);
         }
     }
-
     return 1;
 }

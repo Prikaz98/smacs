@@ -12,7 +12,7 @@
 #include "themes.h"
 #include "common.h"
 
-#define FONT_SIZE       16
+#define FONT_SIZE       15
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        4
 #define LEADING         0    /* space between raws */
@@ -25,6 +25,7 @@ const enum LineNumberFormat DISPLAY_LINE_FROMAT = HIDE; //[ABSOLUTE, RELATIVE, H
 
 static Smacs smacs = {0};
 
+//fixme(ivan): In empty file cursor does not appear
 //TODO(ivan): Clean up whitespaces before saving
 //TODO(ivan): M-& Emacs command
 //TODO(ivan): Multicursor
@@ -148,7 +149,7 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
         } break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN: {
             //TODO(ivan): is not working well with utf8 chars and right pane
-            long point = render_find_position_by_xy(&smacs, (int)event.button.x, (int)event.button.y);
+            long point = render_find_position_by_xy(&smacs, (int)event.button.x, (int)event.button.y - smacs.char_h);
             if (point > 0) {
                 editor_goto_point(&smacs.editor, point);
                 editor_char_backward(&smacs.editor);
