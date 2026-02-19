@@ -16,8 +16,8 @@ uint8_t utf8_size_char_backward(char *text, size_t from)
     register size_t i;
     size_t until;
 
-    until = MIN(from - 4, from);
-    for (i = from; i > until; --i) {
+    until = MIN(from - 4, 0);
+    for (i = from; i >= until; --i) {
         if ((text[i] & 0xC0) == 0x80) {
             continue;
         }

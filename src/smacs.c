@@ -31,8 +31,6 @@ static Smacs smacs = {0};
 //TODO(ivan): undo (revert deletion and changes)
 //TODO(ivan): replace
 
-//fixme(ivan): utf8 in mini buffer input does not work well
-
 void initial_hook(void);
 bool ctrl_leader_mapping(SDL_Event *event, int *message_timeout);
 bool alt_leader_mapping(SDL_Event *event);
