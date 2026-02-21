@@ -14,7 +14,7 @@
 
 #define FONT_SIZE       15
 #define MESSAGE_TIMEOUT 5
-#define TAB_SIZE        4
+#define TAB_SIZE        8
 #define LEADING         0    /* space between raws */
 
 #define NEWLINE         "\n"
@@ -125,20 +125,20 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
             switch (event.key.key) {
             case SDLK_BACKSPACE:{
                 editor_delete_backward(&smacs.editor);
-            }break;
+            } break;
             case SDLK_RETURN:{
                 editor_new_line(&smacs.editor);
-            }break;
+            } break;
             case SDLK_TAB:{
                 editor_insert(&smacs.editor, TAB);
-            }break;
+            } break;
             case SDLK_F11:{
                 if (SDL_GetWindowFlags(smacs.window) & SDL_WINDOW_FULLSCREEN) {
                     SDL_SetWindowFullscreen(smacs.window, 0);
                 } else {
                     SDL_SetWindowFullscreen(smacs.window, SDL_WINDOW_FULLSCREEN);
                 }
-            }break;
+            } break;
             }
         } break;
         case SDL_EVENT_QUIT: {
@@ -154,7 +154,7 @@ smacs_launch(char *home_dir, char *ttf_path, char *file_path)
                 editor_goto_point(&smacs.editor, point);
                 editor_char_backward(&smacs.editor);
             }
-        }break;
+        } break;
         }
 
         SDL_GetWindowSize(smacs.window, &win_w, &win_h);

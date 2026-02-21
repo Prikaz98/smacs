@@ -80,10 +80,10 @@ render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer_len,
 {
     switch (smacs->line_number_format) {
     case HIDE: {
-    }break;
+    } break;
     case ABSOLUTE: {
         render_format_line_number_padding(buffer, buffer_len, num);
-    }break;
+    } break;
     case RELATIVE: {
         if (cursor_line_num < num) {
             render_format_line_number_padding(buffer, buffer_len, num - cursor_line_num);
@@ -92,7 +92,7 @@ render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer_len,
         } else {
             render_format_line_number_padding(buffer, buffer_len, cursor_line_num);
         }
-    }break;
+    } break;
     }
 }
 
