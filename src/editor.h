@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include "common.h"
 
-#define PANES_MAX_SIZE			3
+#define PANES_MAX_SIZE            3
 #define CHANGE_EVENT_HISTORY_SIZE 100
 
 typedef struct {
@@ -37,14 +37,14 @@ typedef struct {
 	StringBuilder string;
 } ChangeEvent;
 
-#define printf_change_event(e)																			   \
-	if (e->type == INSERTION) {																			  \
+#define printf_change_event(e) \
+	if (e->type == INSERTION) { \
 		printf("INSERTION(%ld, %s, %ld)\n", e->insertion.point, e->insertion.string.data, e->insertion.len); \
-	} else if (e->type == DELETION) {																		\
-		printf("DELETION(%ld, %s)\n", e->deletion.point, e->deletion.data);								  \
-	} else {																								 \
-		printf("EMPTY\n");																				   \
-	}																										\
+	} else if (e->type == DELETION) { \
+		printf("DELETION(%ld, %s)\n", e->deletion.point, e->deletion.data); \
+	} else { \
+		printf("EMPTY\n"); \
+	} \
 
 typedef struct {
 	size_t column;
@@ -84,16 +84,16 @@ typedef struct {
 } Pane;
 
 typedef enum {
-	NONE			= 0x000,
-	SELECTION	   = 0x001,
+	NONE            = 0x000,
+	SELECTION       = 0x001,
 	FORWARD_SEARCH  = 0x040,
 	BACKWARD_SEARCH = 0x080,
 	EXTEND_COMMAND  = 0x100,
-	COMPLETION	  = 0x200,
-	_FILE		   = 0x400,
+	COMPLETION       = 0x200,
+	_FILE          = 0x400,
 
-	FILE_SEARCH	 = COMPLETION | _FILE,
-	SEARCH		  = FORWARD_SEARCH | BACKWARD_SEARCH,
+	FILE_SEARCH     = COMPLETION | _FILE,
+	SEARCH          = FORWARD_SEARCH | BACKWARD_SEARCH,
 } EditorState;
 
 typedef struct {
@@ -128,10 +128,10 @@ typedef struct {
 #define EDITOR_CONTENT_CAP 256
 #define EDITOR_MINI_BUFFER_CONTENT_LIMIT 1000
 
-#define EDITOR_DIR_CUR	"."
+#define EDITOR_DIR_CUR     "."
 #define EDITOR_DIR_CUR_LEN 1
 
-#define EDITOR_DIR_PREV	 ".."
+#define EDITOR_DIR_PREV     ".."
 #define EDITOR_DIR_PREV_LEN 2
 
 #define EDITOR_DIR_SLASH  '/'
@@ -221,4 +221,5 @@ bool editor_find_file_complete(Editor *editor);
 void editor_new_line(Editor *editor);
 void editor_undo(Editor *editor);
 bool editor_is_mini_buffer_active(Editor *editor);
+size_t editor_cleanup_whitespaces(char *data, size_t data_len);
 #endif

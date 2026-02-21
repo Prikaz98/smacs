@@ -6,6 +6,7 @@ typedef enum {
 	TOKEN_STRING,
 	TOKEN_COMMENT,
 	TOKEN_NUMBER,
+	TOKEN_BOOLEAN,
 } TokenKind;
 
 typedef struct {

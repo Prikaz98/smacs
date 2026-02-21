@@ -124,7 +124,8 @@ render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data, siz
 		for (int tabs = 0; tabs < smacs->tab_size; ++tabs) sb_append(sb, ' ');
 	} break;
 	case '\n': {
-		sb_append(sb, ' ');
+		//cursor is desapear if there is no value
+		//sb_append(sb, '');
 	} break;
 	default: {
 		char_len = utf8_size_char(data[ci]);
@@ -136,32 +137,47 @@ render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data, siz
 	*i = ci;
 }
 
-GlyphItem
-*render_flush_item_sb_and_move_x(Smacs *smacs, GlyphList *glyph, StringBuilder *sb, int *x, int y, GlyphItemEnum kind, long position)
+GlyphItem *render_flush_item_sb_and_move_x(Smacs *smacs, GlyphList *glyph, StringBuilder *sb, int *x_, int y, GlyphItemEnum kind, long position)
 {
-	if (sb->len == 0) return NULL;
-
-	int w, h, x_;
-	x_ = *x;
-
-	TTF_GetStringSize(smacs->font, sb->data, sb->len, &w, &h);
+	int x = *x_;
 	size_t string_pointer = glyph->string_data.len;
+	GlyphItem *new_item = NULL;
 
-	sb_append_manyl(&glyph->string_data, sb->data, sb->len);
-	gb_append(glyph, ((GlyphItem) {
-				string_pointer,
-				sb->len,
-				x_,
-				y,
-				w,
-				h,
-				kind,
-				position}));
+	if (sb->len > 0) {
+		int w, h;
 
-	sb_clean(sb);
-	x_ += w;
-	*x = x_;
-	return &glyph->data[glyph->len-1];
+		TTF_GetStringSize(smacs->font, sb->data, sb->len, &w, &h);
+
+		sb_append_manyl(&glyph->string_data, sb->data, sb->len);
+		gb_append(glyph, ((GlyphItem) {
+					string_pointer,
+					sb->len,
+					x,
+					y,
+					w,
+					h,
+					kind,
+					position}));
+
+		sb_clean(sb);
+		x += w;
+		new_item = &glyph->data[glyph->len-1];
+	} else if (kind & CURSOR) {
+		gb_append(glyph, ((GlyphItem) {
+					string_pointer,
+					0,
+					x,
+					y,
+					smacs->char_w,
+					smacs->char_h,
+					kind,
+					position}));
+		x += smacs->char_w;
+		new_item = &glyph->data[glyph->len-1];
+	}
+
+	*x_ = x;
+	return new_item;
 }
 
 typedef struct {
@@ -213,6 +229,10 @@ void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, Str
 				break;
 			case TOKEN_NUMBER:
 				kind = kind | NUMBER;
+				break;
+			case TOKEN_BOOLEAN:
+				kind = kind | NUMBER;
+				break;
 			default:
 				break;
 			}
@@ -238,6 +258,9 @@ void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, Str
 				kind = kind ^ COMMENT;
 				break;
 			case TOKEN_NUMBER:
+				kind = kind ^ NUMBER;
+				break;
+			case TOKEN_BOOLEAN:
 				kind = kind ^ NUMBER;
 				break;
 			default:
@@ -314,7 +337,7 @@ render_update_glyph(Smacs *smacs)
 			info->content_hight = 0;
 
 			if(data_len == 0) {
-				gb_append(glyph, ((GlyphItem) {0, 0, info->x, info->content_hight, smacs->char_w, smacs->char_h, CURSOR, 0}));
+				gb_append(glyph, ((GlyphItem) {0, 0, info->x, info->content_hight, smacs->char_w, smacs->char_h, TEXT | CURSOR, 0}));
 			} else {
 
 				assert(arena.start < arena_end);
@@ -405,7 +428,9 @@ render_update_glyph(Smacs *smacs)
 			mode_line_h = win_h - (mini_buffer_is_active ? smacs->char_h*2 : smacs->char_h);
 
 			item = render_flush_item_sb_and_move_x(smacs, glyph, sb, &padding, mode_line_h, is_active_pane ? MODE_LINE_ACTIVE : MODE_LINE, -1);
-			item->w = pane->w;
+			if (item != NULL) {
+				item->w = pane->w;
+			}
 		}
 	}
 
@@ -482,7 +507,9 @@ render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t string_
 	if (kind & TEXT) {
 		if (kind & REGION) {
 			SDL_SetRenderDrawColor(smacs->renderer, smacs->region_color.r, smacs->region_color.g, smacs->region_color.b, smacs->region_color.a);
-			SDL_RenderFillRect(smacs->renderer, rect);
+			//small hack to fill space between the lines
+			SDL_FRect selection_rectangle = {.x = rect->x, .y = rect->y, .w = rect->w, .h = (rect->h * 1.2)};
+			SDL_RenderFillRect(smacs->renderer, &selection_rectangle);
 			foreground_color = smacs->foreground_color;
 		} else if (kind & COMMENT) {
 			foreground_color = smacs->comment_foreground_color;
@@ -533,8 +560,10 @@ render_glyph_show(Smacs *smacs)
 	string_beginning = NULL;
 	string_len_to_show = 0;
 
+
 	for (size_t i = 0; i < smacs->glyph.len; ++i) {
 		item = &smacs->glyph.data[i];
+
 		if (i == 0) {
 			string_beginning = &smacs->glyph.string_data.data[item->beg];
 			string_len_to_show = item->len;
@@ -561,15 +590,14 @@ render_glyph_show(Smacs *smacs)
 		string_beginning = &smacs->glyph.string_data.data[item->beg];
 		string_len_to_show = item->len;
 		if (i == (smacs->glyph.len-1)) {
-			if (string_len_to_show > 0) {
+			if (string_len_to_show > 0 || item->kind & CURSOR) {
 				render_draw_batch(smacs, item->kind, string_beginning, string_len_to_show, &rect);
 			}
 		}
 	}
 }
 
-void
-render_destroy_smacs(Smacs *smacs)
+void render_destroy_smacs(Smacs *smacs)
 {
 	editor_destroy(&smacs->editor);
 	render_destroy_glyph(&smacs->glyph);
@@ -580,15 +608,19 @@ render_destroy_smacs(Smacs *smacs)
 	sb_free(&RenderStringBuilder);
 }
 
-long
-render_find_position_by_xy(Smacs *smacs, int x, int y)
+long render_find_position_by_xy(Smacs *smacs, int x, int y)
 {
 	GlyphItem item;
 	long point = -1;
 
+	/*
+	fixme(ivan):
+		Now it works fine but if you click to empty space it should found a line (x) first
+		and if in the current line no fitted y char put it in the end of the line
+	*/
+
 	for (size_t i = 0; i < smacs->glyph.len; ++i) {
 		item = smacs->glyph.data[i];
-		//fixme(ivan): not working well
 		if (item.y >= y && item.x >= x) {
 			point = item.position;
 			break;

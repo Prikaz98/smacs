@@ -71,7 +71,7 @@ int tokenize(Tokens *tokens, char *data, size_t data_len)
 		} else if (strncmp(&data[tokens->len], "0x", 2) == 0) {
 			gb_append(tokens, TOKEN_NUMBER);
 			gb_append(tokens, TOKEN_NUMBER);
-			
+
 			while (tokens->len < data_len) {
 				if (is_number(data[tokens->len]) ||
 					(64 < data[tokens->len] && data[tokens->len] < 71) || //Upper/lower case hex ascii
@@ -91,6 +91,14 @@ int tokenize(Tokens *tokens, char *data, size_t data_len)
 				} else {
 					break;
 				}
+			}
+		} else if (strncmp(&data[tokens->len], "false", 5) == 0) {
+			for (int i = 0; i < 5; ++i) {
+				gb_append(tokens, TOKEN_BOOLEAN);
+			}
+		} else if (strncmp(&data[tokens->len], "true", 4) == 0) {
+			for (int i = 0; i < 4; ++i) {
+				gb_append(tokens, TOKEN_BOOLEAN);
 			}
 		} else {
 			bool stop_loop = false;

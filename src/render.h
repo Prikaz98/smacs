@@ -36,7 +36,7 @@ typedef struct {
 	long position;
 } GlyphItem;
 
-#define fprintf_item(std, it) fprintf(std, "GlyphItem(%s,%ld,%f,%f,%f,%f,%d)\n", (it)->str, (it)->len, (it)->x, (it)->y, (it)->w, (it)->h, (it)->kind);
+#define fprintf_item(std, it) fprintf(std, "GlyphItem(%ld,%ld,%f,%f,%f,%f,%d)\n", (it)->beg, (it)->len, (it)->x, (it)->y, (it)->w, (it)->h, (it)->kind);
 
 typedef struct {
 	StringBuilder string_data;

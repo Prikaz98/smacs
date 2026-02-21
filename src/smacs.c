@@ -11,27 +11,25 @@
 #include "render.h"
 #include "themes.h"
 #include "common.h"
+#include "smacs.h"
 
 #define FONT_SIZE       15
 #define MESSAGE_TIMEOUT 5
 #define TAB_SIZE        8
-#define LEADING         0	/* space between raws */
+#define LEADING         1 /* space between raws */
 
 #define NEWLINE "\n"
 #define SPACE   " "
 #define TAB     "\t"
 
-//variants [ABSOLUTE, RELATIVE, HIDE]
 const enum LineNumberFormat DISPLAY_LINE_FROMAT = HIDE;
 static Smacs smacs = {0};
 
-//fixme(ivan): In empty file cursor does not appear
-//TODO(ivan): Implement something like config file to change some editor variables
-//TODO(ivan): Clean up whitespaces before saving
+//TODO(ivan): Better undo/redo
+//TODO(ivan): Config file instead of touching params in smacs.c
 //TODO(ivan): M-& Emacs command
-//TODO(ivan): Multicursor
-//TODO(ivan): undo (revert deletion and changes)
 //TODO(ivan): replace
+//TODO(ivan): Multicursor
 
 void initial_hook(void);
 bool ctrl_leader_mapping(SDL_Event *event, int *message_timeout);
@@ -96,7 +94,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 	smacs.leading = LEADING;
 	smacs.tab_size = TAB_SIZE;
 
-	initial_hook();
+	//initial_hook();
 
 	SDL_Event event = {0};
 
