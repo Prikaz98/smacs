@@ -6,9 +6,9 @@
 #include <string.h>
 
 typedef struct {
-    char *data;
-    size_t len;
-    size_t cap;
+	char *data;
+	size_t len;
+	size_t cap;
 } StringBuilder;
 
 #define SB_CAP_INIT 100
@@ -21,24 +21,24 @@ void sb_free(StringBuilder *sb);
 
 void *gb_append_(void *data, size_t *pcap, size_t size);
 
-#define gb_append(gb, elem)                                                   \
-    *((gb)->len == (gb)->cap                                                  \
-      ? (gb)->data = gb_append_((gb)->data, &(gb)->cap, sizeof(*(gb)->data)), \
-        (gb)->data + (gb)->len++                                              \
-      : (gb)->data + (gb)->len++) = elem
+#define gb_append(gb, elem)												   \
+	*((gb)->len == (gb)->cap												  \
+	  ? (gb)->data = gb_append_((gb)->data, &(gb)->cap, sizeof(*(gb)->data)), \
+		(gb)->data + (gb)->len++											  \
+	  : (gb)->data + (gb)->len++) = elem
 
-#define gb_free(gb)        \
-    do {                   \
-        free((gb)->data);  \
-        (gb)->len = 0;     \
-        (gb)->cap = 0;     \
-    } while (0)
+#define gb_free(gb)		\
+	do {				   \
+		free((gb)->data);  \
+		(gb)->len = 0;	 \
+		(gb)->cap = 0;	 \
+	} while (0)
 
-#define gb_clean(gb)                                                 \
-    do {                                                             \
-        (gb)->len = 0;                                               \
-        if ((gb)->cap) memset(&(gb)->data[(gb)->len], 0, (gb)->cap); \
-    } while (0)
+#define gb_clean(gb)												 \
+	do {															 \
+		(gb)->len = 0;											   \
+		if ((gb)->cap) memset(&(gb)->data[(gb)->len], 0, (gb)->cap); \
+	} while (0)
 
 /**
  * a starts_with b

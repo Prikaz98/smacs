@@ -6,132 +6,132 @@
 #include <stdbool.h>
 #include "common.h"
 
-#define PANES_MAX_SIZE            3
+#define PANES_MAX_SIZE			3
 #define CHANGE_EVENT_HISTORY_SIZE 100
 
 typedef struct {
-    size_t start;
-    size_t end;
+	size_t start;
+	size_t end;
 } Line;
 
 typedef struct {
-    char *data;
-    size_t len;
-    size_t capacity;
+	char *data;
+	size_t len;
+	size_t capacity;
 } Content;
 
 typedef struct {
-    size_t start;
-    size_t show_lines;
+	size_t start;
+	size_t show_lines;
 } Arena;
 
 typedef enum {
-    EMPTY,
-    INSERTION,
-    DELETION,
+	EMPTY,
+	INSERTION,
+	DELETION,
 } ChangeEventType;
 
 typedef struct {
-    ChangeEventType type;
-    size_t point;
-    StringBuilder string;
+	ChangeEventType type;
+	size_t point;
+	StringBuilder string;
 } ChangeEvent;
 
-#define printf_change_event(e)                                                                               \
-    if (e->type == INSERTION) {                                                                              \
-        printf("INSERTION(%ld, %s, %ld)\n", e->insertion.point, e->insertion.string.data, e->insertion.len); \
-    } else if (e->type == DELETION) {                                                                        \
-        printf("DELETION(%ld, %s)\n", e->deletion.point, e->deletion.data);                                  \
-    } else {                                                                                                 \
-        printf("EMPTY\n");                                                                                   \
-    }                                                                                                        \
+#define printf_change_event(e)																			   \
+	if (e->type == INSERTION) {																			  \
+		printf("INSERTION(%ld, %s, %ld)\n", e->insertion.point, e->insertion.string.data, e->insertion.len); \
+	} else if (e->type == DELETION) {																		\
+		printf("DELETION(%ld, %s)\n", e->deletion.point, e->deletion.data);								  \
+	} else {																								 \
+		printf("EMPTY\n");																				   \
+	}																										\
 
 typedef struct {
-    size_t column;
+	size_t column;
 
-    Content content;
+	Content content;
 
-    Line *data;
-    size_t len;
-    size_t cap;
+	Line *data;
+	size_t len;
+	size_t cap;
 
-    char *file_path;
-    size_t file_path_len;
+	char *file_path;
+	size_t file_path_len;
 
-    bool need_to_save;
+	bool need_to_save;
 
-    size_t last_position;
+	size_t last_position;
 
-    ChangeEvent events[CHANGE_EVENT_HISTORY_SIZE];
-    size_t events_len;
+	ChangeEvent events[CHANGE_EVENT_HISTORY_SIZE];
+	size_t events_len;
 } Buffer;
 
 typedef struct {
-    Buffer *data;
-    size_t len;
-    size_t cap;
+	Buffer *data;
+	size_t len;
+	size_t cap;
 } BufferList;
 
 typedef struct {
-    Buffer *buffer;
+	Buffer *buffer;
 
-    uint32_t x;
-    uint32_t w;
-    uint32_t h;
+	uint32_t x;
+	uint32_t w;
+	uint32_t h;
 
-    size_t position;
-    Arena arena;
+	size_t position;
+	Arena arena;
 } Pane;
 
 typedef enum {
-    NONE            = 0x000,
-    SELECTION       = 0x001,
-    FORWARD_SEARCH  = 0x040,
-    BACKWARD_SEARCH = 0x080,
-    EXTEND_COMMAND  = 0x100,
-    COMPLETION      = 0x200,
-    _FILE           = 0x400,
+	NONE			= 0x000,
+	SELECTION	   = 0x001,
+	FORWARD_SEARCH  = 0x040,
+	BACKWARD_SEARCH = 0x080,
+	EXTEND_COMMAND  = 0x100,
+	COMPLETION	  = 0x200,
+	_FILE		   = 0x400,
 
-    FILE_SEARCH     = COMPLETION | _FILE,
-    SEARCH          = FORWARD_SEARCH | BACKWARD_SEARCH,
+	FILE_SEARCH	 = COMPLETION | _FILE,
+	SEARCH		  = FORWARD_SEARCH | BACKWARD_SEARCH,
 } EditorState;
 
 typedef struct {
-    char **data;
-    size_t len;
-    size_t cap;
+	char **data;
+	size_t len;
+	size_t cap;
 } CompletorFiltered;
 
 typedef struct {
-    CompletorFiltered filtered;
-    char **data;
-    size_t len;
-    size_t cap;
+	CompletorFiltered filtered;
+	char **data;
+	size_t len;
+	size_t cap;
 } Completor;
 
 typedef struct {
-    Pane panes[PANES_MAX_SIZE];
-    size_t panes_len;
+	Pane panes[PANES_MAX_SIZE];
+	size_t panes_len;
 
-    Pane *pane;
+	Pane *pane;
 
-    size_t mark;
+	size_t mark;
 
-    EditorState state;
-    StringBuilder user_input;
-    BufferList buffer_list;
+	EditorState state;
+	StringBuilder user_input;
+	BufferList buffer_list;
 
-    Completor completor;
-    char dir[1024];
+	Completor completor;
+	char dir[1024];
 } Editor;
 
 #define EDITOR_CONTENT_CAP 256
 #define EDITOR_MINI_BUFFER_CONTENT_LIMIT 1000
 
-#define EDITOR_DIR_CUR    "."
+#define EDITOR_DIR_CUR	"."
 #define EDITOR_DIR_CUR_LEN 1
 
-#define EDITOR_DIR_PREV     ".."
+#define EDITOR_DIR_PREV	 ".."
 #define EDITOR_DIR_PREV_LEN 2
 
 #define EDITOR_DIR_SLASH  '/'

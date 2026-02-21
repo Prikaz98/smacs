@@ -2,10 +2,10 @@
 #define LEXER_H
 
 typedef struct {
-    char **keywords;
-    size_t keywords_len;
-    char **types;
-    size_t types_len;
+	char **keywords;
+	size_t keywords_len;
+	char **types;
+	size_t types_len;
 } SimpleLexer;
 
 void 
