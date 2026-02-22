@@ -1485,3 +1485,101 @@ size_t editor_cleanup_whitespaces(char *data, size_t data_len)
 
     return data_len - tail_garbage_data;
 }
+
+const char *sexps[] = { "{}", "[]", "()", "\"\"" };
+#define sexps_len (sizeof(sexps) / sizeof(sexps[0]))
+
+char editor_find_balanced_sexp_forward(char ch)
+{
+	for (size_t i = 0; i < sexps_len; ++i) {
+		if(sexps[i][0] == ch) {
+			return sexps[i][1];
+		}
+	}
+
+	return 0;
+}
+
+char editor_find_balanced_sexp_backward(char ch)
+{
+	for (size_t i = 0; i < sexps_len; ++i) {
+		if(sexps[i][1] == ch) {
+			return sexps[i][0];
+		}
+	}
+
+	return 0;
+}
+
+void editor_forward_sexp(Editor *editor)
+{
+	if (editor->state != NONE) return;
+
+	char *content;
+	char sexp, balanced_sexp;
+	size_t start_position, content_len, goto_position;
+
+	int sexps_matches_to_skip = 0;
+	start_position = editor->pane->position;
+	content_len = editor->pane->buffer->content.len;
+	content = editor->pane->buffer->content.data;
+	goto_position = 0;
+
+	sexp = content[start_position];
+	balanced_sexp = editor_find_balanced_sexp_forward(sexp);
+	if (balanced_sexp == 0) return;
+
+	for (size_t i = start_position + 1; i < content_len; ++i) {
+		if (content[i] == sexp) {
+			++sexps_matches_to_skip;
+		} else if (content[i] == balanced_sexp) {
+			--sexps_matches_to_skip;
+
+			if (sexps_matches_to_skip < 0) {
+				goto_position = i;
+				break;
+			}
+		}
+	}
+
+	if (goto_position > 0) {
+		editor_goto_point(editor, goto_position);
+	}
+}
+
+void editor_backward_sexp(Editor *editor)
+{
+	if (editor->state != NONE) return;
+
+	char *content;
+	char sexp, balanced_sexp;
+	size_t start_position, content_len, goto_position;
+
+	int sexps_matches_to_skip = 0;
+	start_position = editor->pane->position - 1;
+	content_len = editor->pane->buffer->content.len;
+	content = editor->pane->buffer->content.data;
+	goto_position = content_len;
+
+	sexp = content[start_position];
+	balanced_sexp = editor_find_balanced_sexp_backward(sexp);
+	if (balanced_sexp == 0) return;
+
+	for (size_t i = start_position - 1; i > 0; --i) {
+		if (content[i] == sexp) {
+			++sexps_matches_to_skip;
+		} else if (content[i] == balanced_sexp) {
+			--sexps_matches_to_skip;
+
+			if (sexps_matches_to_skip < 0) {
+				goto_position = i;
+				break;
+			}
+		}
+	}
+
+	if (goto_position < content_len) {
+		editor_goto_point(editor, goto_position + 1);
+	}
+}
+

@@ -19,6 +19,7 @@ Previous word .............. M-b    Next word .................... M-f
 Beggining of line .......... C-a    End of line .................. C-e
 Scroll up .................. C-v    Scroll down .................. M-v
 Beggining of buffer......... M-<    End of buffer ................ M->
+Sexp forward ............. C-M-f    Sexp backward .............. C-M-b
 ----------------------------------------------------------------------
 FILE COMMAND:
 Find file .................. C-o
