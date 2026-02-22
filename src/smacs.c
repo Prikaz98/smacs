@@ -265,10 +265,14 @@ bool ctrl_leader_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout)
 		editor_cut(&smacs->editor);
 		break;
 	case SDLK_EQUALS:
-		TTF_SetFontSize(smacs->font, ++smacs->font_size);
+		++smacs->font_size;
+		TTF_SetFontSize(smacs->font, smacs->font_size);
+		TTF_SetFontSize(smacs->fallback_font, smacs->font_size);
 		break;
 	case SDLK_MINUS:
-		TTF_SetFontSize(smacs->font, --smacs->font_size);
+		--smacs->font_size;
+		TTF_SetFontSize(smacs->font, smacs->font_size);
+		TTF_SetFontSize(smacs->fallback_font, smacs->font_size);
 		break;
 	case SDLK_X:
 		editor_user_extend_command(&smacs->editor);
