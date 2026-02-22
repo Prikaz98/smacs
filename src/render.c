@@ -11,29 +11,57 @@
 
 void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color)
 {
-	SDL_Texture *texture = NULL;
 	SDL_FRect rect = (SDL_FRect) {0.0, 0.0, 0.0, 0.0};
 	SDL_Surface *surface = NULL;
 
 	if (text == NULL) return;
 	if (text_len == 0) return;
 
-	surface = TTF_RenderText_Blended(smacs->font, text, text_len, foreground_color);
-	if (surface == NULL) {
-		fprintf(stderr, "Render text (x %d y %d txt: %s len: %ld) cause: %s\n", x, y, text, text_len, SDL_GetError());
-		exit(EXIT_FAILURE);
-	}
+	if (NULL == (surface = hashmap_get(&smacs->surface_by_string, text, text_len))) {
+		surface = TTF_RenderText_Blended(smacs->font, text, text_len, foreground_color);
+		if (surface == NULL) {
+			fprintf(stderr, "Render text (x %d y %d txt: %s len: %ld) cause: %s\n", x, y, text, text_len, SDL_GetError());
+			exit(EXIT_FAILURE);
+		}
 
-	texture = SDL_CreateTextureFromSurface(smacs->renderer, surface);
+		if (0 != hashmap_put(&smacs->surface_by_string, strndup(text, text_len), text_len, surface)) {
+			fprintf(stderr, "Could not put surface to the hashmap\n");
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	rect.x = x;
 	rect.y = y;
 	rect.w = surface->w;
 	rect.h = surface->h;
 
-	SDL_DestroySurface(surface);
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(smacs->renderer, surface);
 	SDL_RenderTexture(smacs->renderer, texture, NULL, &rect);
 	SDL_DestroyTexture(texture);
+}
+
+int render_free_texture_iterator(void* const context, struct hashmap_element_s* const e)
+{
+	hashmap_t *map = (hashmap_t*)context;
+	char *key = (char *)e->key;
+
+	SDL_Surface *surface = (SDL_Surface *) e->data;
+	SDL_DestroySurface(surface);
+	if (0 != hashmap_remove(map, key, e->key_len)) {
+		fprintf(stderr, "Could not remove key %s from hashmap\n", (char*) e->key);
+		exit(EXIT_FAILURE);
+	}
+	free(key);
+
+	return -1;
+}
+
+void render_clean_textures_cache(Smacs *smacs)
+{
+	if (0 != hashmap_iterate_pairs(&smacs->surface_by_string, render_free_texture_iterator, &smacs->surface_by_string)) {
+		fprintf(stderr, "Could not iterate through the hash map\n");
+		exit(EXIT_FAILURE);
+	}
 }
 
 void render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size_t home_dir_len)
@@ -329,7 +357,7 @@ void render_update_glyph(Smacs *smacs)
 			info->content_hight = 0;
 
 			if(data_len == 0) {
-				gb_append(glyph, ((GlyphItem) {0, 0, info->x, info->content_hight, smacs->char_w, smacs->char_h, TEXT | CURSOR, 0}));
+				gb_append(glyph, ((GlyphItem) {0, 0, text_indention, info->content_hight, smacs->char_w, smacs->char_h, TEXT | CURSOR, 0}));
 			} else {
 
 				assert(arena.start < arena_end);
@@ -513,12 +541,20 @@ void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t st
 		}
 
 		if (kind & CURSOR) {
+			//Char in the cursor usually has contrast color
+			hashmap_remove(&smacs->surface_by_string, string, string_len);
+
 			SDL_SetRenderDrawColor(smacs->renderer, smacs->cursor_foreground_color.r, smacs->cursor_foreground_color.g, smacs->cursor_foreground_color.b, smacs->cursor_foreground_color.a);
 			SDL_RenderFillRect(smacs->renderer, rect);
 			foreground_color = smacs->background_color;
 		}
 
 		render_draw_text(smacs, rect->x, rect->y, string, string_len, foreground_color);
+
+		if (kind & CURSOR) {
+			//TODO(ivan): maybe better to use some variable like "nocache" for cursor char
+			hashmap_remove(&smacs->surface_by_string, string, string_len);
+		}
 	} else if (kind & MODE_LINE) {
 		SDL_SetRenderDrawColor(smacs->renderer, smacs->background_color.r, smacs->background_color.g, smacs->background_color.b, smacs->background_color.a);
 		SDL_RenderFillRect(smacs->renderer, rect);
@@ -597,6 +633,9 @@ void render_destroy_smacs(Smacs *smacs)
 	TTF_CloseFont(smacs->font);
 	TTF_CloseFont(smacs->fallback_font);
 	sb_free(&RenderStringBuilder);
+	gb_free(&smacs->tokenize);
+	render_clean_textures_cache(smacs);
+	hashmap_destroy(&smacs->surface_by_string);
 }
 
 long render_find_position_by_xy(Smacs *smacs, int x, int y)

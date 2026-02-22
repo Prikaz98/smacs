@@ -5,21 +5,23 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include "editor.h"
 #include "tokenize.h"
+#include "hashmap.h"
 
 #define RENDER_NOTIFICATION_LEN 256
+#define SURFACE_HASHMAP_LIMIT   10000
 
 typedef enum {
-	TEXT			 = 0x001,
-	REGION		   = 0x002,
-	CURSOR		   = 0x004,
-	MODE_LINE		= 0x008,
+	TEXT = 0x001,
+	REGION = 0x002,
+	CURSOR = 0x004,
+	MODE_LINE = 0x008,
 	MODE_LINE_ACTIVE = 0x010,
-	MINI_BUFFER	  = 0x020,
-	LINE_NUMBER	  = 0x040,
-	LINE			 = 0x080,
-	NUMBER		   = 0x100,
-	STRING		   = 0x200,
-	COMMENT		  = 0x400,
+	MINI_BUFFER = 0x020,
+	LINE_NUMBER = 0x040,
+	LINE = 0x080,
+	NUMBER = 0x100,
+	STRING = 0x200,
+	COMMENT = 0x400,
 } GlyphItemEnum;
 
 typedef struct {
@@ -83,7 +85,8 @@ typedef struct {
 	GlyphList glyph;
 	Tokens tokenize;
 
-	int char_h; int char_w;
+	int char_h, char_w;
+	struct hashmap_s surface_by_string;
 } Smacs;
 
 void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color);
@@ -92,5 +95,6 @@ void render_destroy_smacs(Smacs *smacs);
 void render_update_glyph(Smacs *smacs);
 void render_glyph_show(Smacs *smacs);
 long render_find_position_by_xy(Smacs *smacs, int x, int y);
+void render_clean_textures_cache(Smacs *smacs);
 
 #endif

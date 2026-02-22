@@ -50,6 +50,7 @@ bool starts_withl(char *a, char *b, size_t b_len);
 uint32_t utf8_chars_to_int(char *str, int len);
 bool contains_ignore_case(char *a, size_t a_len, char *b, size_t b_len);
 char *strdup(const char *str);
+char *strndup(const char *str, size_t len);
 
 #ifdef OS_LINUX
 uint64_t rdtsc(void);

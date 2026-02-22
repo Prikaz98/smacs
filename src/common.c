@@ -120,6 +120,11 @@ uint32_t utf8_chars_to_int(char *str, int len) {
 char *strdup(const char *str)
 {
 	size_t len = strlen(str);
+	return strndup(str, len);
+}
+
+char *strndup(const char *str, size_t len)
+{
 	char *ds = calloc(len+1, sizeof(char));
 
 	memcpy(ds, str, len);

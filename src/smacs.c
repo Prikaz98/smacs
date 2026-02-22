@@ -62,6 +62,11 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 		return 1;
 	}
 
+	if (0 != hashmap_create(100, &smacs.surface_by_string)) {
+		fprintf(stderr, "Could not initialize texture map\n");
+		return 1;
+	}
+
 	SDL_StartTextInput(smacs.window);
 
 	bool quit = false;
@@ -177,6 +182,10 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 		} else {
 			memset(&smacs.notification[0], 0, RENDER_NOTIFICATION_LEN);
 		}
+
+		if (SURFACE_HASHMAP_LIMIT < hashmap_num_entries(&smacs.surface_by_string)) {
+			render_clean_textures_cache(&smacs);
+		}
 	}
 
 	render_destroy_smacs(&smacs);
@@ -241,6 +250,7 @@ bool ctrl_leader_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout)
 		break;
 	case SDLK_V:
 		editor_scroll_up(&smacs->editor);
+		render_clean_textures_cache(smacs);
 		break;
 	case SDLK_SPACE:
 		editor_set_mark(&smacs->editor);
@@ -323,6 +333,7 @@ bool alt_leader_mapping(Smacs *smacs, SDL_Event *event)
 		switch (event->key.key) {
 		case SDLK_V:
 			editor_scroll_down(&smacs->editor);
+			render_clean_textures_cache(smacs);
 			break;
 		case SDLK_W:
 			editor_copy_to_clipboard(&smacs->editor);
