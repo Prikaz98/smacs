@@ -278,11 +278,13 @@ bool ctrl_leader_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout)
 		++smacs->font_size;
 		TTF_SetFontSize(smacs->font, smacs->font_size);
 		TTF_SetFontSize(smacs->fallback_font, smacs->font_size);
+		render_clean_textures_cache(smacs);
 		break;
 	case SDLK_MINUS:
 		--smacs->font_size;
 		TTF_SetFontSize(smacs->font, smacs->font_size);
 		TTF_SetFontSize(smacs->fallback_font, smacs->font_size);
+		render_clean_textures_cache(smacs);
 		break;
 	case SDLK_X:
 		editor_user_extend_command(&smacs->editor);
