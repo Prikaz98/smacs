@@ -11,16 +11,18 @@
 
 const enum LineNumberFormat DISPLAY_LINE_FROMAT = HIDE;
 
-//TODO(ivan): next-line and previous line should work using ui model (x coordnate)
-//TODO(ivan): replace regexp
+//TODO(ivan): M-u without selection Upper since cursor until ending of the word
+//TODO(ivan): Mouse click should switch panes
+//TODO(ivan): Next-line and previous line should work using ui model (x coordnate)
+//TODO(ivan): Config file instead of touching params in smacs.h and Makefile
+//TODO(ivan): Replace regexp
 //TODO(ivan): Better undo/redo
-//TODO(ivan): Config file instead of touching params in smacs.c
 //TODO(ivan): M-& Emacs command
 //TODO(ivan): Multicursor
 
 void initial_hook(Smacs *smacs);
 
-int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
+int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *file_path)
 {
 	int win_w, win_h, message_timeout, win_w_per_pane;
 	register int i;
@@ -41,6 +43,17 @@ int smacs_launch(char *home_dir, char *ttf_path, char *file_path)
 	smacs.font = TTF_OpenFont(ttf_path, smacs.font_size);
 	if (smacs.font == NULL) {
 		fprintf(stderr, "Could not open ttf: %s\n", SDL_GetError());
+		return 1;
+	}
+
+	smacs.fallback_font = TTF_OpenFont(fallback_ttf_path, smacs.font_size);
+	if (smacs.fallback_font == NULL) {
+		fprintf(stderr, "Could not open fallback ttf: %s\n", SDL_GetError());
+		return 1;
+	}
+
+	if (!TTF_AddFallbackFont(smacs.font, smacs.fallback_font)) {
+		fprintf(stderr, "Could not open fallback ttf: %s\n", SDL_GetError());
 		return 1;
 	}
 

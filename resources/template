@@ -5,12 +5,13 @@
 #define HOME ""
 #define APP_DIR ""
 #define TTF ""
+#define FALLBACK_TTF ""
 #define HOMESCREEN "resources/homescreen"
 #define PATH_LEN 1024
 
 int main(int argc, char **argv)
 {
-    char ttf_path[PATH_LEN], file_path[PATH_LEN];
+    char ttf_path[PATH_LEN], fallback_ttf_path[PATH_LEN], file_path[PATH_LEN];
 
     if (argc == 2) {
         size_t len = strlen(argv[1]);
@@ -21,5 +22,6 @@ int main(int argc, char **argv)
     }
 
     snprintf(ttf_path, PATH_LEN, "%s/%s", APP_DIR, TTF);
-    return smacs_launch(HOME, ttf_path, file_path);
+    snprintf(fallback_ttf_path, PATH_LEN, "%s/%s", APP_DIR, FALLBACK_TTF);
+    return smacs_launch(HOME, ttf_path, fallback_ttf_path, file_path);
 }

@@ -56,6 +56,7 @@ typedef struct {
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	TTF_Font *font;
+	TTF_Font *fallback_font;
 	int font_size;
 
 	Editor editor;

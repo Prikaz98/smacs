@@ -8,6 +8,11 @@ Custom implementation of Emacs-like text editor.
 
 I like [Emacs](https://emacsdocs.org/) and I want to learn how this kind of app works internally.
 
+## Reasonable syntax highlighting
+Comments; Chars; String literals and number; That all what I need.
+
+Everything is highlighted, nothing is highlighted.
+
 ## Warning
 This app can not work correctly in Mac OS by some reason.
 

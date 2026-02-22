@@ -605,6 +605,7 @@ void render_destroy_smacs(Smacs *smacs)
 	SDL_DestroyWindow(smacs->window);
 	free(smacs->notification);
 	TTF_CloseFont(smacs->font);
+	TTF_CloseFont(smacs->fallback_font);
 	sb_free(&RenderStringBuilder);
 }
 

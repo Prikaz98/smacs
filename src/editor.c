@@ -1513,7 +1513,7 @@ char editor_find_balanced_sexp_backward(char ch)
 
 void editor_forward_sexp(Editor *editor)
 {
-	if (editor->state != NONE) return;
+	if (editor->state != NONE && editor->state != SELECTION) return;
 
 	char *content;
 	char sexp, balanced_sexp;
@@ -1549,7 +1549,7 @@ void editor_forward_sexp(Editor *editor)
 
 void editor_backward_sexp(Editor *editor)
 {
-	if (editor->state != NONE) return;
+	if (editor->state != NONE && editor->state != SELECTION) return;
 
 	char *content;
 	char sexp, balanced_sexp;
