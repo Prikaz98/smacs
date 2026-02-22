@@ -67,15 +67,12 @@ void sb_free(StringBuilder *sb)
 	sb->cap = 0;
 }
 
-bool starts_with(char *a, char *b)
+bool starts_withl(char *a, char *b, size_t b_len)
 {
-	size_t len;
-
-	len = strlen(b);
 	if (a == NULL || b == NULL) return false;
-	if (strlen(a) < len) return false;
+	if (strlen(a) < b_len) return false;
 
-	return strncmp(a, b, len) == 0;
+	return strncmp(a, b, b_len) == 0;
 }
 
 bool contains_ignore_case(char *a, size_t a_len, char *b, size_t b_len)

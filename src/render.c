@@ -9,8 +9,7 @@
 
 #define LINE_BUFFER_LEN 100
 
-void
-render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color)
+void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color)
 {
 	SDL_Texture *texture = NULL;
 	SDL_FRect rect = (SDL_FRect) {0.0, 0.0, 0.0, 0.0};
@@ -37,10 +36,9 @@ render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Co
 	SDL_DestroyTexture(texture);
 }
 
-void
-render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size_t home_dir_len)
+void render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size_t home_dir_len)
 {
-	if (starts_with(path, home_dir)) {
+	if (starts_withl(path, home_dir, home_dir_len)) {
 		sb_append(sb, '~');
 		sb_append_many(sb, &path[home_dir_len]);
 	} else {
@@ -48,8 +46,7 @@ render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size_t ho
 	}
 }
 
-int
-count_digits(size_t num)
+int count_digits(size_t num)
 {
 	long tmp;
 	int count;
@@ -69,21 +66,20 @@ count_digits(size_t num)
 	return count;
 }
 
-void
-render_format_line_number_padding(char *buffer, size_t buffer_len, size_t num)
+void render_format_line_number_padding(char *buffer, size_t buffer_len, size_t num)
 {
 	snprintf(buffer, LINE_BUFFER_LEN, "%*ld", (int)buffer_len, num);
 }
 
-void
-render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer_len, size_t num, size_t cursor_line_num)
+void render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer_len, size_t num, size_t cursor_line_num)
 {
 	switch (smacs->line_number_format) {
-	case HIDE: {
-	} break;
+	case HIDE:
+		break;
 	case ABSOLUTE: {
 		render_format_line_number_padding(buffer, buffer_len, num);
-	} break;
+		break;
+	}
 	case RELATIVE: {
 		if (cursor_line_num < num) {
 			render_format_line_number_padding(buffer, buffer_len, num - cursor_line_num);
@@ -92,27 +88,25 @@ render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer_len,
 		} else {
 			render_format_line_number_padding(buffer, buffer_len, cursor_line_num);
 		}
-	} break;
+		break;
+	}
 	}
 }
 
-void
-render_glyph_clean(GlyphList *glyph)
+void render_glyph_clean(GlyphList *glyph)
 {
 	gb_clean(&glyph->string_data);
 	gb_clean(glyph);
 }
 
-void
-render_destroy_glyph(GlyphList *glyph)
+void render_destroy_glyph(GlyphList *glyph)
 {
 	render_glyph_clean(glyph);
 	gb_free(&glyph->string_data);
 	gb_free(glyph);
 }
 
-void
-render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data, size_t *i)
+void render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data, size_t *i)
 {
 	size_t ci;
 	int char_len;
@@ -120,18 +114,17 @@ render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data, siz
 	ci = *i;
 
 	switch (data[ci]) {
-	case '\t': {
+	case '\t':
 		for (int tabs = 0; tabs < smacs->tab_size; ++tabs) sb_append(sb, ' ');
-	} break;
-	case '\n': {
-		//cursor is desapear if there is no value
-		//sb_append(sb, '');
-	} break;
+		break;
+	case '\n':
+		break;
 	default: {
 		char_len = utf8_size_char(data[ci]);
 		for (int i = 0; i < char_len; ++i) sb_append(sb, data[ci+i]);
 		ci += (char_len-1);
-	} break;
+		break;
+	}
 	}
 
 	*i = ci;
@@ -150,28 +143,28 @@ GlyphItem *render_flush_item_sb_and_move_x(Smacs *smacs, GlyphList *glyph, Strin
 
 		sb_append_manyl(&glyph->string_data, sb->data, sb->len);
 		gb_append(glyph, ((GlyphItem) {
-					string_pointer,
-					sb->len,
-					x,
-					y,
-					w,
-					h,
-					kind,
-					position}));
+					.beg = string_pointer,
+					.len = sb->len,
+					.x = x,
+					.y = y,
+					.w = w,
+					.h = h,
+					.kind = kind,
+					position = position}));
 
 		sb_clean(sb);
 		x += w;
 		new_item = &glyph->data[glyph->len-1];
 	} else if (kind & CURSOR) {
 		gb_append(glyph, ((GlyphItem) {
-					string_pointer,
-					0,
-					x,
-					y,
-					smacs->char_w,
-					smacs->char_h,
-					kind,
-					position}));
+					.beg = string_pointer,
+					.len = 0,
+					.x = x,
+					.y = y,
+					.w = smacs->char_w,
+					.h = smacs->char_h,
+					.kind = kind,
+					.position = position}));
 		x += smacs->char_w;
 		new_item = &glyph->data[glyph->len-1];
 	}
@@ -272,8 +265,7 @@ void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, Str
 
 static StringBuilder RenderStringBuilder = {0};
 
-void
-render_update_glyph(Smacs *smacs)
+void render_update_glyph(Smacs *smacs)
 {
 	Arena arena;
 	Line *lines;
@@ -499,8 +491,7 @@ render_update_glyph(Smacs *smacs)
 	}
 }
 
-void
-render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t string_len, SDL_FRect *rect)
+void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t string_len, SDL_FRect *rect)
 {
 	SDL_Color foreground_color;
 
@@ -548,8 +539,7 @@ render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t string_
 	}
 }
 
-void
-render_glyph_show(Smacs *smacs)
+void render_glyph_show(Smacs *smacs)
 {
 	GlyphItem *item, *prev_item;
 	SDL_FRect rect;

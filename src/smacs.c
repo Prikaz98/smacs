@@ -389,27 +389,27 @@ bool extend_command_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout
 		data = smacs->editor.user_input.data;
 		data_len = strlen(data);
 
-		if (starts_with(data, "bk") && data_len > 2) {
+		if (starts_withl(data, "bk", 2) && data_len > 2) {
 			editor_kill_buffer(&smacs->editor, (size_t) atoi(&data[2]), smacs->notification, RENDER_NOTIFICATION_LEN);
 			*message_timeout = MESSAGE_TIMEOUT;
-		} else if (starts_with(data, "sp")) {
+		} else if (starts_withl(data, "sp", 2)) {
 			if (smacs->editor.panes_len < PANES_MAX_SIZE) {
 				editor_split_pane(&smacs->editor);
 			} else {
 				snprintf(smacs->notification, RENDER_NOTIFICATION_LEN, "Can not create more than %d panes", PANES_MAX_SIZE);
 				*message_timeout = MESSAGE_TIMEOUT;
 			}
-		} else if (starts_with(data, "n") && data_len > 1) {
+		} else if (starts_withl(data, "n", 1) && data_len > 1) {
 			editor_goto_line_forward(&smacs->editor, (size_t) atoi(&data[1]));
-		} else if (starts_with(data, "p") && data_len > 1) {
+		} else if (starts_withl(data, "p", 1) && data_len > 1) {
 			editor_goto_line_backward(&smacs->editor, (size_t) atoi(&data[1]));
-		} else if (starts_with(data, ":") && data_len > 1) {
+		} else if (starts_withl(data, ":", 1) && data_len > 1) {
 			editor_goto_line(&smacs->editor, (size_t) atoi(&data[1]));
-		} else if (starts_with(data, "dlrel")) {
+		} else if (starts_withl(data, "dlrel", 5)) {
 			smacs->line_number_format = RELATIVE;
-		} else if (starts_with(data, "dlabs")) {
+		} else if (starts_withl(data, "dlabs", 5)) {
 			smacs->line_number_format = ABSOLUTE;
-		} else if (starts_with(data, "dlnon")) {
+		} else if (starts_withl(data, "dlnon", 5)) {
 			smacs->line_number_format = HIDE;
 		} else {
 			//fprintf(stderr, "Unknown cmd %s\n", smacs->editor.user_input.data);

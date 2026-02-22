@@ -21,29 +21,29 @@ void sb_free(StringBuilder *sb);
 
 void *gb_append_(void *data, size_t *pcap, size_t size);
 
-#define gb_append(gb, elem)												   \
-	*((gb)->len == (gb)->cap												  \
+#define gb_append(gb, elem) \
+	*((gb)->len == (gb)->cap \
 	  ? (gb)->data = gb_append_((gb)->data, &(gb)->cap, sizeof(*(gb)->data)), \
-		(gb)->data + (gb)->len++											  \
+		(gb)->data + (gb)->len++ \
 	  : (gb)->data + (gb)->len++) = elem
 
-#define gb_free(gb)		\
-	do {				   \
-		free((gb)->data);  \
-		(gb)->len = 0;	 \
-		(gb)->cap = 0;	 \
+#define gb_free(gb) \
+	do { \
+		free((gb)->data); \
+		(gb)->len = 0; \
+		(gb)->cap = 0; \
 	} while (0)
 
-#define gb_clean(gb)												 \
-	do {															 \
-		(gb)->len = 0;											   \
+#define gb_clean(gb) \
+	do { \
+		(gb)->len = 0; \
 		if ((gb)->cap) memset(&(gb)->data[(gb)->len], 0, (gb)->cap); \
 	} while (0)
 
 /**
  * a starts_with b
  */
-bool starts_with(char *a, char *b);
+bool starts_withl(char *a, char *b, size_t b_len);
 /**
  * cast utf8 char sequence to an interger value
  */
