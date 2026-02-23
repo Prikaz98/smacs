@@ -42,23 +42,18 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, S
 
 int render_free_texture_iterator(void* const context, struct hashmap_element_s* const e)
 {
-	hashmap_t *map = (hashmap_t*)context;
 	char *key = (char *)e->key;
 
 	SDL_Surface *surface = (SDL_Surface *) e->data;
 	SDL_DestroySurface(surface);
-	if (0 != hashmap_remove(map, key, e->key_len)) {
-		fprintf(stderr, "Could not remove key %s from hashmap\n", (char*) e->key);
-		exit(EXIT_FAILURE);
-	}
 	free(key);
-
+	//-1 allowes remove element from the hashmap automatically
 	return -1;
 }
 
 void render_clean_textures_cache(Smacs *smacs)
 {
-	if (0 != hashmap_iterate_pairs(&smacs->surface_by_string, render_free_texture_iterator, &smacs->surface_by_string)) {
+	if (0 != hashmap_iterate_pairs(&smacs->surface_by_string, render_free_texture_iterator, NULL)) {
 		fprintf(stderr, "Could not iterate through the hash map\n");
 		exit(EXIT_FAILURE);
 	}
