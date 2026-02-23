@@ -8,7 +8,7 @@
 #include "hashmap.h"
 
 #define RENDER_NOTIFICATION_LEN 256
-#define SURFACE_HASHMAP_LIMIT   10000
+#define SURFACE_HASHMAP_LIMIT   1000000
 
 typedef enum {
 	TEXT = 0x001,

@@ -14,8 +14,7 @@
 #include "utf8.h"
 #include "common.h"
 
-void
-append_char(Content *content, char ch, size_t pos)
+void append_char(Content *content, char ch, size_t pos)
 {
 	Content cont;
 
@@ -45,8 +44,7 @@ append_char(Content *content, char ch, size_t pos)
 	*content = cont;
 }
 
-void
-editor_goto_point(Editor *editor, size_t pos)
+void editor_goto_point(Editor *editor, size_t pos)
 {
 	size_t max_len;
 
@@ -57,20 +55,17 @@ editor_goto_point(Editor *editor, size_t pos)
 	editor_recognize_arena(editor);
 }
 
-size_t
-editor_reg_beg(Editor *editor)
+size_t editor_reg_beg(Editor *editor)
 {
 	return MIN(editor->mark, editor->pane->position);
 }
 
-size_t
-editor_reg_end(Editor *editor)
+size_t editor_reg_end(Editor *editor)
 {
 	return MIN(editor->pane->buffer->content.len, MAX(editor->mark, editor->pane->position));
 }
 
-void
-editor_store_event(Editor *editor, char *str, size_t len, ChangeEventType event_type)
+void editor_store_event(Editor *editor, char *str, size_t len, ChangeEventType event_type)
 {
 	ChangeEvent *curr_event;
 
@@ -88,8 +83,7 @@ editor_store_event(Editor *editor, char *str, size_t len, ChangeEventType event_
 	}
 }
 
-void
-editor_delete_forward_len(Editor *editor, size_t delete_len)
+void editor_delete_forward_len(Editor *editor, size_t delete_len)
 {
 	Content *content;
 	content = &editor->pane->buffer->content;
@@ -103,8 +97,7 @@ editor_delete_forward_len(Editor *editor, size_t delete_len)
 	content->len -= delete_len;
 }
 
-void
-editor_delete_backward(Editor *editor)
+void editor_delete_backward(Editor *editor)
 {
 	Content *content;
 	size_t reg_beg, reg_end, delete_len;
@@ -137,8 +130,7 @@ editor_delete_backward(Editor *editor)
 	editor->pane->buffer->need_to_save = true;
 }
 
-void
-editor_delete_forward(Editor *editor)
+void editor_delete_forward(Editor *editor)
 {
 	int8_t char_len;
 
@@ -155,8 +147,7 @@ editor_delete_forward(Editor *editor)
 	editor->pane->buffer->need_to_save = true;
 }
 
-void
-editor_insert(Editor *editor, char *str)
+void editor_insert(Editor *editor, char *str)
 {
 	Buffer *buf = editor->pane->buffer;
 	register size_t i;
@@ -186,8 +177,7 @@ editor_insert(Editor *editor, char *str)
 	editor->state = NONE;
 }
 
-size_t
-editor_get_current_line_number(Pane *pane)
+size_t editor_get_current_line_number(Pane *pane)
 {
 	register size_t i;
 	Line *line;
@@ -1063,13 +1053,12 @@ void editor_close_pane(Editor *editor)
 void editor_upper_region(Editor *editor)
 {
 	Content *content;
-	size_t reg_beg, reg_end;
 	register size_t i;
 
 	if (editor->state != SELECTION) return;
 
-	reg_beg = editor_reg_beg(editor);
-	reg_end = editor_reg_end(editor);
+	size_t reg_beg = editor_reg_beg(editor);
+	size_t reg_end = editor_reg_end(editor);
 	content = &editor->pane->buffer->content;
 
 	for (i = reg_beg; i < reg_end; ++i) {
@@ -1083,9 +1072,13 @@ void editor_upper(Editor *editor)
 {
 	if (editor->state == SELECTION) {
 		editor_upper_region(editor);
+	} else if (editor->state == NONE) {
+		editor_set_mark(editor);
+		editor_word_forward(editor);
+		editor_upper_region(editor);
+		editor->state = NONE;
 	}
 }
-
 
 void editor_lower_region(Editor *editor)
 {
@@ -1123,6 +1116,11 @@ void editor_lower(Editor *editor)
 {
 	if (editor->state == SELECTION) {
 		editor_lower_region(editor);
+	} else if (editor->state == NONE) {
+		editor_set_mark(editor);
+		editor_word_forward(editor);
+		editor_lower_region(editor);
+		editor->state = NONE;
 	}
 }
 
