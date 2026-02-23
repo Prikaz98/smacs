@@ -370,8 +370,10 @@ void render_update_glyph(Smacs *smacs)
 				info->text_indention = text_indention;
 				info->pane_width_threashold = pane_width_threashold;
 				if (pane->buffer->file_path_len > 2) {
-					if (strncmp(&pane->buffer->file_path[pane->buffer->file_path_len-2], ".c", 2) == 0 ||
-						strncmp(&pane->buffer->file_path[pane->buffer->file_path_len-2], ".h", 2) == 0) {
+					if (0 == strncmp(&pane->buffer->file_path[pane->buffer->file_path_len-2], ".c", 2) ||
+						0 == strncmp(&pane->buffer->file_path[pane->buffer->file_path_len-2], ".h", 2) ||
+						0 == strncmp(&pane->buffer->file_path[pane->buffer->file_path_len-6], ".scala", 6) ||
+						0 == strncmp(&pane->buffer->file_path[pane->buffer->file_path_len-5], ".java", 5)) {
 						info->c_like_file = true;
 						tokenize(&smacs->tokenize, &data[info->arena_start_point], lines[arena_end-1].end + 1);
 					}

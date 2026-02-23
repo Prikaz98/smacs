@@ -1474,6 +1474,8 @@ void editor_forward_sexp(Editor *editor)
 
 	if (goto_position > 0) {
 		editor_goto_point(editor, goto_position);
+	} else {
+		editor_word_forward(editor);
 	}
 }
 
@@ -1510,5 +1512,7 @@ void editor_backward_sexp(Editor *editor)
 
 	if (goto_position < content_len) {
 		editor_goto_point(editor, goto_position + 1);
+	} else {
+		editor_word_backward(editor);
 	}
 }

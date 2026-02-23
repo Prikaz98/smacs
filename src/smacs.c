@@ -11,7 +11,6 @@
 
 const enum LineNumberFormat DISPLAY_LINE_FROMAT = HIDE;
 
-//TODO(ivan): M-u without selection Upper since cursor until ending of the word
 //TODO(ivan): Mouse click should switch panes
 //TODO(ivan): Next-line and previous line should work using ui model (x coordnate)
 //TODO(ivan): Config file instead of touching params in smacs.h and Makefile
