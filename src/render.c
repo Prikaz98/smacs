@@ -129,12 +129,9 @@ void render_destroy_glyph(GlyphList *glyph)
 	gb_free(glyph);
 }
 
-void render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data, size_t *i)
+void render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data, size_t *index)
 {
-	size_t ci;
-	int char_len;
-
-	ci = *i;
+	size_t ci = *index;
 
 	switch (data[ci]) {
 	case '\t':
@@ -143,14 +140,21 @@ void render_append_char_to_rendering(Smacs *smacs, StringBuilder *sb, char *data
 	case '\n':
 		break;
 	default: {
-		char_len = utf8_size_char(data[ci]);
+		int char_len = utf8_size_char(data[ci]);
 		for (int i = 0; i < char_len; ++i) sb_append(sb, data[ci+i]);
 		ci += (char_len-1);
 		break;
 	}
 	}
 
-	*i = ci;
+	*index = ci;
+}
+
+void render_append_char_to_rendering_many(Smacs *smacs, StringBuilder *sb, char *data, size_t data_len)
+{
+	for (size_t i = 0; i < data_len; ++i) {
+		render_append_char_to_rendering(smacs, sb, data, &i);
+	}
 }
 
 GlyphItem *render_flush_item_sb_and_move_x(Smacs *smacs, GlyphList *glyph, StringBuilder *sb, int *x_, int y, GlyphItemEnum kind, long position)
@@ -212,10 +216,9 @@ typedef struct {
 
 void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, StringBuilder *sb, GlyphList *glyph)
 {
-	size_t data_index;
 	GlyphItemEnum kind = TEXT;
 
-	for (data_index = line->start; data_index <= line->end; ++data_index) {
+	for (size_t data_index = line->start; data_index <= line->end; ++data_index) {
 		if (info->selection && (data_index >= info->region_beg)) {
 			kind = kind | REGION;
 		}
@@ -455,14 +458,10 @@ void render_update_glyph(Smacs *smacs)
 
 	if (mini_buffer_is_active)
 	{
-		size_t home_dir_len, completion_delimiter_len;
 		int completion_w, padding, complition_width_limit;
-		char *completion_delimiter, *parens;
+		char *parens;
 
-		completion_delimiter = " | ";
-		completion_delimiter_len = strlen(completion_delimiter);
-
-		home_dir_len = strlen(smacs->home_dir);
+		size_t home_dir_len = strlen(smacs->home_dir);
 		padding = smacs->char_w;
 		complition_width_limit = win_w - smacs->char_w*10;
 
@@ -475,7 +474,7 @@ void render_update_glyph(Smacs *smacs)
 				}
 
 				if (smacs->editor.user_input.len > 0) {
-					sb_append_manyl(sb, smacs->editor.user_input.data, smacs->editor.user_input.len);
+					render_append_char_to_rendering_many(smacs, sb, smacs->editor.user_input.data, smacs->editor.user_input.len);
 				}
 
 				parens = "{}";
@@ -488,13 +487,13 @@ void render_update_glyph(Smacs *smacs)
 					render_append_file_path(sb, smacs->editor.completor.filtered.data[i], smacs->home_dir, home_dir_len);
 
 					if (i < (smacs->editor.completor.filtered.len-1)) {
-						sb_append_manyl(sb, completion_delimiter, completion_delimiter_len);
+						sb_append_manyl(sb, COMPLETION_DELIMITER, COMPLETION_DELIMITER_LEN);
 					}
 
 					TTF_GetStringSize(smacs->font, sb->data, sb->len, &completion_w, NULL);
 
 					if (completion_w >= complition_width_limit) {
-						sb->len = sb->len - strlen(smacs->editor.completor.filtered.data[i]) - strlen(completion_delimiter);
+						sb->len = sb->len - strlen(smacs->editor.completor.filtered.data[i]) - COMPLETION_DELIMITER_LEN;
 						memset(&sb->data[sb->len], 0, sb->cap - sb->len);
 						sb_append_many(sb, "...");
 						break;
@@ -505,7 +504,7 @@ void render_update_glyph(Smacs *smacs)
 				render_flush_item_sb_and_move_x(smacs, glyph, sb, &padding, win_h - smacs->char_h, MINI_BUFFER, -1);
 			} else {
 				if (smacs->editor.user_input.len > 0) {
-					sb_append_manyl(sb, smacs->editor.user_input.data, smacs->editor.user_input.len);
+					render_append_char_to_rendering_many(smacs, sb, smacs->editor.user_input.data, smacs->editor.user_input.len);
 					render_flush_item_sb_and_move_x(smacs, glyph, sb, &padding, win_h - smacs->char_h, MINI_BUFFER, -1);
 				}
 			}

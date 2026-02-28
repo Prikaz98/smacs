@@ -1186,34 +1186,32 @@ bool editor_buffer_switch_complete(Editor *editor)
 
 void editor_set_dir_by_current_file(Editor *editor)
 {
-	register long i;
-	char *fp;
-	size_t fp_len;
-
 	if (strlen(editor->dir) == 0) {
 		getcwd(editor->dir, 1024);
 		return;
 	}
 
-	fp = editor->pane->buffer->file_path;
-	fp_len = strlen(fp);
+	char *fp = editor->pane->buffer->file_path;
+	size_t fp_len = strlen(fp);
 
-	for (i = (long)fp_len-1; i >= 0; --i) {
+	for (long i = (long)fp_len-1; i >= 0; --i) {
 		if (fp[i] == '/') {
 			memcpy(editor->dir, fp, i);
 			editor->dir[i] = '\0';
 			break;
 		}
 	}
-
 }
 
+#define DIRECTORY_NAME_SIZE 1024
+#define DIRECTORY_FILE_PATH_SIZE (1024 * 2)
 void editor_find_file(Editor *editor, bool refresh_dir)
 {
 	DIR *dp;
 	struct dirent *ep;
 	bool should_add;
-
+	char directory_name[DIRECTORY_NAME_SIZE] = {0};
+	char directory_file_path[DIRECTORY_FILE_PATH_SIZE] = {0};
 	if (refresh_dir) editor_set_dir_by_current_file(editor);
 
 	dp = opendir(editor->dir);
@@ -1234,7 +1232,16 @@ void editor_find_file(Editor *editor, bool refresh_dir)
 		if (strncmp(ep->d_name, EDITOR_DIR_PREV, EDITOR_DIR_PREV_LEN) == 0) should_add = false;
 
 		if (should_add) {
-			gb_append(&(editor->completor), strdup(ep->d_name));
+			snprintf(directory_file_path,
+				 DIRECTORY_FILE_PATH_SIZE,
+				 "%s/%s", editor->dir, ep->d_name);
+
+			snprintf(directory_name,
+				DIRECTORY_NAME_SIZE,
+				"%s%c", ep->d_name,
+				editor_is_directory(directory_file_path) ? '/' : 0);
+
+			gb_append(&(editor->completor), strdup(directory_name));
 		}
 	}
 
@@ -1246,20 +1253,20 @@ int editor_is_directory(const char *path)
 {
 	struct stat path_stat;
 	stat(path, &path_stat);
-	return S_ISDIR(path_stat.st_mode);
+	bool is_directory = S_ISDIR(path_stat.st_mode);
+	return is_directory;
 }
 
 bool editor_find_file_complete(Editor *editor)
 {
-	char *file_path;
 	size_t dir_len;
 	long dir_i;
-	StringBuilder *full_path;
 	bool file_is_dir;
 
-	file_path = editor->completor.filtered.len == 0 ? editor->user_input.data : editor->completor.filtered.data[0];
+	char *file_name = editor->completor.filtered.len == 0 ? editor->user_input.data : editor->completor.filtered.data[0];
+	size_t file_name_len = strlen(file_name);
 
-	if (strncmp(file_path, EDITOR_DIR_PREV, EDITOR_DIR_PREV_LEN) == 0) {
+	if (0 == strncmp(file_name, EDITOR_DIR_PREV, EDITOR_DIR_PREV_LEN)) {
 		dir_len =  strlen(editor->dir);
 		dir_i = (long) dir_len;
 
@@ -1277,30 +1284,32 @@ bool editor_find_file_complete(Editor *editor)
 		return true;
 	}
 
-	full_path = (&(StringBuilder){0});
-	sb_append_many(full_path, editor->dir);
-	sb_append(full_path, EDITOR_DIR_SLASH);
-	sb_append_many(full_path, file_path);
+	if (file_name_len > 0 && file_name[file_name_len - 1] == '/') {
+		file_name[file_name_len - 1] = '\0';
+	}
 
-	if (access(full_path->data, F_OK) != 0) {
-		fprintf(stderr, "File %s not found\n", full_path->data);
+	char full_path[1024] = {0};
+	size_t full_path_len = snprintf(full_path, 1024, "%s/%s", editor->dir, file_name);
+
+	if (0 != access(full_path, F_OK)) {
+		fprintf(stderr, "File %s not found\n", full_path);
 		return false;
 	}
 
 	file_is_dir = false;
-	if (editor_is_directory(full_path->data)) file_is_dir = true;
+	if (editor_is_directory(full_path)) file_is_dir = true;
 	if (editor->completor.filtered.len == 0) file_is_dir = false;
 
 	if (file_is_dir) {
-		memcpy(&editor->dir[0], full_path->data, full_path->len);
-		editor->dir[full_path->len] = '\0';
+		memcpy(&editor->dir[0], full_path, full_path_len);
+		editor->dir[full_path_len] = 0;
+		editor->dir_len = full_path_len;
 		editor_find_file(editor, false);
 	} else {
-		editor_read_file(editor, full_path->data);
+		editor_read_file(editor, full_path);
 		editor->state = NONE;
 	}
 
-	sb_free(full_path);
 	return true;
 }
 

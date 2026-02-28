@@ -122,7 +122,9 @@ typedef struct {
 	BufferList buffer_list;
 
 	Completor completor;
+
 	char dir[1024];
+	size_t dir_len;
 } Editor;
 
 #define EDITOR_CONTENT_CAP 256
@@ -224,4 +226,6 @@ void editor_new_line(Editor *editor);
 void editor_undo(Editor *editor);
 bool editor_is_mini_buffer_active(Editor *editor);
 size_t editor_cleanup_whitespaces(char *data, size_t data_len);
+int editor_is_directory(const char *path);
+
 #endif

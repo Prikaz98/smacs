@@ -11,6 +11,7 @@
 
 const enum LineNumberFormat DISPLAY_LINE_FROMAT = HIDE;
 
+//TODO(ivan): Directories should appear with slash in minibuffer
 //TODO(ivan): Mouse click should switch panes
 //TODO(ivan): Next-line and previous line should work using ui model (x coordnate)
 //TODO(ivan): Config file instead of touching params in smacs.h and Makefile
@@ -71,10 +72,10 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 	bool quit = false;
 	message_timeout = 0;
 
-	//themes_naysayer(&smacs);
+	themes_naysayer(&smacs);
 	//themes_mindre(&smacs);
 	//themes_acme(&smacs);
-	themes_jblow_nastalgia(&smacs);
+	//themes_jblow_nastalgia(&smacs);
 
 	smacs.line_number_format = DISPLAY_LINE_FROMAT;
 	smacs.home_dir = home_dir;
@@ -249,7 +250,6 @@ bool ctrl_leader_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout)
 		break;
 	case SDLK_V:
 		editor_scroll_up(&smacs->editor);
-		render_clean_textures_cache(smacs);
 		break;
 	case SDLK_SPACE:
 		editor_set_mark(&smacs->editor);
@@ -304,7 +304,8 @@ bool ctrl_leader_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout)
 		}
 		break;
 	case SDLK_SLASH:
-		editor_undo(&smacs->editor);
+		//fixme(ivan): disabled because it perform more damage then profit
+		//editor_undo(&smacs->editor);
 		break;
 	}
 
@@ -334,7 +335,6 @@ bool alt_leader_mapping(Smacs *smacs, SDL_Event *event)
 		switch (event->key.key) {
 		case SDLK_V:
 			editor_scroll_down(&smacs->editor);
-			render_clean_textures_cache(smacs);
 			break;
 		case SDLK_W:
 			editor_copy_to_clipboard(&smacs->editor);

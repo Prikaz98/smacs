@@ -32,7 +32,7 @@ themes_mindre(Smacs *smacs)
 	smacs->number_foreground_color = smacs->foreground_color;
 	smacs->type_foreground_color = smacs->foreground_color;
 	smacs->string_foreground_color = themes_as_color(0x54433A);
-	smacs->comment_foreground_color = themes_as_color(0xB0BEC5);
+	smacs->comment_foreground_color = themes_as_color(0x585C60);
 }
 
 void
