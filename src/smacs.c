@@ -72,10 +72,10 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 	bool quit = false;
 	message_timeout = 0;
 
-	themes_naysayer(&smacs);
+	//themes_naysayer(&smacs);
 	//themes_mindre(&smacs);
 	//themes_acme(&smacs);
-	//themes_jblow_nastalgia(&smacs);
+	themes_jblow_nastalgia(&smacs);
 
 	smacs.line_number_format = DISPLAY_LINE_FROMAT;
 	smacs.home_dir = home_dir;
@@ -274,13 +274,13 @@ bool ctrl_leader_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout)
 		editor_cut(&smacs->editor);
 		break;
 	case SDLK_EQUALS:
-		++smacs->font_size;
+		smacs->font_size += 2;
 		TTF_SetFontSize(smacs->font, smacs->font_size);
 		TTF_SetFontSize(smacs->fallback_font, smacs->font_size);
 		render_clean_textures_cache(smacs);
 		break;
 	case SDLK_MINUS:
-		--smacs->font_size;
+		smacs->font_size -= 2;
 		TTF_SetFontSize(smacs->font, smacs->font_size);
 		TTF_SetFontSize(smacs->fallback_font, smacs->font_size);
 		render_clean_textures_cache(smacs);
