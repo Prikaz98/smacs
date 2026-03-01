@@ -106,9 +106,9 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 
 		switch (event.type) {
 		case SDL_EVENT_TEXT_INPUT: {
-#ifdef OS_LINUX
-			if ((event.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT))) continue;
-#endif
+			if (SDL_GetModState() & (SDL_KMOD_CTRL | SDL_KMOD_ALT)) {
+				break;
+			}
 			if (mini_buffer_event_handle(&smacs, &event)) break;
 			if (completion_event_handle(&smacs, &event)) break;
 
@@ -399,7 +399,11 @@ bool extend_command_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout
 		//TODO: need to simplify this shit
 
 		data = smacs->editor.user_input.data;
-		data_len = strlen(data);
+		if (data != NULL) {
+			data_len = strlen(data);
+		} else {
+			data_len = 0;
+		}
 
 		if (starts_withl(data, "bk", 2) && data_len > 2) {
 			editor_kill_buffer(&smacs->editor, (size_t) atoi(&data[2]), smacs->notification, RENDER_NOTIFICATION_LEN);
