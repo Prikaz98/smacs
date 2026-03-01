@@ -72,10 +72,10 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 	bool quit = false;
 	message_timeout = 0;
 
-	//themes_naysayer(&smacs);
+	themes_naysayer(&smacs);
 	//themes_mindre(&smacs);
 	//themes_acme(&smacs);
-	themes_jblow_nastalgia(&smacs);
+	//themes_jblow_nastalgia(&smacs);
 
 	smacs.line_number_format = DISPLAY_LINE_FROMAT;
 	smacs.home_dir = home_dir;
@@ -390,7 +390,7 @@ bool extend_command_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout
 	case SDLK_BACKSPACE:
 		editor_user_input_delete_backward(&smacs->editor);
 		break;
-	case SDLK_RETURN:
+	case SDLK_RETURN: {
 		char *data = smacs->editor.user_input.data;
 		size_t data_len = data == NULL ? 0 : strlen(data);
 
@@ -423,6 +423,7 @@ bool extend_command_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout
 
 		editor_user_input_clear(&smacs->editor);
 		break;
+	}
 	}
 
 	return true;

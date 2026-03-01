@@ -1203,8 +1203,8 @@ void editor_set_dir_by_current_file(Editor *editor)
 	}
 }
 
-#define DIRECTORY_NAME_SIZE 1024
-#define DIRECTORY_FILE_PATH_SIZE (1024 * 2)
+#define DIRECTORY_NAME_SIZE 256
+#define DIRECTORY_FILE_PATH_SIZE (DIRECTORY_NAME_SIZE * 10)
 void editor_find_file(Editor *editor, bool refresh_dir)
 {
 	DIR *dp;
@@ -1228,8 +1228,8 @@ void editor_find_file(Editor *editor, bool refresh_dir)
 
 	while ((ep = readdir(dp)) != NULL) {
 		should_add = true;
-		if (strncmp(ep->d_name, EDITOR_DIR_CUR, EDITOR_DIR_CUR_LEN) == 0) should_add = false;
-		if (strncmp(ep->d_name, EDITOR_DIR_PREV, EDITOR_DIR_PREV_LEN) == 0) should_add = false;
+		if (0 == strncmp(ep->d_name, EDITOR_DIR_CUR, DIRECTORY_NAME_SIZE)) should_add = false;
+		if (0 == strncmp(ep->d_name, EDITOR_DIR_PREV, DIRECTORY_NAME_SIZE)) should_add = false;
 
 		if (should_add) {
 			snprintf(directory_file_path,
@@ -1237,7 +1237,7 @@ void editor_find_file(Editor *editor, bool refresh_dir)
 				 "%s/%s", editor->dir, ep->d_name);
 
 			snprintf(directory_name,
-				DIRECTORY_NAME_SIZE,
+				DIRECTORY_NAME_SIZE + 1,
 				"%s%c", ep->d_name,
 				editor_is_directory(directory_file_path) ? '/' : 0);
 
