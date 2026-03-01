@@ -106,9 +106,7 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 
 		switch (event.type) {
 		case SDL_EVENT_TEXT_INPUT: {
-			if (SDL_GetModState() & (SDL_KMOD_CTRL | SDL_KMOD_ALT)) {
-				break;
-			}
+			if (SDL_GetModState() & (SDL_KMOD_CTRL | SDL_KMOD_ALT)) break;
 			if (mini_buffer_event_handle(&smacs, &event)) break;
 			if (completion_event_handle(&smacs, &event)) break;
 
@@ -375,9 +373,6 @@ bool alt_leader_mapping(Smacs *smacs, SDL_Event *event)
 
 bool extend_command_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout)
 {
-	size_t data_len;
-	char *data;
-
 	if ((smacs->editor.state & EXTEND_COMMAND) == 0) return false;
 
 	if (event->key.mod & SDL_KMOD_CTRL) {
@@ -396,15 +391,10 @@ bool extend_command_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout
 		editor_user_input_delete_backward(&smacs->editor);
 		break;
 	case SDLK_RETURN:
+		char *data = smacs->editor.user_input.data;
+		size_t data_len = data == NULL ? 0 : strlen(data);
+
 		//TODO: need to simplify this shit
-
-		data = smacs->editor.user_input.data;
-		if (data != NULL) {
-			data_len = strlen(data);
-		} else {
-			data_len = 0;
-		}
-
 		if (starts_withl(data, "bk", 2) && data_len > 2) {
 			editor_kill_buffer(&smacs->editor, (size_t) atoi(&data[2]), smacs->notification, RENDER_NOTIFICATION_LEN);
 			*message_timeout = MESSAGE_TIMEOUT;
