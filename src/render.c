@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <sys/param.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "common.h"
 #include "tokenize.h"
@@ -71,15 +72,10 @@ void render_append_file_path(StringBuilder *sb, char *path, char *home_dir, size
 
 int count_digits(size_t num)
 {
-	long tmp;
-	int count;
+	if (num == 0) return 1;
 
-	if (num == 0) {
-		return 1;
-	}
-
-	count = 0;
-	tmp = (long) num;
+	int count = 0;
+	long tmp = (long) num;
 
 	while (tmp > 0) {
 		tmp = tmp / 10;
@@ -101,8 +97,7 @@ void render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer
 		break;
 	case ABSOLUTE: {
 		render_format_line_number_padding(buffer, buffer_len, num);
-		break;
-	}
+	} break;
 	case RELATIVE: {
 		if (cursor_line_num < num) {
 			render_format_line_number_padding(buffer, buffer_len, num - cursor_line_num);
@@ -111,8 +106,7 @@ void render_format_display_line_number(Smacs *smacs, char *buffer, size_t buffer
 		} else {
 			render_format_line_number_padding(buffer, buffer_len, cursor_line_num);
 		}
-		break;
-	}
+	} break;
 	}
 }
 
@@ -259,8 +253,19 @@ void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, Str
 
 
 		if (info->x >= info->pane_width_threashold) {
+			for (data_index -= utf8_size_char_backward(info->data, data_index - 1);
+			     data_index > line->start;
+			     data_index -= utf8_size_char_backward(info->data, data_index - 1)) {
+				if (isspace(info->data[data_index])) {
+					break;
+				}
+				--glyph->len;
+			}
+
 			info->content_hight += (smacs->char_h + smacs->leading);
 			info->x = info->text_indention;
+			//It need to force redrowing everything in a new line
+			continue;
 		}
 
 		if (data_index < info->data_len) {
