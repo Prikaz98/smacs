@@ -1203,7 +1203,7 @@ void editor_set_dir_by_current_file(Editor *editor)
 	}
 }
 
-#define DIRECTORY_NAME_SIZE 256
+#define DIRECTORY_NAME_SIZE 1024
 #define DIRECTORY_FILE_PATH_SIZE (DIRECTORY_NAME_SIZE * 10)
 void editor_find_file(Editor *editor, bool refresh_dir)
 {
