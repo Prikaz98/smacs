@@ -1203,7 +1203,7 @@ void editor_set_dir_by_current_file(Editor *editor)
 	}
 }
 
-#define DIRECTORY_NAME_SIZE 1024
+#define DIRECTORY_NAME_SIZE 256
 #define DIRECTORY_FILE_PATH_SIZE (DIRECTORY_NAME_SIZE * 10)
 void editor_find_file(Editor *editor, bool refresh_dir)
 {
@@ -1237,7 +1237,7 @@ void editor_find_file(Editor *editor, bool refresh_dir)
 				 "%s/%s", editor->dir, ep->d_name);
 
 			snprintf(directory_name,
-				DIRECTORY_NAME_SIZE + 1,
+				DIRECTORY_NAME_SIZE,
 				"%s%c", ep->d_name,
 				editor_is_directory(directory_file_path) ? '/' : 0);
 
