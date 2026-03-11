@@ -89,6 +89,7 @@ typedef struct {
 
 	int char_h, char_w;
 	struct hashmap_s surface_by_string;
+	int message_timeout_duration;
 } Smacs;
 
 void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color);

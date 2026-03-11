@@ -5,7 +5,6 @@ CFLAGS:=-Wall -Wextra -std=c11
 DEV_CFLAGS:=-pedantic -ggdb -D_DEFAULT_SOURCE -fsanitize=address,undefined
 SOURCES:=$(shell find ./src/ -type f -name "*.c")
 EXEC:=smacs
-TTF:=fonts/InconsolataNerdFont-Regular.ttf
 FALLBACK_TTF:=fonts/unifont-16.0.04.ttf
 UNAME_S := $(shell uname -s)
 
@@ -19,7 +18,6 @@ default:
 	cat ./resources/template | \
 	  sed 's+^#define HOME .*$$+#define HOME "${HOME}"+g' | \
 	  sed 's+^#define APP_DIR.*$$+#define APP_DIR "${PWD}"+g' | \
-	  sed 's+^#define TTF.*$$+#define TTF "${TTF}"+g' | \
 	  sed 's+^#define FALLBACK_TTF.*$$+#define FALLBACK_TTF "${FALLBACK_TTF}"+g' > ./.build/main.c
 
 dev: default

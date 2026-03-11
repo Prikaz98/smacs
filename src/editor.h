@@ -47,6 +47,7 @@ typedef struct {
 	} \
 
 typedef struct {
+	bool update_column;
 	size_t column;
 
 	Content content;

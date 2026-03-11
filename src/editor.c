@@ -46,12 +46,21 @@ void append_char(Content *content, char ch, size_t pos)
 
 void editor_goto_point(Editor *editor, size_t pos)
 {
-	size_t max_len;
-
-	max_len = editor->pane->buffer->content.len;
+	size_t max_len = editor->pane->buffer->content.len;
 	if (pos > max_len) return;
-
 	editor->pane->position = pos;
+
+    if (editor->pane->buffer->update_column) {
+        size_t current_line = editor_get_current_line_number(editor->pane);
+        if (current_line < editor->pane->buffer->len) {
+            Line *line = &editor->pane->buffer->data[current_line];
+            if (line != NULL) {
+                editor->pane->buffer->column = pos - line->start;
+            }
+        }
+    }
+
+    editor->pane->buffer->update_column = true;
 	editor_recognize_arena(editor);
 }
 
@@ -235,15 +244,14 @@ void editor_next_line(Editor *editor)
 
 	if (editor->pane->buffer->len > 0) {
 		line = &editor->pane->buffer->data[line_num];
-		editor->pane->buffer->column = MAX(editor->pane->buffer->column, editor->pane->position - line->start);
 
 		++line_num;
 		if (editor->pane->buffer->len > line_num) {
 			line = &editor->pane->buffer->data[line_num];
-			next_pos = line->start + editor->pane->buffer->column;
+			next_pos = MIN(line->start + editor->pane->buffer->column, line->end);
 
+            editor->pane->buffer->update_column = false;
 			editor_goto_point(editor, MIN(next_pos, line->end));
-
 			editor_recognize_arena(editor);
 		}
 	}
@@ -256,13 +264,13 @@ void editor_previous_line(Editor *editor)
 
 	line_num = editor_get_current_line_number(editor->pane);
 	line = &editor->pane->buffer->data[line_num];
-	editor->pane->buffer->column = MAX(editor->pane->buffer->column, editor->pane->position - line->start);
 
 	if (line_num != 0) {
 		line_num--;
 		line = &editor->pane->buffer->data[line_num];
 
-		next_pos = line->start + editor->pane->buffer->column;
+		next_pos = MIN(line->start + editor->pane->buffer->column, line->end);
+        editor->pane->buffer->update_column = false;
 		editor_goto_point(editor, MIN(next_pos, line->end));
 
 		editor_recognize_arena(editor);
@@ -285,6 +293,7 @@ void editor_char_backward(Editor *editor)
 	if (editor->pane->buffer->column > 0) {
 		editor->pane->buffer->column--;
 	}
+
 	editor_goto_point(editor, (size_t) MAX(((int)editor->pane->position) - char_len, 0));
 }
 

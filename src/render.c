@@ -253,19 +253,23 @@ void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, Str
 
 
 		if (info->x >= info->pane_width_threashold) {
+#if 0
+			//TODO(ivan): huge line without spaces brokes everything
 			for (data_index -= utf8_size_char_backward(info->data, data_index - 1);
-			     data_index > line->start;
-			     data_index -= utf8_size_char_backward(info->data, data_index - 1)) {
+				 data_index > line->start;
+				 data_index -= utf8_size_char_backward(info->data, data_index - 1)) {
 				if (isspace(info->data[data_index])) {
 					break;
 				}
 				--glyph->len;
 			}
-
+#endif
 			info->content_hight += (smacs->char_h + smacs->leading);
 			info->x = info->text_indention;
+#if 0
 			//It need to force redrowing everything in a new line
 			continue;
+#endif
 		}
 
 		if (data_index < info->data_len) {

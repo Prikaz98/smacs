@@ -13,6 +13,9 @@ Comments, chars, string literals, number. For me that enough for C lang developm
 
 Everything is highlighted, nothing is highlighted.
 
+## Configuration
+Create ~/.smacsrc and fill using this [reference](./.smacsrc.example)
+
 ## Warning
 Development and usage performed only in Linux operation system. In Mac OS it might works with some bugs. In Windows it supposes to not work at all.
 

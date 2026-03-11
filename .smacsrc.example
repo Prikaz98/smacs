@@ -1,0 +1,19 @@
+# Smacs configuration you can use any type of comment
+# Configuration only use string literals that match "\w = \w"
+
+# Font configuration field requires full path to ttf path by default is used unifont
+# font = /your/path/to/fonts/SomeTTF.ttf
+font_size = 16
+message_timeout = 5
+
+#Smacs uses \t to indention and using this param you can control tab rendering size
+tab_size = 4
+
+#Space between lines (default 1)
+#leading = 1
+
+#alternatives: mindre, naysayer, acme, jblow_nastalgia (default: jblow_nastalgia)
+theme = naysayer
+
+#alternatives: relative, absolute, hide (default: hide)
+line_number_format = absolute

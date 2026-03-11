@@ -8,11 +8,10 @@
 #include "themes.h"
 #include "common.h"
 #include "smacs.h"
+#include "config.h"
 
 const enum LineNumberFormat DISPLAY_LINE_FROMAT = HIDE;
 
-//TODO(ivan): Config file instead of touching params in smacs.h and Makefile
-//TODO(ivan): Mouse click should switch panes
 //TODO(ivan): Next-line and previous line should work using ui model (x coordnate)
 //TODO(ivan): Replace regexp
 //TODO(ivan): Better undo/redo
@@ -21,12 +20,16 @@ const enum LineNumberFormat DISPLAY_LINE_FROMAT = HIDE;
 
 void initial_hook(Smacs *smacs);
 
-int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *file_path)
+int smacs_launch(char *home_dir, char *fallback_ttf_path, char *file_path)
 {
 	int win_w, win_h, message_timeout, win_w_per_pane;
 	register int i;
+	char config_path[512];
 
 	Smacs smacs = {0};
+
+	snprintf(config_path, sizeof(config_path), "%s/.smacsrc", home_dir);
+	Config config = config_load(config_path, fallback_ttf_path);
 
 	if (!SDL_Init(SDL_INIT_VIDEO)) {
 		fprintf(stderr, "Could not initialize SDL: %s\n", SDL_GetError());
@@ -38,8 +41,8 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 		return 1;
 	}
 
-	smacs.font_size = FONT_SIZE;
-	smacs.font = TTF_OpenFont(ttf_path, smacs.font_size);
+	smacs.font_size = config.font_size;
+	smacs.font = TTF_OpenFont(config.font, smacs.font_size);
 	if (smacs.font == NULL) {
 		fprintf(stderr, "Could not open ttf: %s\n", SDL_GetError());
 		return 1;
@@ -71,13 +74,12 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 	bool quit = false;
 	message_timeout = 0;
 
-	//themes_naysayer(&smacs);
-	//themes_mindre(&smacs);
-	//themes_acme(&smacs);
-	themes_jblow_nastalgia(&smacs);
+	config_apply_theme(&smacs, config.theme_name);
 
-	smacs.line_number_format = DISPLAY_LINE_FROMAT;
 	smacs.home_dir = home_dir;
+	smacs.line_number_format = config.line_number_format;
+	smacs.message_timeout_duration = config.message_timeout;
+
 	smacs.editor = (Editor) {0};
 
 	smacs.editor.panes_len = 0;
@@ -90,9 +92,11 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 	SDL_GetWindowSize(smacs.window, &win_w, &win_h);
 	smacs.editor.pane->arena = (Arena) {0, win_h / smacs.font_size};
 	smacs.editor.pane->buffer->events_len = 0;
+	smacs.editor.pane->buffer->update_column = false;
+	smacs.editor.pane->buffer->column = 0;
 	smacs.notification = calloc(RENDER_NOTIFICATION_LEN, sizeof(char));
-	smacs.leading = LEADING;
-	smacs.tab_size = TAB_SIZE;
+	smacs.leading = config.leading;
+	smacs.tab_size = config.tab_size;
 
 	//initial_hook();
 
@@ -144,7 +148,15 @@ int smacs_launch(char *home_dir, char *ttf_path, char *fallback_ttf_path, char *
 			editor_mwheel_scroll(&smacs.editor, event.wheel.y);
 			break;
 		case SDL_EVENT_MOUSE_BUTTON_DOWN: {
-			//TODO(ivan): is not working well with utf8 chars and right pane
+			int click_x = (int)event.button.x;
+			for (i = 0; i < (int)smacs.editor.panes_len; ++i) {
+				if (click_x >= (int)smacs.editor.panes[i].x &&
+					click_x < (int)(smacs.editor.panes[i].x + smacs.editor.panes[i].w)) {
+					smacs.editor.pane = &smacs.editor.panes[i];
+					break;
+				}
+			}
+
 			long point = render_find_position_by_xy(&smacs, (int)event.button.x, (int)event.button.y - smacs.char_h);
 			if (point > 0) {
 				editor_goto_point(&smacs.editor, point);
@@ -396,13 +408,13 @@ bool extend_command_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout
 		//TODO: need to simplify this shit
 		if (starts_withl(data, "bk", 2) && data_len > 2) {
 			editor_kill_buffer(&smacs->editor, (size_t) atoi(&data[2]), smacs->notification, RENDER_NOTIFICATION_LEN);
-			*message_timeout = MESSAGE_TIMEOUT;
+			*message_timeout = smacs->message_timeout_duration;
 		} else if (starts_withl(data, "sp", 2)) {
 			if (smacs->editor.panes_len < PANES_MAX_SIZE) {
 				editor_split_pane(&smacs->editor);
 			} else {
 				snprintf(smacs->notification, RENDER_NOTIFICATION_LEN, "Can not create more than %d panes", PANES_MAX_SIZE);
-				*message_timeout = MESSAGE_TIMEOUT;
+				*message_timeout = smacs->message_timeout_duration;
 			}
 		} else if (starts_withl(data, "n", 1) && data_len > 1) {
 			editor_goto_line_forward(&smacs->editor, (size_t) atoi(&data[1]));
@@ -452,7 +464,7 @@ bool search_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout)
 		break;
 	case SDLK_RETURN:
 		if (!editor_user_search_next(&smacs->editor, smacs->notification, RENDER_NOTIFICATION_LEN)) {
-			*message_timeout = MESSAGE_TIMEOUT;
+			*message_timeout = smacs->message_timeout_duration;
 		}
 		break;
 	}
