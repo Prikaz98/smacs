@@ -92,7 +92,6 @@ typedef struct {
 	int message_timeout_duration;
 } Smacs;
 
-void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color);
 void render_draw_smacs(Smacs *smacs);
 void render_destroy_smacs(Smacs *smacs);
 void render_update_glyph(Smacs *smacs);

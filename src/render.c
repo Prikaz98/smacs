@@ -10,7 +10,7 @@
 
 #define LINE_BUFFER_LEN 100
 
-void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color)
+void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color, bool no_cache)
 {
 	SDL_FRect rect = (SDL_FRect) {0.0, 0.0, 0.0, 0.0};
 	SDL_Surface *surface = NULL;
@@ -18,7 +18,7 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, S
 	if (text == NULL) return;
 	if (text_len == 0) return;
 
-	if (NULL == (surface = hashmap_get(&smacs->surface_by_string, text, text_len))) {
+	if (no_cache || NULL == (surface = hashmap_get(&smacs->surface_by_string, text, text_len))) {
 		surface = TTF_RenderText_Blended(smacs->font, text, text_len, foreground_color);
 		if (surface == NULL) {
 			fprintf(stderr, "Render text (x %d y %d txt: %s len: %ld) cause: %s\n", x, y, text, text_len, SDL_GetError());
@@ -39,6 +39,16 @@ void render_draw_text(Smacs *smacs, int x, int y, char *text, size_t text_len, S
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(smacs->renderer, surface);
 	SDL_RenderTexture(smacs->renderer, texture, NULL, &rect);
 	SDL_DestroyTexture(texture);
+}
+
+void render_draw_text_no_cache(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color)
+{
+	render_draw_text(smacs, x, y, text, text_len, foreground_color, true);
+}
+
+void render_draw_text_with_cache(Smacs *smacs, int x, int y, char *text, size_t text_len, SDL_Color foreground_color)
+{
+	render_draw_text(smacs, x, y, text, text_len, foreground_color, false);
 }
 
 int render_free_texture_iterator(void* const context, struct hashmap_element_s* const e)
@@ -171,7 +181,7 @@ GlyphItem *render_flush_item_sb_and_move_x(Smacs *smacs, GlyphList *glyph, Strin
 					.w = w,
 					.h = h,
 					.kind = kind,
-					position = position}));
+					.position = position}));
 
 		sb_clean(sb);
 		x += w;
@@ -225,7 +235,15 @@ void render_line_processing(Smacs *smacs, PaneDrawingInfo *info, Line *line, Str
 			kind = kind | CURSOR;
 
 			if (info->cursor == info->data_len) {
-				gb_append(glyph, ((GlyphItem) {0, 0, info->x, info->content_hight, smacs->char_w, smacs->char_h, kind, data_index}));
+				gb_append(glyph, ((GlyphItem) {
+						   .beg = 0,
+						   .len = 0,
+						   .x = info->x,
+						   .y = info->content_hight,
+						   .w = smacs->char_w,
+						   .h = smacs->char_h,
+						   .kind = kind,
+						   .position = data_index}));
 				kind = kind ^ CURSOR;
 			}
 		} else if (kind & CURSOR) {
@@ -420,7 +438,15 @@ void render_update_glyph(Smacs *smacs)
 				}
 			}
 
-			gb_append(glyph, ((GlyphItem) {0, 0, pane->x+pane->w, 0, pane->x+pane->w, pane->h-smacs->char_h * (mini_buffer_is_active ? 2 : 1), LINE, -1}));
+			gb_append(glyph, ((GlyphItem) {
+					  .beg = 0,
+					  .len = 0,
+					  .x = pane->x+pane->w,
+					  .y = 0,
+					  .w = pane->x+pane->w,
+					  .h = pane->h-smacs->char_h * (mini_buffer_is_active ? 2 : 1),
+					  .kind = LINE,
+					  .position = -1}));
 		}
 
 		//MODE LINE
@@ -547,33 +573,29 @@ void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t st
 
 		if (kind & CURSOR) {
 			//Char in the cursor usually has contrast color
-			hashmap_remove(&smacs->surface_by_string, string, string_len);
-
 			SDL_SetRenderDrawColor(smacs->renderer, smacs->cursor_foreground_color.r, smacs->cursor_foreground_color.g, smacs->cursor_foreground_color.b, smacs->cursor_foreground_color.a);
 			SDL_RenderFillRect(smacs->renderer, rect);
 			foreground_color = smacs->background_color;
-		}
-
-		render_draw_text(smacs, rect->x, rect->y, string, string_len, foreground_color);
-
-		if (kind & CURSOR) {
-			//TODO(ivan): maybe better to use some variable like "nocache" for cursor char
+			render_draw_text_no_cache(smacs, rect->x, rect->y, string, string_len, foreground_color);
 			hashmap_remove(&smacs->surface_by_string, string, string_len);
+		} else {
+			render_draw_text_with_cache(smacs, rect->x, rect->y, string, string_len, foreground_color);
 		}
 	} else if (kind & MODE_LINE) {
 		SDL_SetRenderDrawColor(smacs->renderer, smacs->background_color.r, smacs->background_color.g, smacs->background_color.b, smacs->background_color.a);
 		SDL_RenderFillRect(smacs->renderer, rect);
 
-		render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->foreground_color);
+		render_draw_text_no_cache(smacs, rect->x, rect->y, string, string_len, smacs->foreground_color);
 	} else if (kind & MODE_LINE_ACTIVE) {
 		SDL_SetRenderDrawColor(smacs->renderer, smacs->mode_line_background_color.r, smacs->mode_line_background_color.g, smacs->mode_line_background_color.b, smacs->mode_line_background_color.a);
 		SDL_RenderFillRect(smacs->renderer, rect);
 
-		render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->mode_line_foreground_color);
+		render_draw_text_no_cache(smacs, rect->x, rect->y, string, string_len, smacs->mode_line_foreground_color);
 	} else if (kind & MINI_BUFFER) {
-		render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->foreground_color);
+		render_draw_text_no_cache(smacs, rect->x, rect->y, string, string_len, smacs->foreground_color);
 	} else if (kind & LINE_NUMBER) {
-		render_draw_text(smacs, rect->x, rect->y, string, string_len, smacs->line_number_color);
+		render_draw_text_no_cache(smacs, rect->x, rect->y, string, string_len, smacs->line_number_color);
+	hashmap_remove(&smacs->surface_by_string, string, string_len);
 	} else if (kind & LINE) {
 		SDL_SetRenderDrawColor(smacs->renderer, smacs->foreground_color.r, smacs->foreground_color.g, smacs->foreground_color.b, smacs->foreground_color.a);
 		SDL_RenderLine(smacs->renderer, rect->x, rect->y, rect->w, rect->h);
