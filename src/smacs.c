@@ -227,6 +227,18 @@ bool ctrl_leader_mapping(Smacs *smacs, SDL_Event *event, int *message_timeout)
 			editor_backward_sexp(&smacs->editor);
 			break;
 		}
+
+		return true;
+	}
+
+	if  (event->key.mod & SDL_KMOD_SHIFT) {
+		switch (event->key.key) {
+		case SDLK_2:
+			editor_set_mark(&smacs->editor);
+			break;
+		}
+
+		return true;
 	}
 
 	switch (event->key.key) {

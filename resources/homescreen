@@ -33,6 +33,7 @@ Kill line .................. C-k
 ----------------------------------------------------------------------
 REGION/SELECTION:
 Set mark ................... C-SPC  Set mark forward ............. M-@
+Set mark ................... C-@
 Exit selection ............. C-g
 Cut ........................ C-w    Copy ......................... M-w
 Replace .................... C-y    Wrap region in parenthesis ... M-(
