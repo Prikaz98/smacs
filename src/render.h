@@ -67,7 +67,8 @@ typedef struct {
 
 	SDL_Color background_color;
 	SDL_Color foreground_color;
-	SDL_Color region_color;
+	SDL_Color region_background_color;
+	SDL_Color region_foreground_color;
 	SDL_Color line_number_color;
 	SDL_Color mode_line_background_color;
 	SDL_Color mode_line_foreground_color;

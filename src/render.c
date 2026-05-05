@@ -556,11 +556,11 @@ void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t st
 
 	if (kind & TEXT) {
 		if (kind & REGION) {
-			SDL_SetRenderDrawColor(smacs->renderer, smacs->region_color.r, smacs->region_color.g, smacs->region_color.b, smacs->region_color.a);
+			SDL_SetRenderDrawColor(smacs->renderer, smacs->region_background_color.r, smacs->region_background_color.g, smacs->region_background_color.b, smacs->region_background_color.a);
 			//small hack to fill space between the lines
 			SDL_FRect selection_rectangle = {.x = rect->x, .y = rect->y, .w = rect->w, .h = (rect->h * 1.2)};
 			SDL_RenderFillRect(smacs->renderer, &selection_rectangle);
-			foreground_color = smacs->foreground_color;
+			foreground_color = smacs->region_foreground_color;
 		} else if (kind & COMMENT) {
 			foreground_color = smacs->comment_foreground_color;
 		} else if (kind & NUMBER) {
@@ -576,6 +576,9 @@ void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t st
 			SDL_SetRenderDrawColor(smacs->renderer, smacs->cursor_foreground_color.r, smacs->cursor_foreground_color.g, smacs->cursor_foreground_color.b, smacs->cursor_foreground_color.a);
 			SDL_RenderFillRect(smacs->renderer, rect);
 			foreground_color = smacs->background_color;
+			render_draw_text_no_cache(smacs, rect->x, rect->y, string, string_len, foreground_color);
+			hashmap_remove(&smacs->surface_by_string, string, string_len);
+		} else if (kind & REGION) {
 			render_draw_text_no_cache(smacs, rect->x, rect->y, string, string_len, foreground_color);
 			hashmap_remove(&smacs->surface_by_string, string, string_len);
 		} else {
@@ -595,7 +598,7 @@ void render_draw_batch(Smacs *smacs, GlyphItemEnum kind, char *string, size_t st
 		render_draw_text_no_cache(smacs, rect->x, rect->y, string, string_len, smacs->foreground_color);
 	} else if (kind & LINE_NUMBER) {
 		render_draw_text_no_cache(smacs, rect->x, rect->y, string, string_len, smacs->line_number_color);
-	hashmap_remove(&smacs->surface_by_string, string, string_len);
+		hashmap_remove(&smacs->surface_by_string, string, string_len);
 	} else if (kind & LINE) {
 		SDL_SetRenderDrawColor(smacs->renderer, smacs->foreground_color.r, smacs->foreground_color.g, smacs->foreground_color.b, smacs->foreground_color.a);
 		SDL_RenderLine(smacs->renderer, rect->x, rect->y, rect->w, rect->h);

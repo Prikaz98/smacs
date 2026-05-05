@@ -68,6 +68,8 @@ void config_apply_theme(Smacs *smacs, const char *theme_name)
 		themes_acme(smacs);
 	} else if (0 == strcmp(theme_name, "jblow_nastalgia")) {
 		themes_jblow_nastalgia(smacs);
+	} else if (0 == strcmp(theme_name, "qemacs")) {
+		themes_qemacs(smacs);
 	} else {
 		themes_jblow_nastalgia(smacs);
 	}
